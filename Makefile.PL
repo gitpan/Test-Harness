@@ -28,6 +28,7 @@ CHANGE_WARN
 }
 
 warn "\a\a\a", <<'UNSTABLE_WARN';
+***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***
 As of version 1.18, Test::Harness is now **UNSTABLE!**
 
 Its undergoing an incremental internal refactoring as well as
@@ -40,7 +41,7 @@ However, please run the tests and report their success or failure to
 me along with your architecture and Perl version.
 
 I'll pause for a few seconds to allow you to reflect on this...
-kill me know if you have any doubts!
+kill me now if you have any doubts!
 
 UNSTABLE_WARN
 
@@ -52,6 +53,7 @@ Ok, your funeral.
 I'll install myself in site_perl instead of with the core libraries
 for now.  Use "perl Makefile.PL INSTALLDIRS=perl" or
 "make install UNINST=1" to put me into the core.
+***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***
 MORE_WARNING
 
 warn "Test::Harness likes to have Devel::CoreStack, but doesn't require it.\n"

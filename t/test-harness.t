@@ -61,7 +61,7 @@ BEGIN {
                 simple            => {
                                       bonus      => 0,
                                       max        => 5,
-                                      ok         => 5,
+                                      'ok'         => 5,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -72,7 +72,7 @@ BEGIN {
                 simple_fail      => {
                                      bonus       => 0,
                                      max         => 5,
-                                     ok          => 3,
+                                     'ok'          => 3,
                                      files       => 1,
                                      bad         => 1,
                                      good        => 0,
@@ -83,7 +83,7 @@ BEGIN {
                 descriptive       => {
                                       bonus      => 0,
                                       max        => 5,
-                                      ok         => 5,
+                                      'ok'         => 5,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -94,7 +94,7 @@ BEGIN {
                 no_nums           => {
                                       bonus      => 0,
                                       max        => 5,
-                                      ok         => 4,
+                                      'ok'         => 4,
                                       files      => 1,
                                       bad        => 1,
                                       good       => 0,
@@ -105,7 +105,7 @@ BEGIN {
                 todo              => {
                                       bonus      => 1,
                                       max        => 5,
-                                      ok         => 5,
+                                      'ok'         => 5,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -116,7 +116,7 @@ BEGIN {
                 skip              => {
                                       bonus      => 0,
                                       max        => 5,
-                                      ok         => 5,
+                                      'ok'         => 5,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -128,7 +128,7 @@ BEGIN {
                 combined          => {
                                       bonus      => 1,
                                       max        => 10,
-                                      ok         => 8,
+                                      'ok'         => 8,
                                       files      => 1,
                                       bad        => 1,
                                       good       => 0,
@@ -139,7 +139,7 @@ BEGIN {
                 duplicates        => {
                                       bonus      => 0,
                                       max        => 10,
-                                      ok         => 11,
+                                      'ok'         => 11,
                                       files      => 1,
                                       bad        => 1,
                                       good       => 0,
@@ -150,7 +150,7 @@ BEGIN {
                 header_at_end     => {
                                       bonus      => 0,
                                       max        => 4,
-                                      ok         => 4,
+                                      'ok'         => 4,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -161,7 +161,7 @@ BEGIN {
                 skip_all          => {
                                       bonus      => 0,
                                       max        => 0,
-                                      ok         => 0,
+                                      'ok'         => 0,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -172,7 +172,7 @@ BEGIN {
                 with_comments     => {
                                       bonus      => 2,
                                       max        => 5,
-                                      ok         => 5,
+                                      'ok'         => 5,
                                       files      => 1,
                                       bad        => 0,
                                       good       => 1,
@@ -188,12 +188,12 @@ BEGIN {
 tie *NULL, 'My::Dev::Null' or die $!;
 
 while (my($test, $expect) = each %samples) {
-    # _runtests() runs the tests but skips the formatting.
+    # _run_all_tests() runs the tests but skips the formatting.
     my($totals, $failed);
     eval {
-        select NULL;    # _runtests() isn't as quiet as it should be.
+        select NULL;    # _run_all_tests() isn't as quiet as it should be.
         ($totals, $failed) = 
-          Test::Harness::_runtests("t/sample-tests/$test");
+          Test::Harness::_run_all_tests("t/sample-tests/$test");
     };
     select STDOUT;
 
