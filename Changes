@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Harness
 
+1.24  Tue Aug  7 08:51:09 EDT 2001
+    - Added internal information about number of todo tests
+
 1.23  Tue Jul 31 15:06:47 EDT 2001
     - Merged in Ilya's "various reasons" patch
     * Fixed "not ok 23 - some name # TODO" style tests

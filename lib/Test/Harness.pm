@@ -1,9 +1,11 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.13 2001/07/31 03:01:46 schwern Exp $
+# $Id: Harness.pm,v 1.14.2.5 2001/08/12 02:55:08 schwern Exp $
 
 package Test::Harness;
 
 require 5.004;
+use Test::Harness::Straps;
+use Test::Harness::Assert;
 use Exporter;
 use Benchmark;
 use Config;
@@ -20,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "1.23";
+$VERSION = "2.00_00";
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -29,6 +31,7 @@ my $Ignore_Exitcode = $ENV{HARNESS_IGNORE_EXITCODE};
 
 my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 
+my $Strap = Test::Harness::Straps->new;
 
 @ISA = ('Exporter');
 @EXPORT    = qw(&runtests);
@@ -163,6 +166,19 @@ succeed.
 
   not ok 13 # TODO harness the power of the atom
 
+=begin _deprecated
+
+Alternatively, you can specify a list of what tests are todo as part
+of the test header.
+
+  1..23 todo 5 12 23
+
+This only works if the header appears at the beginning of the test.
+
+This style is B<deprecated>.
+
+=end _deprecated
+
 These tests represent a feature to be implemented or a bug to be fixed
 and act as something of an executable "thing to do" list.  They are
 B<not> expected to succeed.  Should a todo test begin succeeding,
@@ -291,8 +307,8 @@ sub runtests {
 
     my $ok = ($tot->{bad} == 0 && $tot->{max});
 
-    die q{Assert '$ok xor keys %$failedtests' failed!}
-      unless $ok xor keys %$failedtests;
+    assert(($ok xor keys %$failedtests), 
+           q{ok status jives with $failedtests});
 
     return $ok;
 }
@@ -328,6 +344,7 @@ and values are this:
     max             Number of individual tests ran
     ok              Number of individual tests passed
     sub_skipped     Number of individual tests skipped
+    todo            Number of individual todo tests
 
     files           Number of test files ran
     good            Number of test files passed
@@ -371,6 +388,7 @@ sub _run_all_tests {
                 good     => 0,
                 tests    => scalar @tests,
                 sub_skipped  => 0,
+                todo     => 0,
                 skipped  => 0,
                 bench    => 0,
                );
@@ -396,6 +414,8 @@ sub _run_all_tests {
     my $t_start = new Benchmark;
 
     foreach my $tfile (@tests) {
+        $Strap->_reset_file_state;
+
         my($leader, $ml) = _mk_leader($tfile);
         print $leader;
 
@@ -416,6 +436,8 @@ sub _run_all_tests {
 
         my($seen_header, $tests_seen) = (0,0);
         while (<$fh>) {
+            print if $Verbose;
+
             if( _parse_header($_, \%test, \%tot) ) {
                 warn "Test header seen twice!\n" if $seen_header;
 
@@ -542,7 +564,7 @@ on TTY.
 
 sub _mk_leader {
     my $te = shift;
-    chop($te);      # XXX chomp?
+    chomp($te);      # XXX chomp?
 
     if ($^O eq 'VMS') { $te =~ s/^.*\.t\./\[.t./s; }
     my $blank = (' ' x 77);
@@ -601,32 +623,20 @@ sub _parse_header {
 
     my $is_header = 0;
 
-    print $line if $Verbose;
-
-    # 1..10 todo 4 7 10;
-    if ($line =~ /^1\.\.([0-9]+) todo([\d\s]+);?/i) {
-        $test->{max} = $1;
-        for (split(/\s+/, $2)) { $test->{todo}{$_} = 1; }
-
-        $tot->{max} += $test->{max};
-        $tot->{files}++;
-
+    if( $Strap->_is_header($line) ) {
         $is_header = 1;
-    }
-    # 1..10
-    # 1..0 # skip  Why?  Because I said so!
-    elsif ($line =~ /^1\.\.([0-9]+)
-                      (\s*\#\s*[Ss]kip\S*\s* (.+))?
-                    /x
-          )
-    {
-        $test->{max} = $1;
-        $tot->{max} += $test->{max};
-        $tot->{files}++;
+
+        $test->{max} = $Strap->{max};
+        for ( keys %{$Strap->{todo}} ) { $test->{todo}{$_} = 1; }
+
+        $test->{skip_reason} = $Strap->{skip_all} 
+          if not $test->{max} and defined $Strap->{skip_all};
+
         $test->{'next'} = 1 unless $test->{'next'};
-        $test->{skip_reason} = $3 if not $test->{max} and defined $3;
 
-        $is_header = 1;
+
+        $tot->{max} += $test->{max};
+        $tot->{files}++;
     }
     else {
         $is_header = 0;
@@ -667,65 +677,53 @@ sub _run_one_test {
 sub _parse_test_line {
     my($line, $test, $tot) = @_;
 
-    if ($line =~ /^(not\s+)?ok\b/i) {
+    my %result;
+    if ( $Strap->_is_test($line, \%result) ) {
         $test->{next} ||= 1;
-        my $this = $test->{'next'};
-        # "not ok 23"
-        if ($line =~ /^(not )?ok\s*(\d*)[^#]*(\s*#.*)?/) {
-            my($not, $tnum, $extra) = ($1, $2, $3);
+        my $this = $test->{next};
 
-            $this = $tnum if $tnum;
+        my($not, $tnum) = (!$result{ok}, $result{number});
 
-            my($type, $reason) = $extra =~ /^\s*#\s*([Ss]kip\S*|TODO)(\s+.+)?/
-              if defined $extra;
+        $this = $tnum if $tnum;
 
-            my($istodo, $isskip);
-            if( defined $type ) {
-                $istodo = $type =~ /TODO/;
-                $isskip = $type =~ /skip/i;
-            }
+        my($type, $reason) = ($result{type}, $result{reason});
 
-            $test->{todo}{$tnum} = 1 if $istodo;
+        my($istodo, $isskip);
+        if( defined $type ) {
+            $istodo = 1 if $type eq 'todo';
+            $isskip = 1 if $type eq 'skip';
+        }
 
-            if( $not ) {
-                print "$test->{ml}NOK $this" if $test->{ml};
-                if (!$test->{todo}{$this}) {
-                    push @{$test->{failed}}, $this;
-                } else {
-                    $test->{ok}++;
-                    $tot->{ok}++;
-                }
-            }
-            else {
-                print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
+        $test->{todo}{$this} = 1 if $istodo;
+
+        $tot->{todo}++ if $test->{todo}{$this};
+
+        if( $not ) {
+            print "$test->{ml}NOK $this" if $test->{ml};
+            if (!$test->{todo}{$this}) {
+                push @{$test->{failed}}, $this;
+            } else {
                 $test->{ok}++;
                 $tot->{ok}++;
-                $test->{skipped}++ if $isskip;
-
-                $reason = '[no reason given]'
-                    if $isskip and not defined $reason;
-                if (defined $reason and defined $test->{skip_reason}) {
-                    # print "was: '$skip_reason' new '$reason'\n";
-                    $test->{skip_reason} = 'various reasons'
-                      if $test->{skip_reason} ne $reason;
-                } elsif (defined $reason) {
-                    $test->{skip_reason} = $reason;
-                }
-
-                $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
             }
         }
-        # XXX ummm... dunno
-        elsif ($line =~ /^ok\s*(\d*)\s*\#([^\r]*)$/) { # XXX multiline ok?
-            $this = $1 if $1 > 0;
+        else {
             print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
             $test->{ok}++;
             $tot->{ok}++;
-        }
-        else {
-            # an ok or not ok not matching the 3 cases above...
-            # just ignore it for compatibility with TEST
-            next;
+            $test->{skipped}++ if $isskip;
+
+            $reason = '[no reason given]'
+              if $isskip and not defined $reason;
+            if (defined $reason and defined $test->{skip_reason}) {
+                # print "was: '$skip_reason' new '$reason'\n";
+                $test->{skip_reason} = 'various reasons'
+                  if $test->{skip_reason} ne $reason;
+            } elsif (defined $reason) {
+                $test->{skip_reason} = $reason;
+            }
+
+            $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
         }
 
         if ($this > $test->{'next'}) {
@@ -741,9 +739,12 @@ sub _parse_test_line {
         $test->{'next'} = $this + 1;
 
     }
-    elsif ($line =~ /^Bail out!\s*(.*)/i) { # magic words
-        die "FAILED--Further testing stopped" .
-            ($1 ? ": $1\n" : ".\n");
+    else {
+        my $bail_reason;
+        if( $Strap->_is_bail_out($line, \$bail_reason) ) { # bail out!
+            die "FAILED--Further testing stopped" .
+              ($bail_reason ? ": $bail_reason\n" : ".\n");
+        }
     }
 }
 

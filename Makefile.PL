@@ -34,7 +34,9 @@ warn "Test::Harness likes to have Devel::CoreStack, but doesn't require it.\n"
 WriteMakefile(
     NAME            => $PACKAGE,
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
-    PREREQ_PM       => { },
+    PREREQ_PM       => { 
+                        Test::More  => 0.09
+                       },
     INSTALLDIRS     => 'perl',
     'dist'          => { COMPRESS   => 'gzip -9',
                          SUFFIX     => '.gz',
