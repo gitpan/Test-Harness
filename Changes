@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+2.34        Sat Nov  8 22:09:15 CST 2003
+    [FIXES]
+    * Allowed prove to run on Perl versions < 5.6.0.
+
+    [ENHANCEMENTS]
+    * Command-line switches to prove may now be stacked.
+    * Added check for proper Pod::Usage version.
+    * "make clean" does a better job of cleaning up after itself.
+
+
 2.32        Fri Nov  7 09:41:21 CST 2003
     Test::Harness now includes a powerful development tool to help
     programmers work with automated tests.  The prove utility runs

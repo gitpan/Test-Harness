@@ -18,6 +18,6 @@ local $/ = undef;
 
 my $blib = File::Spec->catfile( qw( blib lib ) );
 my $prove = File::Spec->catfile( qw( blib script prove ) );
-my $actual = qx/$prove -d -v -Ifirst -I second -Ithird -T -b/;
+my $actual = qx/$prove -d -Ifirst -I second -Ithird -Tvb/;
 my $expected = "# \$Test::Harness::Switches: -I$blib -Ifirst -Isecond -Ithird -T\n";
 is( $actual, $expected, "Proper flags found" );

@@ -4,10 +4,11 @@ use strict;
 
 use Test::Harness;
 use Getopt::Long;
-use Pod::Usage;
+use Pod::Usage 1.12;
 use File::Spec;
 
-our $VERSION = "0.02";
+use vars qw( $VERSION );
+$VERSION = "1.00";
 
 my @ext = ();
 my $shuffle = 0;
@@ -21,6 +22,7 @@ my @switches = ();
 @ARGV = map { /^(-I)(.+)/ ? ($1,$2) : $_ } @ARGV;
 
 Getopt::Long::Configure( "no_ignore_case" );
+Getopt::Long::Configure( "bundling" );
 GetOptions(
     'b|blib'        => sub { unshift @includes, File::Spec->catfile( "blib", "lib" ) },
     'd|debug'	    => \$debug,
@@ -126,6 +128,8 @@ Options:
     -v  --verbose   Display standard output of test scripts while running them.
     -V  --version   Display version info
 
+Single-character options may be stacked.
+
 =head1 OVERVIEW
 
 F<prove> is a command-line interface to the test-running functionality
@@ -166,6 +170,11 @@ F<prove>'s C<-T> runs your tests under C<perl -T>.
 
 You can use F<prove>'s C<--shuffle> option to try to excite problems
 that don't show up when tests are run in the same order every time.
+
+=item * F<prove> doesn't rely on a make tool
+
+Not everyone wants to write a makefile, or use L<ExtUtils::MakeMaker>
+to do so.  F<prove> has no external dependencies.
 
 =item * Not everything is a module
 
