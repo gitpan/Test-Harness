@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.70 2003/11/18 19:52:14 andy Exp $
+# $Id: Harness.pm,v 1.72 2003/11/19 05:15:14 andy Exp $
 
 package Test::Harness;
 
@@ -11,10 +11,17 @@ use Benchmark;
 use Config;
 use strict;
 
-use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
-            $Columns $verbose $switches $ML $Strap
-            @ISA @EXPORT @EXPORT_OK $Last_ML_Print
-           );
+use vars qw(
+    $VERSION 
+    @ISA @EXPORT @EXPORT_OK 
+    $Verbose $Switches $Debug
+    $verbose $switches $debug
+    $Have_Devel_Corestack
+    $Curtest
+    $Columns 
+    $ML $Last_ML_Print
+    $Strap
+);
 
 =head1 NAME
 
@@ -22,17 +29,18 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.37_01
+Version 2.37_02
 
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.70 2003/11/18 19:52:14 andy Exp $
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.72 2003/11/19 05:15:14 andy Exp $
 
 =cut
 
-$VERSION = '2.37_01';
+$VERSION = '2.37_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
 *switches = *Switches;
+*debug    = *Debug;
 
 $Have_Devel_Corestack = 0;
 
@@ -57,6 +65,7 @@ $Strap = Test::Harness::Straps->new;
 @EXPORT_OK = qw($verbose $switches);
 
 $Verbose  = $ENV{HARNESS_VERBOSE} || 0;
+$Debug    = $ENV{HARNESS_DEBUG} || 0;
 $Switches = "-w";
 $Columns  = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
 $Columns--;             # Some shells have trouble with a full line of text.
@@ -1034,6 +1043,13 @@ C<perlcc> before running it.
 B<NOTE> This currently only works when sitting in the perl source
 directory!
 
+=item C<HARNESS_DEBUG>
+
+If true, Test::Harness will print debugging information about itself as
+it runs the tests.  This is different from C<HARNESS_VERBOSE>, which prints
+the output from the test being run.  Setting C<$Test::Harness::debug> will
+override this, or you can use the C<-d> switch in the F<prove> utility.
+
 =item C<HARNESS_FILELEAK_IN_DIR>
 
 When set to the name of a directory, harness will check after each
@@ -1080,7 +1096,8 @@ run all tests with all warnings enabled.
 =item C<HARNESS_VERBOSE>
 
 If true, Test::Harness will output the verbose results of running
-its tests.  Setting C<$Test::Harness::verbose> will override this.
+its tests.  Setting C<$Test::Harness::verbose> will override this,
+or you can use the C<-v> switch in the F<prove> utility.
 
 =back
 

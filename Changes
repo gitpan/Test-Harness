@@ -1,14 +1,20 @@
 Revision history for Perl extension Test::Harness
 
-2.37_01
+2.37_02	    Tue Nov 18 23:15:00 CST 2003
     [ENHANCEMENTS]
     * prove -V now shows the Perl version being used.
+    * Now there's a HARNESS_DEBUG flag that shows diagnostics as the
+      harness runs the tests.  This is different from HARNESS_VERBOSE,
+      which shows test output, but not information about the harness
+      itself.
 
     [FIXES]
     * Bad interaction with Module::Build:  The strap was only checking
       $ENV{HARNESS_PERL_SWITCHES} for definedness, but not emptiness.
       It now also strips any leading or trailing whitesapce from the
       switches.
+    * Test::Harness and prove only quote those parms that actually need
+      to be quoted: Have some whitespace and aren't already quoted.
 
 2.36        Fri Nov 14 09:24:44 CST 2003
     [FIXES]

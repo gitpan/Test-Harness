@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.30 2003/11/18 19:43:51 andy Exp $
+# $Id: Straps.pm,v 1.31 2003/11/19 04:50:04 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -265,8 +265,12 @@ sub analyze_file {
     my $command =  $self->_command();
     my $switches = $self->_switches($file);
 
+    $file = qq["$file"] if ($file =~ /\s/) && ($file !~ /^".*"$/);
+    my $line = "$command $switches $file";
+    warn "# Running: $line\n" if $Test::Harness::debug;
+
     # *sigh* this breaks under taint, but open -| is unportable.
-    unless( open(FILE, qq[$command $switches "$file"|]) ) {
+    unless( open(FILE, "$line|") ) {
         print "can't run $file. $!\n";
         return;
     }
@@ -348,11 +352,14 @@ sub _switches {
     # MacPerl's putenv is broken, so it will not see PERL5LIB, tainted or not.
     if ( $taint || $self->{_is_macos} ) {
 	my @inc = $self->_filtered_INC;
-	push @switches, map "-I$_", @inc;
+	push @switches, map { "-I$_" } @inc;
     }
 
     # Quote all switches to prevent shell interference, or VMS downcasing
-    return join( " ", map { qq["$_"] } @switches );
+    for ( @switches ) {
+	$_ = qq["$_"] if /\s/ && !/^".*"$/;
+    }
+    return join( " ", @switches );
 }
 
 =head2 C<_cleaned_switches>
