@@ -41,6 +41,7 @@ t/sample-tests/skip
 t/sample-tests/skipall
 t/sample-tests/skipall_nomsg
 t/sample-tests/skip_nomsg
+t/sample-tests/switches
 t/sample-tests/taint
 t/sample-tests/todo
 t/sample-tests/todo_inline

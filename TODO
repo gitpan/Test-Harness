@@ -16,8 +16,6 @@ HARNESS_TODOFAIL to display TODO failures
 
 Add a test for verbose.
 
-Fix $Test::Harness::Switches
-
 Change internal list of test results to a hash.
 
 Fix stats display when there's an overrun.
