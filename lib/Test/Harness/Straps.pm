@@ -1,12 +1,12 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.24 2003/11/04 16:00:57 andy Exp $
+# $Id: Straps.pm,v 1.25 2003/11/07 16:06:37 andy Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.17_02';
+$VERSION = '0.18';
 
 use Test::Harness::Assert;
 use Test::Harness::Iterator;

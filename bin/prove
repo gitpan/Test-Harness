@@ -116,7 +116,7 @@ Options:
     -b  --blib      Adds blib/lib to the path for your tests, a la "use blib".
     -d  --debug	    Includes extra debugging information.
     -D  --dry       Dry run: Show the tests to run, but don't run them.
-        --ext       Extensions (defaults to .t)
+        --ext=x     Extensions (defaults to .t)
     -h  --help      Display this help
     -H  --man       Longer manpage for prove
     -I              Add libraries to @INC, as Perl's -I
@@ -191,9 +191,11 @@ by -v,--verbose.
 
 Dry run: Show the tests to run, but don't run them.
 
-=head2 --ext
+=head2 --ext=extension
 
-Extensions (defaults to .t)
+Specify extensions of the test files to run.  By default, these are .t,
+but you may have other non-.t test files, most likely .sh shell scripts.
+The --ext is repeatable.
 
 =head2 -I
 

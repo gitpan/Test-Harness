@@ -1,10 +1,48 @@
 Revision history for Perl extension Test::Harness
 
-The 2.31_xx series of Test::Harness is primarily for getting prove
-out there among the masses, mostly as support for Phalanx.  Not to
-say that we won't fix bugs along the way...
+2.32        Fri Nov  7 09:41:21 CST 2003
+    Test::Harness now includes a powerful development tool to help
+    programmers work with automated tests.  The prove utility runs
+    test files against the harness, like a "make test", but with many
+    advantages:
 
-2.31_05	    Thu Nov  6 14:56:22 CST 2003
+    * prove is designed as a development tool
+        Perl users typically run the test harness through a makefile via
+        "make test". That's fine for module distributions, but it's
+        suboptimal for a test/code/debug development cycle.
+
+    * prove is granular
+        prove lets your run against only the files you want to check.
+        Running "prove t/live/ t/master.t" checks every *.t in t/live, plus
+        t/master.t.
+
+    * prove has an easy verbose mode
+        To get full test program output from "make test", you must set
+        "HARNESS_VERBOSE" in the environment. prove has a "-v" option.
+
+    * prove can run under taint mode
+        prove's "-T" runs your tests under "perl -T".
+
+    * prove can shuffle tests
+        You can use prove's "--shuffle" option to try to excite problems
+        that don't show up when tests are run in the same order every time.
+
+    * Not everything is a module
+        More and more users are using Perl's testing tools outside the
+        context of a module distribution, and may not even use a makefile at
+        all.
+
+    Prove requires Pod::Usage, which is standard after Perl 5.004.
+
+    I'm very excited about prove, and hope that developers will begin
+    adopting it to their coding cycles.  I welcome your comments at
+    andy@petdance.com.
+
+    There are also some minor bug fixes in Test::Harness itself, listed
+    below in the 2.31_* notes.
+     
+
+2.31_05     Thu Nov  6 14:56:22 CST 2003
     [FIXES]
     - If a MacPerl script had a shebang with -T, the -T wouldn't get
       passed as a switch.
@@ -14,17 +52,17 @@ say that we won't fix bugs along the way...
       is available, which prove needs.
     - Removed old leftover code from Makefile.PL.
 
-2.31_04	    Mon Nov  3 23:36:06 CST 2003
+2.31_04     Mon Nov  3 23:36:06 CST 2003
     Minor tweaks here and there, almost ready to release.
 
-2.31_03	    Mon Nov  3 08:50:36 CST 2003
+2.31_03     Mon Nov  3 08:50:36 CST 2003
     [FEATURES]
     - prove is almost feature-complete.  Removed the handling of
       --exclude for excluding certain tests.  It may go back in the
       future.
     - prove -d is now debug.  Dry is prove -D.
 
-2.31_02	    Fri Oct 31 23:46:03 CST 2003
+2.31_02     Fri Oct 31 23:46:03 CST 2003
     [FEATURES]
     - Added many more switches to prove: -d for dry run, and -b for
       blib.
@@ -58,10 +96,10 @@ say that we won't fix bugs along the way...
     - Incorporated the TODO file into Harness.pm proper.
     - Cleaned up formatting in Test::Harness::Straps.
 
-2.29	    Wed Jul 17 14:08:00 CDT 2003
+2.29        Wed Jul 17 14:08:00 CDT 2003
     - Released as 2.29.
 
-2.28_91	    Sun Jul 13 00:10:00 CDT 2003
+2.28_91     Sun Jul 13 00:10:00 CDT 2003
     [ENHANCEMENTS]
     - Added support for HARNESS_OK_SLOW.  This will make a significant
       speedup for slower connections.
@@ -74,7 +112,7 @@ say that we won't fix bugs along the way...
     - Fixed the prototype for the canonfailed() function, not that
       it matters since it's never called without parens.
 
-2.28_90	    Sat Jul 05 20:21:00 CDT 2003
+2.28_90     Sat Jul 05 20:21:00 CDT 2003
     [ENHANCEMENTS]
     - Now, when you run a test harnessed, the numbers don't fly by one
       at a time, one update per second.  This significantly speeds
