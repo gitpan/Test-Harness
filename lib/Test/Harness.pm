@@ -18,7 +18,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "1.18";
+$VERSION = "1.19";
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -88,26 +88,11 @@ sub _runtests {
     my @dir_files = globdir $Files_In_Dir if defined $Files_In_Dir;
     my $t_start = new Benchmark;
 
-    foreach my $test (@tests) {
-	my $te = $test;
-	chop($te);      # XXX chomp?
+    foreach my $tfile (@tests) {
+        my($leader, $ml) = _mk_leader($tfile);
+        print $leader;
 
-	if ($^O eq 'VMS') { $te =~ s/^.*\.t\./[.t./s; }
-	my $blank = (' ' x 77);
-	my $leader = "$te" . '.' x (20 - length($te));
-	my $ml = "";
-	$ml = "\r$blank\r$leader"
-	    if -t STDOUT and not $ENV{HARNESS_NOTTY} and not $Verbose;
-	print $leader;
-
-         my $s = _set_switches($test);
-
-	my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
-		? "./perl -I../lib ../utils/perlcc $test "
-		  . "-r 2>> ./compilelog |" 
-		: "$^X $s $test|";
-	$cmd = "MCR $cmd" if $^O eq 'VMS';
-	open(my $fh, $cmd) or print "can't run $test. $!\n";
+        my $fh = _open_test($tfile);
 
         # state of the current test.
         my %test = (
@@ -140,12 +125,14 @@ sub _runtests {
 
         my($estatus, $wstatus) = _close_fh($fh);
 
+        my $allok = $test{ok} == $test{max} && $test{next} == $test{max}+1;
+
 	if ($wstatus) {
-            $failedtests{$test} = _dubious_return(\%test, \%tot, 
+            $failedtests{$tfile} = _dubious_return(\%test, \%tot, 
                                                   $estatus, $wstatus);
-            $failedtests{$test}{name} = $test;
+            $failedtests{$tfile}{name} = $tfile;
 	}
-        elsif ($test{ok} == $test{max} && $test{next} == $test{max}+1) {
+        elsif ($allok) {
 	    if ($test{max} and $test{skipped} + $test{bonus}) {
 		my @msg;
 		push(@msg, "$test{skipped}/$test{max} skipped: $test{skip_reason}")
@@ -163,47 +150,51 @@ sub _runtests {
 		$tot{skipped}++;
 	    }
 	    $tot{good}++;
-	} elsif ($test{max}) {
-	    if ($test{next} <= $test{max}) {
-		push @{$test{failed}}, $test{next}..$test{max};
-	    }
-	    if (@{$test{failed}}) {
-		my ($txt, $canon) = canonfailed($test{max},$test{skipped},
-                                                @{$test{failed}});
-		print "$test{ml}$txt";
-		$failedtests{$test} = { canon   => $canon,
-                                        max     => $test{max},
-					failed  => scalar @{$test{failed}},
-					name    => $test, 
-                                        percent => 100*(scalar @{$test{failed}})/$test{max},
-					estat   => '',
-                                        wstat   => '',
-				      };
-	    } else {
-		print "Don't know which tests failed: got $test{ok} ok, ".
-                      "expected $test{max}\n";
-		$failedtests{$test} = { canon   => '??',
-                                        max     => $test{max},
-					failed  => '??',
-					name    => $test, 
-                                        percent => undef,
-					estat   => '', 
-                                        wstat   => '',
-				      };
-	    }
-	    $tot{bad}++;
-	} elsif ($test{next} == 0) {
-	    print "FAILED before any test output arrived\n";
-	    $tot{bad}++;
-	    $failedtests{$test} = { canon       => '??',
-                                    max         => '??',
-				    failed      => '??',
-				    name        => $test,
-                                    percent     => undef,
-				    estat       => '', 
-                                    wstat       => '',
-				  };
 	}
+        else {
+            if ($test{max}) {
+                if ($test{next} <= $test{max}) {
+                    push @{$test{failed}}, $test{next}..$test{max};
+                }
+                if (@{$test{failed}}) {
+                    my ($txt, $canon) = canonfailed($test{max},$test{skipped},
+                                                    @{$test{failed}});
+                    print "$test{ml}$txt";
+                    $failedtests{$tfile} = { canon   => $canon,
+                                             max     => $test{max},
+                                             failed  => scalar @{$test{failed}},
+                                             name    => $tfile, 
+                                             percent => 100*(scalar @{$test{failed}})/$test{max},
+                                             estat   => '',
+                                             wstat   => '',
+                                           };
+                } else {
+                    print "Don't know which tests failed: got $test{ok} ok, ".
+                          "expected $test{max}\n";
+                    $failedtests{$tfile} = { canon   => '??',
+                                             max     => $test{max},
+                                             failed  => '??',
+                                             name    => $tfile, 
+                                             percent => undef,
+                                             estat   => '', 
+                                             wstat   => '',
+                                           };
+                }
+                $tot{bad}++;
+            } elsif ($test{next} == 0) {
+                print "FAILED before any test output arrived\n";
+                $tot{bad}++;
+                $failedtests{$tfile} = { canon       => '??',
+                                         max         => '??',
+                                         failed      => '??',
+                                         name        => $tfile,
+                                         percent     => undef,
+                                         estat       => '', 
+                                         wstat       => '',
+                                       };
+            }
+        }
+
 	$tot{sub_skipped} += $test{skipped};
 
 	if (defined $Files_In_Dir) {
@@ -229,6 +220,34 @@ sub _runtests {
     }
 
     return(\%tot, \%failedtests);
+}
+
+=begin _private
+
+=item B<_mk_leader>
+
+  my($leader, $ml) = _mk_leader($test_file);
+
+Generates the 't/foo........' $leader for the given $test_file as well
+as a similar version which will overwrite the current line (by use of
+\r and such).  $ml may be empty if Test::Harness doesn't think you're
+on TTY.
+
+=cut
+
+sub _mk_leader {
+    my $te = shift;
+    chop($te);      # XXX chomp?
+
+    if ($^O eq 'VMS') { $te =~ s/^.*\.t\./\[.t./s; }
+    my $blank = (' ' x 77);
+    my $leader = "$te" . '.' x (20 - length($te));
+    my $ml = "";
+
+    $ml = "\r$blank\r$leader"
+      if -t STDOUT and not $ENV{HARNESS_NOTTY} and not $Verbose;
+
+    return($leader, $ml);
 }
 
 
@@ -292,7 +311,7 @@ sub _parse_header {
     # 1..10
     # 1..0 # skip  Why?  Because I said so!
     elsif ($line =~ /^1\.\.([0-9]+)
-                      (\s*\#\s*[Ss]kip\S*(?>\s+) (.+))?
+                      (\s*\#\s*[Ss]kip\S*\s* (.+))?
                     /x
           )
     {
@@ -309,6 +328,34 @@ sub _parse_header {
     }
 
     return $is_header;
+}
+
+
+sub _open_test {
+    my($test) = shift;
+
+    my $s = _set_switches($test);
+
+    my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
+                ? "./perl -I../lib ../utils/perlcc $test "
+		  . "-r 2>> ./compilelog |" 
+		: "$^X $s $test|";
+    $cmd = "MCR $cmd" if $^O eq 'VMS';
+
+    my $fh;
+    if( open($fh, $cmd) ) {
+        return $fh;
+    }
+    else {
+        print "can't run $test. $!\n";
+        return;
+    }
+}
+
+sub _run_one_test {
+    my($test) = @_;
+
+    
 }
 
 
@@ -440,7 +487,8 @@ sub _close_fh {
 sub _set_switches {
     my($test) = shift;
 
-    open(my $fh, $test) or print "can't open $test. $!\n";
+    my $fh;
+    open($fh, $test) or print "can't open $test. $!\n";
     my $first = <$fh>;
     my $s = $Switches;
     $s .= " $ENV{'HARNESS_PERL_SWITCHES'}"
@@ -555,6 +603,10 @@ sub _create_fmts {
 
     return($fmt_top, $fmt);
 }
+
+=end _private
+
+=cut
 
 {
     my $tried_devel_corestack;
@@ -875,7 +927,7 @@ sure is, that it was inspired by Larry Wall's TEST script that came
 with perl distributions for ages. Numerous anonymous contributors
 exist.  Andreas Koenig held the torch for many years.
 
-Current maintainer is Michael G Schwern <schwern@pobox.com>
+Current maintainer is Michael G Schwern E<lt>schwern@pobox.comE<gt>
 
 =head1 BUGS
 

@@ -15,3 +15,6 @@ t/sample-tests/skip_all
 t/sample-tests/todo
 t/sample-tests/with_comments
 t/test-harness.t
+t/base.t
+t/nonumbers.t
+t/ok.t

@@ -1,5 +1,13 @@
 Revision history for Perl extension Test::Harness
 
+1.19  Sat Mar 10 00:43:29 GMT 2001 by Michael G Schwern    *UNSTABLE*
+    - More internal reworking
+    * Removed use of experimental /(?>...)/ feature for backwards compat
+    * Removed use of open(my $fh, $file) for backwards compatibility
+    * Removed use of Tie::StdHandle in tests for backwards compat
+    * Added dire warning that this is unstable.
+    - Added some tests from the old CPAN release
+
 1.18  Mon Mar  5 17:35:11 GMT 2001 by Michael G Schwern
     * Under new management!
     * Test::Harness is now being concurrently shipped on CPAN as well
@@ -8,7 +16,7 @@ Revision history for Perl extension Test::Harness
       to 5.004.  This may be optimistic.
 
 
-*** Version history to be extracted from Perl changes ***
+*** Missing version history to be extracted from Perl changes ***
 
 
 1.07  Fri Feb 23 1996 by Andreas Koenig

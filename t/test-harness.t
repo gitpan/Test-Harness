@@ -4,10 +4,18 @@ use strict;
 
 # For shutting up Test::Harness.
 package My::Dev::Null;
-use Tie::Handle;
-@My::Dev::Null::ISA = qw(Tie::StdHandle);
 
-sub WRITE { }
+sub WRITE  {}
+sub PRINT  {}
+sub PRINTF {}
+sub TIEHANDLE {
+    my $class = shift;
+    my $fh    = do { local *HANDLE;  \*HANDLE };
+    return bless $fh, $class;
+}
+sub READ {}
+sub READLINE {}
+sub GETC {}
 
 
 package main;
