@@ -30,6 +30,7 @@ t/sample-tests/head_end
 t/sample-tests/head_fail
 t/sample-tests/lone_not_bug
 t/sample-tests/no_nums
+t/sample-tests/no_output
 t/sample-tests/out_of_order
 t/sample-tests/shbang_misparse
 t/sample-tests/simple

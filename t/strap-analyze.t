@@ -174,6 +174,23 @@ my %samples = (
                                        ],
                           },
 
+   no_output        => {
+                        passing     => 0,
+
+                        'exit'      => 0,
+                        'wait'      => 0,
+
+                        max         => 0,
+                        seen        => 0,
+
+                        'ok'        => 0,
+                        'todo'      => 0,
+                        'skip'      => 0,
+                        bonus       => 0,
+
+                        details     => [],
+                       },
+
    simple           => {
                         passing     => 1,
 
@@ -284,6 +301,7 @@ my %samples = (
 
                           max       => 0,
                           seen      => 0,
+                          skip_all  => '',
 
                           'ok'      => 0,
                           'todo'    => 0,
