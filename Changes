@@ -1,5 +1,17 @@
 Revision history for Perl extension Test::Harness
 
+The 2.31_xx series of Test::Harness is primarily for getting prove
+out there among the masses, mostly as support for Phalanx.  Not to
+say that we won't fix bugs along the way...
+
+2.31_01
+    [FEATURES]
+    - Added "prove" script to run a test or set of tests through the
+      harness.  Thanks to Curtis Poe for the foundation.
+
+    [DOCUMENTATION]
+    - Fixed POD problem in Test::Harness::Assert
+
 2.30        Thu Aug 14 20:04:00 CDT 2003
     No functional changes in this version.  It's only to make some doc
     tweaks, and bump up the version number in T:H:Straps.

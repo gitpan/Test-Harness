@@ -2,6 +2,7 @@ Changes
 MANIFEST
 Makefile.PL
 NOTES
+bin/prove
 examples/mini_harness.plx
 lib/Test/Harness.pm
 lib/Test/Harness/Assert.pm
@@ -50,3 +51,4 @@ t/sample-tests/with_comments
 t/strap-analyze.t
 t/strap.t
 t/test-harness.t
+META.yml                                 Module meta-data (added by MakeMaker)

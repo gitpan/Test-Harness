@@ -36,6 +36,7 @@ WriteMakefile(
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
     PREREQ_PM       => { File::Spec => 0.6 },
     INSTALLDIRS     => 'perl',
+    EXE_FILES	    => [ 'bin/prove' ],
 );
 
 

@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.54 2003/08/15 01:05:00 andy Exp $
+# $Id: Harness.pm,v 1.56 2003/09/24 22:19:38 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.30';
+$VERSION = '2.31_01';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -1164,5 +1164,23 @@ Clean up how the summary is printed.  Get rid of those damned formats.
 
 HARNESS_COMPILE_TEST currently assumes it's run from the Perl source
 directory.
+
+Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
+You can also mail bugs, fixes and enhancements to 
+C<< <bug-test-harness@rt.cpan.org> >>.
+
+=head1 AUTHORS
+
+Original code by Michael G Schwern, maintained by Andy Lester.
+
+=head1 COPYRIGHT
+
+Copyright 2003 by Michael G Schwern C<< <schwern@pobox.com> >>,
+                  Andy Lester C<< <andy@petdance.com> >>.
+
+This program is free software; you can redistribute it and/or 
+modify it under the same terms as Perl itself.
+
+See L<http://www.perl.com/perl/misc/Artistic.html>.
 
 =cut

@@ -1,0 +1,154 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+use Test::Harness;
+use Getopt::Long;
+use Pod::Usage;
+use File::Spec;
+
+my @exclude;
+my $shuffle;
+my $recurse;
+my $dry;
+
+GetOptions(
+    'help|?'     => sub {pod2usage({-verbose => 2, -input => \*DATA}); exit},
+    'verbose!'   => \$Test::Harness::verbose,
+    'shuffle'    => \$shuffle,
+    'dry'	 => \$dry,
+
+    # Need to implement
+    #'exclude=s'  => \@exclude,
+    #'recurse'    => \$recurse,
+    #'ext'	 => \@extensions,
+);
+
+my @tests;
+@ARGV = File::Spec->curdir unless @ARGV;
+push( @tests, -d $_ ? all_below( $_ ) : $_ ) for @ARGV;
+
+shuffle(@tests) if $shuffle;
+if ( $dry ) {
+    print join( "\n", @tests, "" );
+} else {
+    runtests(@tests);
+}
+
+sub all_below {
+    my $start = shift;
+
+    my @hits = ();
+
+    if ( -d $start ) {
+	next if $start eq ".svn";
+	next if $start eq "CVS";
+
+	opendir( my $dh, $start ) or return;
+	while ( my $file = readdir $dh ) {
+	    next if $file eq File::Spec->updir || $file eq File::Spec->curdir;
+	    next if $file eq ".svn";
+	    next if $file eq "CVS";
+	    push( @hits, all_below( File::Spec->catfile( $start, $file ) ) ); # XXX Use File::whatever
+	}
+    } else {
+	push( @hits, $start ) if $start =~ /\.t$/;
+    }
+
+    return @hits;
+}
+
+sub shuffle {
+    # Fisher-Yates shuffle
+    my $i = @_;
+    while ($i) {
+        my $j = rand $i--;
+        @_[$i, $j] = @_[$j, $i];
+    }
+}
+
+__END__
+
+=head1 NAME
+
+prove -- A test harness utility
+
+=head1 SYNOPSIS
+
+B<prove --help> for more information
+ 
+    prove [options]
+
+Options:
+
+    --[no]verbose   Display standard output of test scripts while running them.
+    --shuffle       Run the tests in a random order
+    --exclude       Tests to exclude
+    --help          Display this help
+
+=head1 OVERVIEW
+
+This program uses C<Test::Harness> to run the results of a test suite.  With no
+arguments, it will run all tests in the current directory (assumes test have a
+C<.t> extension).  However, it will check for a 't' directory in the current
+directory and switch to that one if found.
+
+Shell metacharacters may be used with command lines options and will be exanded 
+via C<glob>.
+
+=head1 COMMAND LINE OPTIONS
+
+Note that all options may be specified with a single dash and the first
+letter of the option.
+
+=head2 --exclude
+
+Use this switch to specify which files will not be run as tests.  If used, the
+program assumes all files ending in C<.t> are tests and will skip those that
+match C<--exclude>.  To run all tests but exclude the tests used in the
+previous example:
+
+    prove -e 10item.t -e 10tax.t -e 10tender.t
+
+The above may be written as:
+
+    prove -e '10*.t'
+
+=head2 --shuffle
+
+Sometimes tests are accidentally dependent on tests that have been run before.
+This switch will shuffle the tests to be run prior to running them, thus
+ensuring that hidden dependencies in the test order are likely to be revealed.
+The author hopes the run the algorithm on the preceding sentence to see if he
+can produce something slightly less awkward.
+
+=head1 BUGS
+
+Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
+You can also mail bugs, fixes and enhancements to 
+C<< <bug-test-harness@rt.cpan.org> >>.
+
+=head1 TODO
+
+=over 4
+
+=item * 
+
+Shuffled tests must be recreatable
+
+=back
+
+=head1 AUTHORS
+
+Andy Lester C<< <andy@petdance.com> >>
+
+=head1 COPYRIGHT
+
+Copyright 2003 by Andy Lester C<< <andy@petdance.com> >>.
+
+This program is free software; you can redistribute it and/or 
+modify it under the same terms as Perl itself.
+
+See L<http://www.perl.com/perl/misc/Artistic.html>.
+
+=cut
