@@ -11,6 +11,8 @@ my $IsVMS = $^O eq 'VMS';
 
 my %samples = (
    combined   => {
+                  passing     => 0,
+
                   max         => 10,
                   seen        => 10,
 
@@ -44,6 +46,8 @@ my %samples = (
                        },
 
    descriptive      => {
+                        passing     => 1,
+
                         max         => 5,
                         seen        => 5,
 
@@ -71,6 +75,8 @@ my %samples = (
                        },
 
    duplicates       => {
+                        passing     => 0,
+
                         max         => 10,
                         seen        => 11,
 
@@ -84,6 +90,23 @@ my %samples = (
                        },
 
    head_end         => {
+                        passing     => 1,
+
+                        max         => 4,
+                        seen        => 4,
+
+                        'ok'        => 4,
+                        'todo'      => 0,
+                        'skip'      => 0,
+                        bonus       => 0,
+
+                        details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 4
+                                       ],
+                       },
+
+   lone_not_bug     => {
+                        passing     => 1,
+
                         max         => 4,
                         seen        => 4,
 
@@ -97,6 +120,8 @@ my %samples = (
                        },
 
    head_fail           => {
+                           passing  => 0,
+
                            max      => 4,
                            seen     => 4,
 
@@ -112,6 +137,8 @@ my %samples = (
                           },
                
    simple           => {
+                        passing     => 1,
+
                         max         => 5,
                         seen        => 5,
                         
@@ -125,6 +152,8 @@ my %samples = (
                        },
 
    simple_fail      => {
+                        passing     => 0,
+
                         max         => 5,
                         seen        => 5,
                         
@@ -142,6 +171,8 @@ my %samples = (
                        },
 
    'skip'             => {
+                        passing     => 1,
+
                         max         => 5,
                         seen        => 5,
 
@@ -159,7 +190,24 @@ my %samples = (
                                        ]
                        },
 
+   skip_all           => {
+                          passing   => 1,
+
+                          max       => 0,
+                          seen      => 0,
+                          skip_all  => 'rope',
+
+                          'ok'      => 0,
+                          'todo'    => 0,
+                          'skip'    => 0,
+                          bonus     => 0,
+                          
+                          details   => [],
+                         },
+
    'todo'             => {
+                        passing     => 1,
+
                         max         => 5,
                         seen        => 5,
                                     
@@ -177,6 +225,8 @@ my %samples = (
                                        ],
                        },
    taint            => {
+                        passing     => 1,
+
                         max         => 1,
                         seen        => 1,
 
@@ -191,6 +241,8 @@ my %samples = (
                                        ],
                        },
    vms_nit          => {
+                        passing     => 0,
+
                         max         => 2,
                         seen        => 2,
 

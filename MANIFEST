@@ -3,12 +3,15 @@ MANIFEST
 Makefile.PL
 NOTES
 TODO
+examples/mini_harness.plx
 lib/Test/Harness.pm
 lib/Test/Harness/Assert.pm
+lib/Test/Harness/Iterator.pm
 lib/Test/Harness/Straps.pm
 t/00compile.t
 t/assert.t
 t/base.t
+t/callback.t
 t/lib/Test/More.pm
 t/lib/Test/Simple.pm
 t/lib/Test/Builder.pm
@@ -20,7 +23,9 @@ t/sample-tests/descriptive
 t/sample-tests/duplicates
 t/sample-tests/head_end
 t/sample-tests/head_fail
+t/sample-tests/lone_not_bug
 t/sample-tests/no_nums
+t/sample-tests/out_of_order
 t/sample-tests/simple
 t/sample-tests/simple_fail
 t/sample-tests/skip

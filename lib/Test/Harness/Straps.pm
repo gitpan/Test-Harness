@@ -1,15 +1,15 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.1.2.10 2001/12/18 03:20:10 schwern Exp $
+# $Id: Straps.pm,v 1.1.2.17 2002/01/07 22:34:33 schwern Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.06';
+$VERSION = '0.08';
 
 use Test::Harness::Assert;
-
+use Test::Harness::Iterator;
 
 # Flags used as return values from our methods.  Just for internal 
 # clarification.
@@ -30,7 +30,7 @@ Test::Harness::Straps - detailed analysis of test results
   my $strap = Test::Harness::Straps->new;
 
   # Various ways to interpret a test
-  my %results = $strap->analyze($name, @test_output);
+  my %results = $strap->analyze($name, \@test_output);
   my %results = $strap->analyze_fh($name, $test_filehandle);
   my %results = $strap->analyze_file($test_file);
 
@@ -44,12 +44,19 @@ Test::Harness::Straps - detailed analysis of test results
 
 =head1 DESCRIPTION
 
+B<THIS IS ALPHA SOFTWARE> in that the interface is subject to change
+in incompatible ways.  It is otherwise stable.
+
 Test::Harness is limited to printing out its results.  This makes
 analysis of the test results difficult for anything but a human.  To
 make it easier for programs to work with test results, we provide
 Test::Harness::Straps.  Instead of printing the results, straps
 provide them as raw data.  You can also configure how the tests are to
 be run.
+
+The interface is currently incomplete.  I<Please> contact the author
+if you'd like a feature added or something change or just have
+comments.
 
 =head2 Construction
 
@@ -87,7 +94,6 @@ sub _init {
     my($self) = shift;
 
     $self->{_is_vms} = $^O eq 'VMS';
-    $self->{_saw_lone_not} = 0;
 }
 
 =end _private
@@ -113,6 +119,14 @@ L<Results>.
 sub analyze {
     my($self, $name, $test_output) = @_;
 
+    my $it = Test::Harness::Iterator->new($test_output);
+    return $self->_analyze_iterator($name, $it);
+}
+
+
+sub _analyze_iterator {
+    my($self, $name, $it) = @_;
+
     $self->_reset_file_state;
     $self->{file} = $name;
     my %totals  = (
@@ -128,63 +142,86 @@ sub analyze {
                   );
 
 
-    foreach my $line (@$test_output) {
-        my %result = ();
-        
-        $self->{line}++;
-        
-
-        if( $self->_is_header($line) ) {
-            $self->{saw_header}++;
-
-            $totals{max} += $self->{max};
-
-#            $self->_callback('saw_header', $line);
-        }
-        elsif( $self->_is_test($line, \%result) ) {
-            $totals{seen}++;
-            $result{number} = $self->{'next'} unless $result{number};
-
-            # sometimes the 'not ' and the 'ok' are on different lines,
-            # happens often on VMS if you do:
-            #   print "not " unless $test;
-            #   print "ok $num\n";
-            if( $self->{_saw_lone_not} == $self->{line} - 1  &&
-                $result{ok}
-              ) 
-            {   
-                $result{ok} = 0;
-            }
-
-            my $pass = $result{ok};
-            $result{type} = 'todo' if $self->{todo}{$result{number}};
-
-            if( $result{type} eq 'todo' ) {
-                $totals{todo}++;
-                $pass = 1;
-                $totals{bonus}++ if $result{ok}
-            }
-            elsif( $result{type} eq 'skip' ) {
-                $totals{skip}++;
-                $pass = 1;
-            }
-
-            $totals{ok}++ if $pass;
-
-            $totals{details}[$result{number} - 1] = 
-              {$self->_detailize($pass, \%result)};
-
-            $self->{'next'}++;
-
-            # XXX handle counter mismatch
-
-        }
+    while( defined(my $line = $it->next) ) {
+        $self->_analyze_line($line, \%totals);
+        last if $self->{saw_bailout};
     }
+
+    my $passed = $totals{skip_all} || 
+                  ($totals{max} == $totals{seen} && 
+                   $totals{max} == $totals{ok});
+    $totals{passing} = $passed ? 1 : 0;
+
+    $totals{skip_all} = $self->{skip_all} if defined $self->{skip_all};
 
     $self->{totals}{$name} = \%totals;
     return %totals;
 }
 
+
+sub _analyze_line {
+    my($self, $line, $totals) = @_;
+
+    my %result = ();
+        
+    $self->{line}++;
+
+    my $type;
+    if( $self->_is_header($line) ) {
+        $type = 'header';
+
+        $self->{saw_header}++;
+        
+        $totals->{max} += $self->{max};
+    }
+    elsif( $self->_is_test($line, \%result) ) {
+        $type = 'test';
+
+        $totals->{seen}++;
+        $result{number} = $self->{'next'} unless $result{number};
+
+        # sometimes the 'not ' and the 'ok' are on different lines,
+        # happens often on VMS if you do:
+        #   print "not " unless $test;
+        #   print "ok $num\n";
+        if( $self->{saw_lone_not} && 
+            ($self->{lone_not_line} == $self->{line} - 1) ) 
+        {   
+            $result{ok} = 0;
+        }
+
+        my $pass = $result{ok};
+        $result{type} = 'todo' if $self->{todo}{$result{number}};
+
+        if( $result{type} eq 'todo' ) {
+            $totals->{todo}++;
+            $pass = 1;
+            $totals->{bonus}++ if $result{ok}
+        }
+        elsif( $result{type} eq 'skip' ) {
+            $totals->{skip}++;
+            $pass = 1;
+        }
+
+        $totals->{ok}++ if $pass;
+
+        $totals->{details}[$result{number} - 1] = 
+                               {$self->_detailize($pass, \%result)};
+
+        # XXX handle counter mismatch
+    }
+    elsif ( $self->_is_bail_out($line, \$self->{bailout_reason}) ) {
+        $type = 'bailout';
+        $self->{saw_bailout} = 1;
+    }
+    else {
+        $type = 'other';
+    }
+
+    $self->{callback}->($self, $line, $type, $totals) if $self->{callback};
+
+    $self->{'next'} = $result{number} + 1 if $type eq 'test';
+}
 
 =item B<analyze_fh>
 
@@ -197,7 +234,8 @@ Like C<analyze>, but it reads from the given filehandle.
 sub analyze_fh {
     my($self, $name, $fh) = @_;
 
-    $self->analyze($name, [<$fh>]);
+    my $it = Test::Harness::Iterator->new($fh);
+    $self->_analyze_iterator($name, $it);
 }
 
 =item B<analyze_file>
@@ -225,7 +263,6 @@ sub analyze_file {
         return;
     }
 
-    # XXX simple, stupid, easy for now.
     my %results = $self->analyze_fh($file, \*FILE);
     close FILE;
 
@@ -372,7 +409,7 @@ $strap->{skip_all} contains the reason.
 my $Extra_Header_Re = <<'REGEX';
                        ^
                         (?: \s+ todo \s+ ([\d \t]+) )?      # optional todo set
-                        (?: \s* \# \s* ([\w:]+) (.*) )?     # optional skip with optional reason
+                        (?: \s* \# \s* ([\w:]+\s?) (.*) )?     # optional skip with optional reason
 REGEX
 
 sub _is_header {
@@ -411,7 +448,8 @@ result back in %test which will contain:
   type          'todo' or 'skip' (if any)
   reason        why is it todo or skip? (if any)
 
-If will also catch lone 'not' lines and note them in $strap->{_saw_lone_not}.
+If will also catch lone 'not' lines, note it saw them 
+$strap->{saw_lone_not} and the line in $strap->{lone_not_line}.
 
 =cut
 
@@ -457,7 +495,8 @@ sub _is_test {
         # Sometimes the "not " and "ok" will be on seperate lines on VMS.
         # We catch this and remember we saw it.
         if( $line =~ /^not\s+$/ ) {
-            $self->{_saw_lone_not} = $self->{line};
+            $self->{saw_lone_not} = 1;
+            $self->{lone_not_line} = $self->{line};
         }
 
         return $NO;
@@ -500,6 +539,10 @@ sub _reset_file_state {
     delete @{$self}{qw(max skip_all todo)};
     $self->{line}       = 0;
     $self->{saw_header} = 0;
+    $self->{saw_bailout}= 0;
+    $self->{saw_lone_not} = 0;
+    $self->{lone_not_line} = 0;
+    $self->{bailout_reason} = '';
     $self->{'next'}       = 1;
 }
 
@@ -511,6 +554,9 @@ sub _reset_file_state {
 =head2 Results
 
 The %results returned from analyze() contain the following information:
+
+  passing           true if the whole test is considered a pass 
+                    (or skipped), false if its a failure
 
   max               total tests which should have been run
   seen              total tests actually seen
@@ -579,6 +625,10 @@ sub _detailize {
 =back
 
 =end _private
+
+=head1 EXAMPLES
+
+See F<examples/mini_harness.plx> for an example of use.
 
 =head1 AUTHOR
 

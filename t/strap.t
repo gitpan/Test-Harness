@@ -65,13 +65,13 @@ my %headers = (
    '1..1'                               => { max => 1 },
    '1..0'                               => { max => 0 },
    '1..0 # Skipped: no leverage found'  => { max      => 0,
-                                             skip_all => ' no leverage found',
+                                             skip_all => 'no leverage found',
                                            },
    '1..4 # Skipped: no leverage found'  => { max      => 4,
-                                             skip_all => ' no leverage found',
+                                             skip_all => 'no leverage found',
                                            },
    '1..0 # skip skip skip because'      => { max      => 0,
-                                             skip_all => ' skip skip because',
+                                             skip_all => 'skip skip because',
                                            },
    '1..10 todo 2 4 10'                  => { max        => 10,
                                              'todo'       => { 2  => 1,
@@ -87,7 +87,7 @@ my %headers = (
                                                           13  => 1, 
                                                           192 => 1,
                                                         },
-                                             skip_all => ' skip skip because'
+                                             skip_all => 'skip skip because'
                                            }
 );
 

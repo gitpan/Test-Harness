@@ -1,5 +1,13 @@
 Revision history for Perl extension Test::Harness
 
+2.01  Thu Dec 27 18:54:36 EST 2001
+    * Added 'passing' to the results to tell you if the test passed
+    * Added Test::Harness::Straps example (examples/mini_harness.plx)
+    * Header-at-end tests were being interpreted as failing sometimes
+    - The 'skip_all' results from analyze* was not being set
+    - analyze_fh() and analyze_file() now work more efficiently, reading
+      line-by-line instead of slurping as before.
+
 2.00  Sun Dec 23 19:13:57 EST 2001
     - Fixed a warning on VMS.
     - Removed a little unnecessary code from analyze_file()
