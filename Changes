@@ -1,8 +1,12 @@
 Revision history for Perl extension Test::Harness
 
+2.29	    Wed Jul 17 14:08:00 CDT 2003
+    - Released as 2.29.
+
 2.28_91	    Sun Jul 13 00:10:00 CDT 2003
     [ENHANCEMENTS]
-    - Added support for HARNESS_OK_SLOW.
+    - Added support for HARNESS_OK_SLOW.  This will make a significant
+      speedup for slower connections.
     - Folded in some changes from bleadperl that spiff up the
       failure reports.
 

@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.51 2003/07/13 05:15:06 andy Exp $
+# $Id: Harness.pm,v 1.52 2003/07/17 19:02:48 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.28_91';
+$VERSION = '2.29';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
