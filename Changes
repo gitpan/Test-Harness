@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+2.45_02 Fri Dec 31 14:57:33 CST 2004
+    [ENHANCEMENTS]
+    * Turns off buffering on both STDERR and STDOUT, so that the two
+      output handles don't get out of sync with each other.  Thanks to
+      David Wheeler.
+
+    * No longer requires, or supports, the HARNESS_OK_SLOW environment
+      variable.  Test counts are only updated once per second, which
+      used to require having HARNESS_OK_SLOW set.
+
 2.45_01 Fri Dec 17 22:39:17 CST 2004
     [THINGS THAT MIGHT BREAK YOUR CODE]
     * Test::Harness now requires Perl 5.004_05.

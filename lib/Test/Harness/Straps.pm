@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm 421 2004-11-27 05:16:35Z andy $
+# $Id: Straps.pm 450 2004-12-20 04:51:42Z andy $
 
 package Test::Harness::Straps;
 
@@ -585,7 +585,7 @@ result back in C<%test> which will contain:
   type          'todo' or 'skip' (if any)
   reason        why is it todo or skip? (if any)
 
-If will also catch lone 'not' lines, note it saw them 
+It will also catch lone 'not' lines, note it saw them in
 C<< $strap->{saw_lone_not} >> and the line in C<< $strap->{lone_not_line} >>.
 
 =cut
