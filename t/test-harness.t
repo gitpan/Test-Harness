@@ -10,9 +10,14 @@ BEGIN {
     }
 }
 
-my $SAMPLE_TESTS = $ENV{PERL_CORE} ? "lib/sample-tests" : "t/sample-tests";
-
 use strict;
+use File::Spec;
+
+my $Curdir = File::Spec->curdir;
+my $SAMPLE_TESTS = $ENV{PERL_CORE}
+                    ? File::Spec->catdir($Curdir, 'lib', 'sample-tests')
+                    : File::Spec->catdir($Curdir, 't',   'sample-tests');
+
 
 # For shutting up Test::Harness.
 # Has to work on 5.004 which doesn't have Tie::StdHandle.
@@ -35,7 +40,8 @@ package main;
 
 use Test::More;
 
-my $IsVMS = $^O eq 'VMS';
+my $IsMacPerl = $^O eq 'MacOS';
+my $IsVMS     = $^O eq 'VMS';
 
 # VMS uses native, not POSIX, exit codes.
 my $die_estat = $IsVMS ? 44 : 1;
@@ -410,7 +416,7 @@ my %samples = (
                                  },
            );
 
-plan tests => (keys(%samples) * 7) + 1;
+plan tests => (keys(%samples) * 8) + 1;
 
 use Test::Harness;
 use_ok('Test::Harness');
@@ -421,14 +427,19 @@ tie *NULL, 'My::Dev::Null' or die $!;
 while (my($test, $expect) = each %samples) {
     # _run_all_tests() runs the tests but skips the formatting.
     my($totals, $failed);
-    my $warning;
+    my $warning = '';
+    my $test_path = File::Spec->catfile($SAMPLE_TESTS, $test);
+
     eval {
         select NULL;    # _run_all_tests() isn't as quiet as it should be.
         local $SIG{__WARN__} = sub { $warning .= join '', @_; };
         ($totals, $failed) = 
-          Test::Harness::_run_all_tests("$SAMPLE_TESTS/$test");
+          Test::Harness::_run_all_tests($test_path);
     };
     select STDOUT;
+
+    # $? is unreliable in MacPerl, so we'll simply fudge it.
+    $failed->{estat} = $die_estat if $IsMacPerl and $failed;
 
     SKIP: {
         skip "special tests for bailout", 1 unless $test eq 'bailout';
@@ -444,7 +455,7 @@ while (my($test, $expect) = each %samples) {
         is_deeply( {map { $_=>$totals->{$_} } keys %{$expect->{total}}},
                    $expect->{total},
                                                   "$test - totals" );
-        is_deeply( {map { $_=>$failed->{"$SAMPLE_TESTS/$test"}{$_} }
+        is_deeply( {map { $_=>$failed->{$test_path}{$_} }
                     keys %{$expect->{failed}}},
                    $expect->{failed},
                                                   "$test - failed" );
@@ -453,12 +464,16 @@ while (my($test, $expect) = each %samples) {
     SKIP: {
         skip "special tests for bignum", 1 unless $test eq 'bignum';
         is( $warning, <<WARN );
-Enourmous test number seen [test 100001]
+Enormous test number seen [test 100001]
 Can't detailize, too big.
-Enourmous test number seen [test 136211425]
+Enormous test number seen [test 136211425]
 Can't detailize, too big.
 WARN
 
     }
 
+    SKIP: {
+        skip "bignum has known warnings", 1 if $test eq 'bignum';
+        is( $warning, '' );
+    }
 }

@@ -10,12 +10,18 @@ BEGIN {
     }
 }
 
-my $SAMPLE_TESTS = $ENV{PERL_CORE} ? 'lib/sample-tests' : 't/sample-tests';
-
 use strict;
 use Test::More;
+use File::Spec;
 
-my $IsVMS = $^O eq 'VMS';
+my $Curdir = File::Spec->curdir;
+my $SAMPLE_TESTS = $ENV{PERL_CORE}
+                    ? File::Spec->catdir($Curdir, 'lib', 'sample-tests')
+                    : File::Spec->catdir($Curdir, 't',   'sample-tests');
+
+
+my $IsMacPerl = $^O eq 'MacOS';
+my $IsVMS     = $^O eq 'VMS';
 
 # VMS uses native, not POSIX, exit codes.
 my $die_exit = $IsVMS ? 44 : 1;
@@ -436,12 +442,12 @@ my %samples = (
                        },
 );
 
-plan tests => (keys(%samples) * 3) + 3;
+plan tests => (keys(%samples) * 4) + 3;
 
 use_ok('Test::Harness::Straps');
 
 $SIG{__WARN__} = sub { 
-    warn @_ unless $_[0] =~ /^Enourmous test number/ ||
+    warn @_ unless $_[0] =~ /^Enormous test number/ ||
                    $_[0] =~ /^Can't detailize/
 };
 while( my($test, $expect) = each %samples ) {
@@ -454,18 +460,29 @@ while( my($test, $expect) = each %samples ) {
             unless exists $expect->{details}[$_]{reason};
     }
 
+    my $test_path = File::Spec->catfile($SAMPLE_TESTS, $test);
     my $strap = Test::Harness::Straps->new;
-    my %results = $strap->analyze_file("$SAMPLE_TESTS/$test");
+    my %results = $strap->analyze_file($test_path);
 
     is_deeply($results{details}, $expect->{details}, "$test details" );
 
     delete $expect->{details};
     delete $results{details};
 
-    # We can only check if it's zero or non-zero.
-    is( !!$results{'wait'}, !!$expect->{'wait'}, 'wait status' );
-    delete $results{'wait'};
-    delete $expect->{'wait'};
+    SKIP: {
+        skip '$? unreliable in MacPerl', 2 if $IsMacPerl;
+
+        # We can only check if it's zero or non-zero.
+        is( !!$results{'wait'}, !!$expect->{'wait'}, 'wait status' );
+        delete $results{'wait'};
+        delete $expect->{'wait'};
+
+        # Have to check the exit status seperately so we can skip it
+        # in MacPerl.
+        is( $results{'exit'}, $expect->{'exit'} );
+        delete $results{'exit'};
+        delete $expect->{'exit'};
+    }
 
     is_deeply(\%results, $expect, "  the rest $test" );
 }
