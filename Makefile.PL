@@ -43,29 +43,24 @@ WriteMakefile(
 );
 
 
-## We'll try this later once I've made the failing tests nicer.
-# package MY;
-# sub MY::test {
-#     my $test = shift->SUPER::test(@_);
-#     $test =~ s|t/\*\.t|t/*.t 2>&1 \| \$(PERL) t/filter_test_out|;
-#     return $test;
-# }
-
-
+# If PERL_TEST_ALL is set, run "make test" against other perls
+# as well as the current perl.
 {
     package MY;
 
     sub test_via_harness {
         my($self, $orig_perl, $tests) = @_;
 
+        my @other_perls = qw(bleadperl
+                             perl5.6.1
+                             perl5.005_03
+                             perl5.004_05
+                             perl5.004_04
+                             perl5.004
+                            );
+
         my @perls = ($orig_perl);
-        push @perls, qw(bleadperl 
-                        perl5.6.1
-                        perl5.005_03 
-                        perl5.004_05 
-                        perl5.004_04
-                        perl5.004)
-          if $ENV{PERL_TEST_ALL};
+        push @perls, @other_perls if $ENV{PERL_TEST_ALL};
 
         my $out;
         foreach my $perl (@perls) {
@@ -75,3 +70,12 @@ WriteMakefile(
         return $out;
     }
 }
+
+
+## We'll try this later once I've made the failing tests nicer.
+# package MY;
+# sub MY::test {
+#     my $test = shift->SUPER::test(@_);
+#     $test =~ s|t/\*\.t|t/*.t 2>&1 \| \$(PERL) t/filter_test_out|;
+#     return $test;
+# }
