@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.14.2.15 2002/03/14 23:49:34 schwern Exp $
+# $Id: Harness.pm,v 1.14.2.18 2002/04/25 05:04:35 schwern Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.02';
+$VERSION = '2.03';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -87,15 +87,16 @@ test program.
 
 =item B<'1..M'>
 
-This header tells how many tests there will be.  It should be the
-first line output by your test program (but its okay if its preceded
-by comments).
+This header tells how many tests there will be.  For example, C<1..10>
+means you plan on running 10 tests.  This is a safeguard in case your
+test dies quietly in the middle of its run.
 
-In certain instanced, you may not know how many tests you will
-ultimately be running.  In this case, it is permitted (but not
-encouraged) for the 1..M header to appear as the B<last> line output
-by your test (again, it can be followed by further comments).  But we
-strongly encourage you to put it first.
+It should be the first non-comment line output by your test program.
+
+In certain instances, you may not know how many tests you will
+ultimately be running.  In this case, it is permitted for the 1..M
+header to appear as the B<last> line output by your test (again, it
+can be followed by further comments).
 
 Under B<no> circumstances should 1..M appear in the middle of your
 output or more than once.
@@ -149,7 +150,7 @@ variations in spacing and case) after C<ok> or C<ok NUMBER>, it is
 counted as a skipped test.  If the whole testscript succeeds, the
 count of skipped tests is included in the generated output.
 C<Test::Harness> reports the text after C< # Skip\S*\s+> as a reason
-for skipping.  
+for skipping.
 
   ok 23 # skip Insufficient flogiston pressure.
 
@@ -709,11 +710,13 @@ sub _open_test {
 
     my $s = _set_switches($test);
 
+    my $perl = -x $^X ? $^X : $Config{perlpath};
+
     # XXX This is WAY too core specific!
     my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
                 ? "./perl -I../lib ../utils/perlcc $test "
                   . "-r 2>> ./compilelog |" 
-                : "$Config{perlpath} $s $test|";
+                : "$perl $s $test|";
     $cmd = "MCR $cmd" if $^O eq 'VMS';
 
     if( open(PERL, $cmd) ) {
@@ -747,17 +750,14 @@ sub _parse_test_line {
         }
 
         $test->{todo}{$this} = 1 if $istodo;
+        if( $test->{todo}{$this} ) {
+            $tot->{todo}++;
+            $test->{bonus}++, $tot->{bonus}++ unless $not;
+        }
 
-        $tot->{todo}++ if $test->{todo}{$this};
-
-        if( $not ) {
+        if( $not && !$test->{todo}{$this} ) {
             print "$test->{ml}NOK $this" if $test->{ml};
-            if (!$test->{todo}{$this}) {
-                push @{$test->{failed}}, $this;
-            } else {
-                $test->{ok}++;
-                $tot->{ok}++;
-            }
+            push @{$test->{failed}}, $this;
         }
         else {
             print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
@@ -774,13 +774,18 @@ sub _parse_test_line {
             } elsif (defined $reason) {
                 $test->{skip_reason} = $reason;
             }
-
-            $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
         }
 
         if ($this > $test->{'next'}) {
             print "Test output counter mismatch [test $this]\n";
-            push @{$test->{failed}}, $test->{'next'}..$this-1;
+
+            # Guard against resource starvation.
+            if( $this > 100000 ) {
+                print "Enourmous test number seen [test $this]\n";
+            }
+            else {
+                push @{$test->{failed}}, $test->{'next'}..$this-1;
+            }
         }
         elsif ($this < $test->{'next'}) {
             #we have seen more "ok" lines than the number suggests
@@ -962,13 +967,17 @@ sub _create_fmts {
     sub corestatus {
         my($st) = @_;
 
-        eval {require 'wait.ph'};
-        my $ret = defined &WCOREDUMP ? WCOREDUMP($st) : $st & 0200;
+        eval {
+            local $^W = 0;  # *.ph files are often *very* noisy
+            require 'wait.ph'
+        };
+        return if $@;
+        my $did_core = defined &WCOREDUMP ? WCOREDUMP($st) : $st & 0200;
 
         eval { require Devel::CoreStack; $Have_Devel_Corestack++ } 
           unless $tried_devel_corestack++;
 
-        $ret;
+        return $did_core;
     }
 }
 
@@ -1183,7 +1192,7 @@ Clean up how the summary is printed.  Get rid of those damned formats.
 
 =head1 BUGS
 
-HARNESS_COMPILE_TEST currently assumes its run from the Perl source
+HARNESS_COMPILE_TEST currently assumes it's run from the Perl source
 directory.
 
 =cut

@@ -14,7 +14,7 @@ my $SAMPLE_TESTS = $ENV{PERL_CORE} ? 'lib/sample-tests' : 't/sample-tests';
 
 use strict;
 
-use Test::More tests => 33;
+use Test::More tests => 35;
 
 use_ok('Test::Harness::Straps');
 
@@ -357,9 +357,32 @@ my %samples = (
                         details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 4
                                        ],
                        },
+
+   bignum           => {
+                        passing     => 0,
+
+                        'exit'      => 0,
+                        'wait'      => 0,
+
+                        max         => 2,
+                        seen        => 4,
+                        
+                        'ok'          => 4,
+                        'todo'        => 0,
+                        'skip'        => 0,
+                        bonus       => 0,
+                        
+                        details     => [ { 'ok' => 1, actual_ok => 1 },
+                                         { 'ok' => 1, actual_ok => 1 },
+                                       ]
+                       },
 );
 
 
+$SIG{__WARN__} = sub { 
+    warn @_ unless $_[0] =~ /^Enourmous test number/ ||
+                   $_[0] =~ /^Can't detailize/
+};
 while( my($test, $expect) = each %samples ) {
     my $strap = Test::Harness::Straps->new;
     my %results = $strap->analyze_file("$SAMPLE_TESTS/$test");

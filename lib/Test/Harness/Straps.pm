@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.1.2.18 2002/03/14 23:30:15 schwern Exp $
+# $Id: Straps.pm,v 1.1.2.20 2002/04/25 05:04:35 schwern Exp $
 
 package Test::Harness::Straps;
 
@@ -206,8 +206,14 @@ sub _analyze_line {
 
         $totals->{ok}++ if $pass;
 
-        $totals->{details}[$result{number} - 1] = 
+        if( $result{number} > 100000 ) {
+            warn "Enourmous test number seen [test $result{number}]\n";
+            warn "Can't detailize, too big.\n";
+        }
+        else {
+            $totals->{details}[$result{number} - 1] = 
                                {$self->_detailize($pass, \%result)};
+        }
 
         # XXX handle counter mismatch
     }
@@ -243,8 +249,8 @@ sub analyze_fh {
 
   my %results = $strap->analyze_file($test_file);
 
-Like C<analyze>, but it reads from the given $test_file.  It will also
-use that name for the total report.
+Like C<analyze>, but it runs the given $test_file and parses it's
+results.  It will also use that name for the total report.
 
 =cut
 

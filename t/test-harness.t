@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -348,7 +348,24 @@ BEGIN {
                                                 },
                                       all_ok => 0,
                                      },
-
+                bignum            => {
+                                      total => {
+                                                bonus      => 0,
+                                                max        => 2,
+                                                'ok'       => 4,
+                                                files      => 1,
+                                                bad        => 1,
+                                                good       => 0,
+                                                tests      => 1,
+                                                sub_skipped=> 0,
+                                                'todo'     => 0,
+                                                skipped    => 0,
+                                               },
+                                      failed => {
+                                                 canon      => '??',
+                                                },
+                                      all_ok => 0,
+                                     },
                );
 
     $Total_tests = (keys(%samples) * 4) + 1;

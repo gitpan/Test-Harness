@@ -18,6 +18,7 @@ t/lib/Test/Simple.pm
 t/nonumbers.t
 t/ok.t
 t/sample-tests/bailout
+t/sample-tests/bignum
 t/sample-tests/combined
 t/sample-tests/descriptive
 t/sample-tests/die
