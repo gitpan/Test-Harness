@@ -11,6 +11,7 @@ BEGIN {
 use strict;
 use File::Spec;
 use Test::More;
+plan skip_all => "Not adapted to perl core" if $ENV{PERL_CORE};
 plan skip_all => "Not installing prove" if -e "t/SKIP-PROVE";
 
 plan tests => 3;

@@ -18,7 +18,11 @@ push @INC, 'we_added_this_lib';
 
 tie *NULL, 'Dev::Null' or die $!;
 select NULL;
-my($tot, $failed) = Test::Harness::_run_all_tests('t/sample-tests/inc_taint');
+my($tot, $failed) = Test::Harness::_run_all_tests(
+    $ENV{PERL_CORE}
+    ? 'lib/sample-tests/inc_taint'
+    : 't/sample-tests/inc_taint'
+);
 select STDOUT;
 
 ok( Test::Harness::_all_ok($tot), 'tests with taint on preserve @INC' );

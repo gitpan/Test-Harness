@@ -1,5 +1,12 @@
 Revision history for Perl extension Test::Harness
 
+
+2.39_01
+    [INTERNALS]
+    * All tests now do their use_ok() in a BEGIN block.  Some of the
+      use_ok() calls were too much of a hassle to put into a BEGIN block,
+      so I changed them to regular use calls.
+
 2.38	    Mon Nov 24 22:36:18 CST 2003
     Released.  See changes below.
 
