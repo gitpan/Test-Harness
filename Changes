@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+1.23  Tue Jul 31 15:06:47 EDT 2001
+    - Merged in Ilya's "various reasons" patch
+    * Fixed "not ok 23 - some name # TODO" style tests
+
 1.22  Mon Jun 25 02:00:02 EDT 2001
     * Fixed bug with failing tests using header at end.
     - Documented how Test::Harness deals with garbage input

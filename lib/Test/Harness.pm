@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.11 2001/05/23 18:24:41 schwern Exp $
+# $Id: Harness.pm,v 1.13 2001/07/31 03:01:46 schwern Exp $
 
 package Test::Harness;
 
@@ -20,7 +20,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "1.22";
+$VERSION = "1.23";
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -383,8 +383,8 @@ sub _run_all_tests {
     # for VMS
     my $new5lib;
     if ($^O eq 'VMS') {
-	$new5lib = join($Config{path_sep}, grep {!/perl_root/i;} @INC);
-	$Switches =~ s/-(\S*[A-Z]\S*)/"-$1"/g;
+        $new5lib = join($Config{path_sep}, grep {!/perl_root/i;} @INC);
+        $Switches =~ s/-(\S*[A-Z]\S*)/"-$1"/g;
     }
     else {
         $new5lib = join($Config{path_sep}, @INC);
@@ -415,7 +415,7 @@ sub _run_all_tests {
                    );
 
         my($seen_header, $tests_seen) = (0,0);
-	while (<$fh>) {
+        while (<$fh>) {
             if( _parse_header($_, \%test, \%tot) ) {
                 warn "Test header seen twice!\n" if $seen_header;
 
@@ -428,36 +428,36 @@ sub _run_all_tests {
                 $tests_seen++;
             }
             # else, ignore it.
-	}
+        }
 
         my($estatus, $wstatus) = _close_fh($fh);
 
         my $allok = $test{ok} == $test{max} && $test{'next'} == $test{max}+1;
 
-	if ($wstatus) {
+        if ($wstatus) {
             $failedtests{$tfile} = _dubious_return(\%test, \%tot, 
                                                   $estatus, $wstatus);
             $failedtests{$tfile}{name} = $tfile;
-	}
+        }
         elsif ($allok) {
-	    if ($test{max} and $test{skipped} + $test{bonus}) {
-		my @msg;
-		push(@msg, "$test{skipped}/$test{max} skipped: $test{skip_reason}")
-		    if $test{skipped};
-		push(@msg, "$test{bonus}/$test{max} unexpectedly succeeded")
-		    if $test{bonus};
-		print "$test{ml}ok, ".join(', ', @msg)."\n";
-	    } elsif ($test{max}) {
-		print "$test{ml}ok\n";
-	    } elsif (defined $test{skip_reason}) {
-		print "skipped: $test{skip_reason}\n";
-		$tot{skipped}++;
-	    } else {
-		print "skipped test on this platform\n";
-		$tot{skipped}++;
-	    }
-	    $tot{good}++;
-	}
+            if ($test{max} and $test{skipped} + $test{bonus}) {
+                my @msg;
+                push(@msg, "$test{skipped}/$test{max} skipped: $test{skip_reason}")
+                    if $test{skipped};
+                push(@msg, "$test{bonus}/$test{max} unexpectedly succeeded")
+                    if $test{bonus};
+                print "$test{ml}ok, ".join(', ', @msg)."\n";
+            } elsif ($test{max}) {
+                print "$test{ml}ok\n";
+            } elsif (defined $test{skip_reason}) {
+                print "skipped: $test{skip_reason}\n";
+                $tot{skipped}++;
+            } else {
+                print "skipped test on this platform\n";
+                $tot{skipped}++;
+            }
+            $tot{good}++;
+        }
         else {
             if ($test{max}) {
                 if ($test{'next'} <= $test{max}) {
@@ -502,28 +502,28 @@ sub _run_all_tests {
             }
         }
 
-	$tot{sub_skipped} += $test{skipped};
+        $tot{sub_skipped} += $test{skipped};
 
-	if (defined $Files_In_Dir) {
-	    my @new_dir_files = _globdir $Files_In_Dir;
-	    if (@new_dir_files != @dir_files) {
-		my %f;
-		@f{@new_dir_files} = (1) x @new_dir_files;
-		delete @f{@dir_files};
-		my @f = sort keys %f;
-		print "LEAKED FILES: @f\n";
-		@dir_files = @new_dir_files;
-	    }
-	}
+        if (defined $Files_In_Dir) {
+            my @new_dir_files = _globdir $Files_In_Dir;
+            if (@new_dir_files != @dir_files) {
+                my %f;
+                @f{@new_dir_files} = (1) x @new_dir_files;
+                delete @f{@dir_files};
+                my @f = sort keys %f;
+                print "LEAKED FILES: @f\n";
+                @dir_files = @new_dir_files;
+            }
+        }
     }
     $tot{bench} = timediff(new Benchmark, $t_start);
 
     if ($^O eq 'VMS') {
-	if (defined $old5lib) {
-	    $ENV{PERL5LIB} = $old5lib;
-	} else {
-	    delete $ENV{PERL5LIB};
-	}
+        if (defined $old5lib) {
+            $ENV{PERL5LIB} = $old5lib;
+        } else {
+            delete $ENV{PERL5LIB};
+        }
     }
 
     return(\%tot, \%failedtests);
@@ -563,32 +563,32 @@ sub _show_results {
     my $bonusmsg = _bonusmsg($tot);
 
     if ($tot->{bad} == 0 && $tot->{max}) {
-	print "All tests successful$bonusmsg.\n";
+        print "All tests successful$bonusmsg.\n";
     } elsif (!$tot->{tests}){
-	die "FAILED--no tests were run for some reason.\n";
+        die "FAILED--no tests were run for some reason.\n";
     } elsif (!$tot->{max}) {
-	my $blurb = $tot->{tests}==1 ? "script" : "scripts";
-	die "FAILED--$tot->{tests} test $blurb could be run, ".
+        my $blurb = $tot->{tests}==1 ? "script" : "scripts";
+        die "FAILED--$tot->{tests} test $blurb could be run, ".
             "alas--no output ever seen\n";
     } else {
-	$pct = sprintf("%.2f", $tot->{good} / $tot->{tests} * 100);
-	my $subpct = sprintf " %d/%d subtests failed, %.2f%% okay.",
-	                      $tot->{max} - $tot->{ok}, $tot->{max}, 
+        $pct = sprintf("%.2f", $tot->{good} / $tot->{tests} * 100);
+        my $subpct = sprintf " %d/%d subtests failed, %.2f%% okay.",
+                              $tot->{max} - $tot->{ok}, $tot->{max}, 
                               100*$tot->{ok}/$tot->{max};
 
         my($fmt_top, $fmt) = _create_fmts($failedtests);
 
-	# Now write to formats
-	for my $script (sort keys %$failedtests) {
-	  $Curtest = $failedtests->{$script};
-	  write;
-	}
-	if ($tot->{bad}) {
-	    $bonusmsg =~ s/^,\s*//;
-	    print "$bonusmsg.\n" if $bonusmsg;
-	    die "Failed $tot->{bad}/$tot->{tests} test scripts, $pct% okay.".
+        # Now write to formats
+        for my $script (sort keys %$failedtests) {
+          $Curtest = $failedtests->{$script};
+          write;
+        }
+        if ($tot->{bad}) {
+            $bonusmsg =~ s/^,\s*//;
+            print "$bonusmsg.\n" if $bonusmsg;
+            die "Failed $tot->{bad}/$tot->{tests} test scripts, $pct% okay.".
                 "$subpct\n";
-	}
+        }
     }
 
     printf("Files=%d, Tests=%d, %s\n",
@@ -644,8 +644,8 @@ sub _open_test {
     # XXX This is WAY too core specific!
     my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
                 ? "./perl -I../lib ../utils/perlcc $test "
-		  . "-r 2>> ./compilelog |" 
-		: "$^X $s $test|";
+                  . "-r 2>> ./compilelog |" 
+                : "$^X $s $test|";
     $cmd = "MCR $cmd" if $^O eq 'VMS';
 
     if( open(PERL, $cmd) ) {
@@ -671,47 +671,49 @@ sub _parse_test_line {
         $test->{next} ||= 1;
         my $this = $test->{'next'};
         # "not ok 23"
-        if ($line =~ /^(not )?ok\s*(\d*)(\s*#.*)?/) {
-	    my($not, $tnum, $extra) = ($1, $2, $3);
+        if ($line =~ /^(not )?ok\s*(\d*)[^#]*(\s*#.*)?/) {
+            my($not, $tnum, $extra) = ($1, $2, $3);
 
-	    $this = $tnum if $tnum;
+            $this = $tnum if $tnum;
 
-	    my($type, $reason) = $extra =~ /^\s*#\s*([Ss]kip\S*|TODO)(\s+.+)?/
-	      if defined $extra;
+            my($type, $reason) = $extra =~ /^\s*#\s*([Ss]kip\S*|TODO)(\s+.+)?/
+              if defined $extra;
 
-	    my($istodo, $isskip);
-	    if( defined $type ) {
-		$istodo = $type =~ /TODO/;
-		$isskip = $type =~ /skip/i;
-	    }
+            my($istodo, $isskip);
+            if( defined $type ) {
+                $istodo = $type =~ /TODO/;
+                $isskip = $type =~ /skip/i;
+            }
 
-	    $test->{todo}{$tnum} = 1 if $istodo;
+            $test->{todo}{$tnum} = 1 if $istodo;
 
-	    if( $not ) {
-		print "$test->{ml}NOK $this" if $test->{ml};
-		if (!$test->{todo}{$this}) {
-		    push @{$test->{failed}}, $this;
-		} else {
-		    $test->{ok}++;
-		    $tot->{ok}++;
-		}
-	    }
-	    else {
-		print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
-		$test->{ok}++;
-		$tot->{ok}++;
-		$test->{skipped}++ if $isskip;
+            if( $not ) {
+                print "$test->{ml}NOK $this" if $test->{ml};
+                if (!$test->{todo}{$this}) {
+                    push @{$test->{failed}}, $this;
+                } else {
+                    $test->{ok}++;
+                    $tot->{ok}++;
+                }
+            }
+            else {
+                print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
+                $test->{ok}++;
+                $tot->{ok}++;
+                $test->{skipped}++ if $isskip;
 
-		if (defined $reason and defined $test->{skip_reason}) {
-		    # print "was: '$skip_reason' new '$reason'\n";
-		    $test->{skip_reason} = 'various reasons'
-		      if $test->{skip_reason} ne $reason;
-		} elsif (defined $reason) {
-		    $test->{skip_reason} = $reason;
-		}
+                $reason = '[no reason given]'
+                    if $isskip and not defined $reason;
+                if (defined $reason and defined $test->{skip_reason}) {
+                    # print "was: '$skip_reason' new '$reason'\n";
+                    $test->{skip_reason} = 'various reasons'
+                      if $test->{skip_reason} ne $reason;
+                } elsif (defined $reason) {
+                    $test->{skip_reason} = $reason;
+                }
 
-		$test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
-	    }
+                $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
+            }
         }
         # XXX ummm... dunno
         elsif ($line =~ /^ok\s*(\d*)\s*\#([^\r]*)$/) { # XXX multiline ok?
@@ -751,22 +753,22 @@ sub _bonusmsg {
 
     my $bonusmsg = '';
     $bonusmsg = (" ($tot->{bonus} subtest".($tot->{bonus} > 1 ? 's' : '').
-	       " UNEXPECTEDLY SUCCEEDED)")
-	if $tot->{bonus};
+               " UNEXPECTEDLY SUCCEEDED)")
+        if $tot->{bonus};
 
     if ($tot->{skipped}) {
-	$bonusmsg .= ", $tot->{skipped} test"
+        $bonusmsg .= ", $tot->{skipped} test"
                      . ($tot->{skipped} != 1 ? 's' : '');
-	if ($tot->{sub_skipped}) {
-	    $bonusmsg .= " and $tot->{sub_skipped} subtest"
-			 . ($tot->{sub_skipped} != 1 ? 's' : '');
-	}
-	$bonusmsg .= ' skipped';
+        if ($tot->{sub_skipped}) {
+            $bonusmsg .= " and $tot->{sub_skipped} subtest"
+                         . ($tot->{sub_skipped} != 1 ? 's' : '');
+        }
+        $bonusmsg .= ' skipped';
     }
     elsif ($tot->{sub_skipped}) {
-	$bonusmsg .= ", $tot->{sub_skipped} subtest"
-	             . ($tot->{sub_skipped} != 1 ? 's' : '')
-		     . " skipped";
+        $bonusmsg .= ", $tot->{sub_skipped} subtest"
+                     . ($tot->{sub_skipped} != 1 ? 's' : '')
+                     . " skipped";
     }
 
     return $bonusmsg;
@@ -778,7 +780,7 @@ sub _close_fh {
 
     close($fh); # must close to reap child resource values
 
-    my $wstatus = $Ignore_Exitcode ? 0 : $?;	# Can trust $? ?
+    my $wstatus = $Ignore_Exitcode ? 0 : $?;    # Can trust $? ?
     my $estatus;
     $estatus = ($^O eq 'VMS'
                   ? eval 'use vmsish "status"; $estatus = $?'
@@ -831,7 +833,7 @@ sub _dubious_return {
         if ($test->{'next'} == $test->{max} + 1 and not @{$test->{failed}}) {
             print "\tafter all the subtests completed successfully\n";
             $percent = 0;
-            $failed = 0;	# But we do not set $canon!
+            $failed = 0;        # But we do not set $canon!
         }
         else {
             push @{$test->{failed}}, $test->{'next'}..$test->{max};
@@ -883,23 +885,23 @@ sub _create_fmts {
     my $fmt_top = "format STDOUT_TOP =\n"
                   . sprintf("%-${max_namelen}s", $failed_str)
                   . $middle_str
-		  . $list_str . "\n"
-		  . "-" x $Columns
-		  . "\n.\n";
+                  . $list_str . "\n"
+                  . "-" x $Columns
+                  . "\n.\n";
 
     my $fmt = "format STDOUT =\n"
-	      . "@" . "<" x ($max_namelen - 1)
+              . "@" . "<" x ($max_namelen - 1)
               . "  @>> @>>>> @>>>> @>>> ^##.##%  "
-	      . "^" . "<" x ($list_len - 1) . "\n"
-	      . '{ $Curtest->{name}, $Curtest->{estat},'
-	      . '  $Curtest->{wstat}, $Curtest->{max},'
-	      . '  $Curtest->{failed}, $Curtest->{percent},'
-	      . '  $Curtest->{canon}'
-	      . "\n}\n"
-	      . "~~" . " " x ($Columns - $list_len - 2) . "^"
-	      . "<" x ($list_len - 1) . "\n"
-	      . '$Curtest->{canon}'
-	      . "\n.\n";
+              . "^" . "<" x ($list_len - 1) . "\n"
+              . '{ $Curtest->{name}, $Curtest->{estat},'
+              . '  $Curtest->{wstat}, $Curtest->{max},'
+              . '  $Curtest->{failed}, $Curtest->{percent},'
+              . '  $Curtest->{canon}'
+              . "\n}\n"
+              . "~~" . " " x ($Columns - $list_len - 2) . "^"
+              . "<" x ($list_len - 1) . "\n"
+              . '$Curtest->{canon}'
+              . "\n.\n";
 
     eval $fmt_top;
     die $@ if $@;
@@ -936,23 +938,23 @@ sub canonfailed ($@) {
     my $last = $min = shift @failed;
     my $canon;
     if (@failed) {
-	for (@failed, $failed[-1]) { # don't forget the last one
-	    if ($_ > $last+1 || $_ == $last) {
-		if ($min == $last) {
-		    push @canon, $last;
-		} else {
-		    push @canon, "$min-$last";
-		}
-		$min = $_;
-	    }
-	    $last = $_;
-	}
-	local $" = ", ";
-	push @result, "FAILED tests @canon\n";
-	$canon = join ' ', @canon;
+        for (@failed, $failed[-1]) { # don't forget the last one
+            if ($_ > $last+1 || $_ == $last) {
+                if ($min == $last) {
+                    push @canon, $last;
+                } else {
+                    push @canon, "$min-$last";
+                }
+                $min = $_;
+            }
+            $last = $_;
+        }
+        local $" = ", ";
+        push @result, "FAILED tests @canon\n";
+        $canon = join ' ', @canon;
     } else {
-	push @result, "FAILED test $last\n";
-	$canon = $last;
+        push @result, "FAILED test $last\n";
+        $canon = $last;
     }
 
     push @result, "\tFailed $failed/$max tests, ";

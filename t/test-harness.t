@@ -132,6 +132,20 @@ BEGIN {
                                                },
                                       failed => { },
                                      },
+                todo_inline       => {
+                                      total => {
+                                                bonus       => 1,
+                                                max         => 3,
+                                                'ok'        => 3,
+                                                files       => 1,
+                                                bad         => 0,
+                                                good        => 1,
+                                                tests       => 1,
+                                                sub_skipped => 0,
+                                                skipped     => 0,
+                                               },
+                                      failed => { },
+                                     },
                 skip              => {
                                       total => {
                                                 bonus      => 0,
@@ -239,7 +253,7 @@ BEGIN {
                                      },
                );
 
-    $Total_tests = (keys(%samples) * 2);
+    $Total_tests = (keys(%samples) * 3) + 1;
 }
 
 tie *NULL, 'My::Dev::Null' or die $!;
@@ -255,8 +269,9 @@ while (my($test, $expect) = each %samples) {
     select STDOUT;
 
     unless( $@ ) {
-        ok( eqhash( $expect->{totals}, 
-                    {map { $_=>$totals->{$_} } keys %{$expect->{totals}}} ),
+        ok( defined $expect->{total},                 "$test - has total" );
+        ok( eqhash( $expect->{total}, 
+                    {map { $_=>$totals->{$_} } keys %{$expect->{total}}} ),
                                                          "$test - totals" );
         ok( eqhash( $expect->{failed}, 
                     {map { $_=>$failed->{"t/sample-tests/$test"}{$_} }
@@ -266,5 +281,7 @@ while (my($test, $expect) = each %samples) {
     else {      # special case for bailout
         ok( ($test eq 'bailout' and $@ =~ /Further testing stopped: GERONI/i),
             $test );
+        ok( 1,  'skipping for bailout' );
+        ok( 1,  'skipping for bailout' );
     }
 }
