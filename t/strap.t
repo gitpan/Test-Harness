@@ -163,8 +163,7 @@ while( my($line, $expect) = each %tests ) {
     ok( $strap->_is_test($line, \%test),    "_is_test() spots '$line'" );
 
     foreach my $type (qw(ok number name type reason)) {
-        $expect->{$type} = '' unless exists $expect->{$type};
-        is( $test{$type}, $expect->{$type}, "  $type" );
+        cmp_ok( $test{$type}, 'eq', $expect->{$type}, "  $type" );
     }
 }
 

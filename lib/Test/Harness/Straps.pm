@@ -1,12 +1,12 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.1.2.8 2001/12/16 05:16:34 schwern Exp $
+# $Id: Straps.pm,v 1.1.2.10 2001/12/18 03:20:10 schwern Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use Test::Harness::Assert;
 
@@ -258,7 +258,7 @@ sub _switches {
     my $s = '';
     $s .= " $ENV{'HARNESS_PERL_SWITCHES'}"
       if exists $ENV{'HARNESS_PERL_SWITCHES'};
-    $s .= join " ", qq[ "-$1"], map {qq["-I$_"]} @INC
+    $s .= join " ", qq[ "-$1"], map {qq["-I$_"]} $self->_filtered_INC
       if $first =~ /^#!.*\bperl.*-\w*([Tt]+)/;
 
     close(TEST) or print "can't close $file. $!\n";
@@ -281,19 +281,32 @@ sub _INC2PERL5LIB {
 
     $self->{_old5lib} = $ENV{PERL5LIB};
 
+    return join $Config{path_sep}, $self->_filtered_INC;
+}    
+
+=item B<_filtered_INC>
+
+  my @filtered_inc = $self->_filtered_INC;
+
+Shortens @INC by removing redundant and unnecessary entries.
+Necessary for OS's with limited command line lengths, like VMS.
+
+=cut
+
+sub _filtered_INC {
+    my($self, @inc) = @_;
+    @inc = @INC unless @inc;
+
     # VMS has a 255-byte limit on the length of %ENV entries, so
     # toss the ones that involve perl_root, the install location
     # for VMS
-    my $new5lib;
-    if ($self->{_is_vms}) {
-        $new5lib = join($Config{path_sep}, grep {!/perl_root/i;} @INC);
-    }
-    else {
-        $new5lib = join($Config{path_sep}, @INC);
+    if( $self->{_is_vms} ) {
+        @inc = grep !/perl_root/i, @inc;
     }
 
-    return $new5lib;
-}    
+    return @inc;
+}
+
 
 =item B<_restore_PERL5LIB>
 
@@ -430,9 +443,9 @@ sub _is_test {
         my($name, $control) = split /(?:[^\\]|^)#/, $extra if $extra;
         my($type, $reason)  = $control =~ /^\s*(\S+)(?:\s+(.*))?$/ if $control;
 
-        $test->{number} = $num || '';
+        $test->{number} = $num;
         $test->{ok}     = $not ? 0 : 1;
-        $test->{name}   = $name || '';
+        $test->{name}   = $name;
 
         if( defined $type ) {
             $test->{type}   = $type =~ /^TODO$/i ? 'todo' :
@@ -441,7 +454,7 @@ sub _is_test {
         else {
             $test->{type} = '';
         }
-        $test->{reason} = $reason ? $reason : '';
+        $test->{reason} = $reason;
 
         return $YES;
     }

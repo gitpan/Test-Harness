@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.14.2.9 2001/12/16 04:54:30 schwern Exp $
+# $Id: Harness.pm,v 1.14.2.11 2001/12/18 03:17:48 schwern Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = 2.00_04;
+$VERSION = 2.00_05;
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -220,7 +220,7 @@ test script, please use a comment.
 
 =head2 Taint mode
 
-Test::Harness will honor the -T in the #! line on your test files.  So
+Test::Harness will honor the C<-T> in the #! line on your test files.  So
 if you begin a test with:
 
     #!perl -T
@@ -1095,7 +1095,7 @@ test whether new files appeared in that directory, and report them as
 
 If relative, directory name is with respect to the current directory at
 the moment runtests() was called.  Putting absolute path into 
-C<HARNESS_FILELEAK_IN_DIR> may give more predicatable results.
+C<HARNESS_FILELEAK_IN_DIR> may give more predictable results.
 
 =item C<HARNESS_PERL_SWITCHES>
 
