@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.04  Tue Apr 30 00:54:49 EDT 2002
+    * Changing the output format of skips
+    - Taking into account VMS's special exit codes in the tests.
+
 2.03  Thu Apr 25 01:01:34 EDT 2002
     * $^X fix made safer.
     - Noise from loading wait.ph to analyze core files supressed
