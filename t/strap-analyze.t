@@ -7,6 +7,8 @@ use Test::More 'no_plan';
 
 use_ok('Test::Harness::Straps');
 
+my $IsVMS = $^O eq 'VMS';
+
 my %samples = (
    combined   => {
                   max         => 10,
@@ -188,6 +190,19 @@ my %samples = (
                                          },
                                        ],
                        },
+   vms_nit          => {
+                        max         => 2,
+                        seen        => 2,
+
+                        'ok'          => 1,
+                        'todo'        => 0,
+                        'skip'        => 0,
+                        bonus       => 0,
+
+                        details     => [ { 'ok' => 0, actual_ok => 0 },
+                                         { 'ok' => 1, actual_ok => 1 },
+                                       ],
+                       },              
 );
 
 

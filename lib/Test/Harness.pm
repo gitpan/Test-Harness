@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = 2.00_05;
+$VERSION = '2.00';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -471,6 +471,7 @@ sub _run_all_tests {
         while (<$fh>) {
             print if $Verbose;
 
+            $Strap->{line}++;
             if( _parse_header($_, \%test, \%tot) ) {
                 warn "Test header seen twice!\n" if $seen_header;
 
@@ -570,6 +571,8 @@ sub _run_all_tests {
                 @dir_files = @new_dir_files;
             }
         }
+
+        close $fh;
     }
     $tot{bench} = timediff(new Benchmark, $t_start);
 

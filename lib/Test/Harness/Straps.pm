@@ -6,7 +6,7 @@ package Test::Harness::Straps;
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 use Test::Harness::Assert;
 
@@ -87,6 +87,7 @@ sub _init {
     my($self) = shift;
 
     $self->{_is_vms} = $^O eq 'VMS';
+    $self->{_saw_lone_not} = 0;
 }
 
 =end _private
@@ -144,20 +145,18 @@ sub analyze {
             $totals{seen}++;
             $result{number} = $self->{'next'} unless $result{number};
 
-            my $pass = $result{ok};
-
-            # special case for VMS, sometimes the 'not ' and the 'ok' are
-            # on different lines if you do this:
+            # sometimes the 'not ' and the 'ok' are on different lines,
+            # happens often on VMS if you do:
             #   print "not " unless $test;
             #   print "ok $num\n";
-            if( $self->{_is_vms}                             &&
-                $self->{_saw_lone_not} == $self->{line} - 1  &&
+            if( $self->{_saw_lone_not} == $self->{line} - 1  &&
                 $result{ok}
               ) 
             {   
                 $result{ok} = 0;
             }
 
+            my $pass = $result{ok};
             $result{type} = 'todo' if $self->{todo}{$result{number}};
 
             if( $result{type} eq 'todo' ) {
@@ -213,10 +212,6 @@ use that name for the total report.
 sub analyze_file {
     my($self, $file) = @_;
 
-    local $ENV{IFS} = '';
-
-    # XXX set switches
-
     local $ENV{PERL5LIB} = $self->_INC2PERL5LIB;
 
     # Is this necessary anymore?
@@ -226,13 +221,13 @@ sub analyze_file {
 
     # *sigh* this breaks under taint, but open -| is unportable.
     unless( open(FILE, "$cmd $switches $file|") ) {
-        # XXX fix up this error handling.
         print "can't run $file. $!\n";
         return;
     }
 
     # XXX simple, stupid, easy for now.
     my %results = $self->analyze_fh($file, \*FILE);
+    close FILE;
 
     $self->_restore_PERL5LIB();
 
@@ -461,7 +456,7 @@ sub _is_test {
     else{
         # Sometimes the "not " and "ok" will be on seperate lines on VMS.
         # We catch this and remember we saw it.
-        if( $self->{_is_vms} && $line =~ /^not\s+$/ ) {
+        if( $line =~ /^not\s+$/ ) {
             $self->{_saw_lone_not} = $self->{line};
         }
 

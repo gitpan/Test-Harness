@@ -1,5 +1,12 @@
 Revision history for Perl extension Test::Harness
 
+2.00  Sun Dec 23 19:13:57 EST 2001
+    - Fixed a warning on VMS.
+    - Removed a little unnecessary code from analyze_file()
+    - Made sure filehandles are getting closed
+    - analyze() now considers "not \nok" to be a failure (VMSism)
+      but Test::Harness still doesn't.
+
 2.00_05 Mon Dec 17 22:08:02 EST 2001
     * Wasn't filtering @INC properly when a test is run with -T, caused the 
       command line to be too long on VMS.  VMS should be 100% now.
