@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.85 2004/04/29 03:13:43 andy Exp $
+# $Id: Harness.pm,v 1.87 2004/08/08 19:22:09 andy Exp $
 
 package Test::Harness;
 
@@ -29,13 +29,13 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.42;
+Version 2.43_01;
 
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.85 2004/04/29 03:13:43 andy Exp $
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.87 2004/08/08 19:22:09 andy Exp $
 
 =cut
 
-$VERSION = '2.42';
+$VERSION = '2.43_01';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -958,8 +958,8 @@ sub _canonfailed ($$@) {
 	push @result, "?% okay";
     }
     my $ender = 's' x ($skipped > 1);
-    my $good = $max - $failed - $skipped;
     if ($skipped) {
+        my $good = $max - $failed - $skipped;
 	my $skipmsg = " (less $skipped skipped test$ender: $good okay, ";
 	if ($max) {
 	    my $goodper = sprintf("%.2f",100*($good/$max));

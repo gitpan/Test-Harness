@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+
+2.43_01
+    [FIXES]
+    * Added workaround for local $ENV{} bug on Cygwin to
+    t/prove-switches.t.  See the following RT tickets for details.
+
+    https://rt.cpan.org/Ticket/Display.html?id=6452
+    http://rt.perl.org/rt3/Ticket/Display.html?id=30952
+
+
 2.42        Wed Apr 28 22:13:11 CDT 2004
     [ENHANCEMENTS]
     * prove -v now sets TEST_VERBOSE in case your tests rely on them.
