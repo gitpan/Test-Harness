@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+2.37_01
+    [ENHANCEMENTS]
+    * prove -V now shows the Perl version being used.
+
+    [FIXES]
+    * Bad interaction with Module::Build:  The strap was only checking
+      $ENV{HARNESS_PERL_SWITCHES} for definedness, but not emptiness.
+      It now also strips any leading or trailing whitesapce from the
+      switches.
+
 2.36        Fri Nov 14 09:24:44 CST 2003
     [FIXES]
     * t/prove-includes.t properly ignores PROVE_SWITCHES that you may

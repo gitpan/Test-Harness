@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.28 2003/11/13 04:24:23 andy Exp $
+# $Id: Straps.pm,v 1.30 2003/11/18 19:43:51 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -333,7 +333,7 @@ Formats and returns the switches necessary to run the test.
 sub _switches {
     my($self, $file) = @_;
 
-    my @switches = grep { defined } ($Test::Harness::Switches, $ENV{HARNESS_PERL_SWITCHES});
+    my @switches = $self->_cleaned_switches( $Test::Harness::Switches, $ENV{HARNESS_PERL_SWITCHES} );
 
     local *TEST;
     open(TEST, $file) or print "can't open $file. $!\n";
@@ -355,6 +355,30 @@ sub _switches {
     return join( " ", map { qq["$_"] } @switches );
 }
 
+=head2 C<_cleaned_switches>
+
+  my @switches = $self->_cleaned_switches( @switches_from_user );
+
+Returns only defined, non-blank, trimmed switches from the parms passed.
+
+=cut
+
+sub _cleaned_switches {
+    my $self = shift;
+
+    local $_;
+
+    my @switches;
+    for ( @_ ) {
+	my $switch = $_;
+	next unless defined $switch;
+	$switch =~ s/^\s+//;
+	$switch =~ s/\s+$//;
+	push( @switches, $switch ) if $switch ne "";
+    }
+
+    return @switches;
+}
 
 =head2 C<_INC2PERL5LIB>
 

@@ -37,8 +37,8 @@ GetOptions(
     'I=s@'          => \@includes,
     'r|recurse'     => \$recurse,
     's|shuffle'     => \$shuffle,
-    'T'		    => sub { unshift @switches, "-T" }, # Always want -T up front
     't'		    => sub { unshift @switches, "-t" }, # Always want -t up front
+    'T'		    => sub { unshift @switches, "-T" }, # Always want -T up front
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
     'ext=s@'        => \@ext,
@@ -116,7 +116,8 @@ sub shuffle {
 }
 
 sub print_version {
-    print "prove v$VERSION, using Test::Harness $Test::Harness::VERSION\n";
+    printf( "prove v%s, using Test::Harness v%s and Perl v%vd\n",
+	$VERSION, $Test::Harness::VERSION, $^V );
 }
 
 # Stolen directly from blib.pm
@@ -270,7 +271,11 @@ order are likely to be revealed.  The author hopes the run the
 algorithm on the preceding sentence to see if he can produce something
 slightly less awkward.
 
-=head2 -T, --taint
+=head2 -t
+
+Runs test programs under perl's -t taint warning mode.
+
+=head2 -T
 
 Runs test programs under perl's -T taint mode.
 
