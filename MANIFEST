@@ -1,20 +1,17 @@
 Changes
-MANIFEST			This file
+MANIFEST
 Makefile.PL
-README				The basics
-filter_test_out			script to make out own tests look sane
-lib/Test/Harness.pm		The module
-t/0.t				Test scripts
-t/base.t
-t/die.t
-t/dumpcore.t
-t/error.t
-t/fail.t
-t/gobbled.t
-t/mixed.t
-t/multicanon.t
-t/nonumbers.t
-t/nonumbersmix.t
-t/nonumbersmix2.t
-t/notests.t
-t/ok.t
+lib/Test/Harness.pm
+t/sample-tests/bailout
+t/sample-tests/combined
+t/sample-tests/descriptive
+t/sample-tests/duplicates
+t/sample-tests/header_at_end
+t/sample-tests/no_nums
+t/sample-tests/simple
+t/sample-tests/simple_fail
+t/sample-tests/skip
+t/sample-tests/skip_all
+t/sample-tests/todo
+t/sample-tests/with_comments
+t/test-harness.t
