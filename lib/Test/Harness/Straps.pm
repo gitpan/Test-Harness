@@ -3,11 +3,12 @@ package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.21';
+$VERSION = '0.22';
 
 use Config;
 use Test::Harness::Assert;
 use Test::Harness::Iterator;
+use Test::Harness::Point;
 
 # Flags used as return values from our methods.  Just for internal 
 # clarification.
@@ -150,16 +151,14 @@ sub _analyze_iterator {
 sub _analyze_line {
     my($self, $line, $totals) = @_;
 
-    my %result = ();
-
     $self->{line}++;
 
-    my $type;
-    if ( $self->_is_test($line, \%result) ) {
-        $type = 'test';
+    my $linetype;
+    if ( my $point = Test::Harness::Point->from_test_line( $line ) ) {
+        $linetype = 'test';
 
         $totals->{seen}++;
-        $result{number} = $self->{'next'} unless $result{number};
+        $point->set_number( $self->{'next'} ) unless $point->number;
 
         # sometimes the 'not ' and the 'ok' are on different lines,
         # happens often on VMS if you do:
@@ -168,26 +167,28 @@ sub _analyze_line {
         if( $self->{saw_lone_not} && 
             ($self->{lone_not_line} == $self->{line} - 1) ) 
         {
-            $result{ok} = 0;
+            $point->set_ok( 0 );
         }
 
-        my $pass = $result{ok};
-        $result{type} = 'todo' if $self->{todo}{$result{number}};
+        my $pass = $point->ok;
+        if ( $self->{todo}{$point->number} ) {
+            $point->set_directive_type( 'todo' );
+        }
 
-        if( $result{type} eq 'todo' ) {
+        if ( $point->is_todo ) {
             $totals->{todo}++;
             $pass = 1;
-            $totals->{bonus}++ if $result{ok}
+            $totals->{bonus}++ if $point->ok;
         }
-        elsif( $result{type} eq 'skip' ) {
+        elsif ( $point->is_skip ) {
             $totals->{skip}++;
             $pass = 1;
         }
 
         $totals->{ok}++ if $pass;
 
-        if( $result{number} > 100000 && $result{number} > $self->{max} ) {
-            warn "Enormous test number seen [test $result{number}]\n";
+        if ( ($point->number > 100000) && ($point->number > $self->{max}) ) {
+            warn "Enormous test number seen [test ", $point->number, "]\n";
             warn "Can't detailize, too big.\n";
         }
         else {
@@ -195,8 +196,11 @@ sub _analyze_line {
             #true if it was considered to be a passed test.  C<%test> is the results
             #of the test you're summarizing.
             my $details = {
-                ok         => $pass,
-                actual_ok  => $result{ok}
+                ok          => $pass,
+                actual_ok   => $point->ok,
+                name        => _def_or_blank( $point->description ),
+                type        => _def_or_blank( $point->directive_type ),
+                reason      => _def_or_blank( $point->directive_reason ),
             };
 
             assert( defined( $details->{ok} ) && defined( $details->{actual_ok} ) );
@@ -204,38 +208,42 @@ sub _analyze_line {
             # We don't want these to be undef because they are often
             # checked and don't want the checker to have to deal with
             # uninitialized vars.
-            foreach my $piece (qw(name type reason)) {
-                $details->{$piece} = defined $result{$piece} ? $result{$piece} : '';
-            }
-            $totals->{details}[$result{number} - 1] = $details;
+            $totals->{details}[$point->number - 1] = $details;
         }
+
+        $self->{'next'} = $point->number + 1;
 
         # XXX handle counter mismatch
     }
+    elsif ( $line =~ /^not\s+$/ ) {
+        $linetype = 'other';
+        # Sometimes the "not " and "ok" will be on separate lines on VMS.
+        # We catch this and remember we saw it.
+        $self->{saw_lone_not} = 1;
+        $self->{lone_not_line} = $self->{line};
+    }
     elsif ( $self->_is_header($line) ) {
-        $type = 'header';
+        $linetype = 'header';
 
         $self->{saw_header}++;
 
         $totals->{max} += $self->{max};
     }
     elsif ( $self->_is_bail_out($line, \$self->{bailout_reason}) ) {
-        $type = 'bailout';
+        $linetype = 'bailout';
         $self->{saw_bailout} = 1;
     }
     elsif (my $diagnostics = $self->_is_diagnostic_line( $line )) {
+        $linetype = 'other';
         my $test = $totals->{details}[-1];
         $test->{diagnostics} ||=  '';
         $test->{diagnostics}  .= $diagnostics;
-        $type = 'other';
     }
     else {
-        $type = 'other';
+        $linetype = 'other';
     }
 
-    $self->{callback}->($self, $line, $type, $totals) if $self->{callback};
-
-    $self->{'next'} = $result{number} + 1 if $type eq 'test';
+    $self->{callback}->($self, $line, $linetype, $totals) if $self->{callback};
 }
 
 sub _is_diagnostic_line {
@@ -507,16 +515,16 @@ sub _restore_PERL5LIB {
 
 Methods for identifying what sort of line you're looking at.
 
-=head2 C<_is_comment>
+=head2 C<_is_diagnostic>
 
-  my $is_comment = $strap->_is_comment($line, \$comment);
+    my $is_diagnostic = $strap->_is_diagnostic($line, \$comment);
 
 Checks if the given line is a comment.  If so, it will place it into
 C<$comment> (sans #).
 
 =cut
 
-sub _is_comment {
+sub _is_diagnostic {
     my($self, $line, $comment) = @_;
 
     if( $line =~ /^\s*\#(.*)/ ) {
@@ -568,67 +576,6 @@ sub _is_header {
         return $YES;
     }
     else {
-        return $NO;
-    }
-}
-
-=head2 C<_is_test>
-
-  my $is_test = $strap->_is_test($line, \%test);
-
-Checks if the $line is a test report (ie. 'ok/not ok').  Reports the
-result back in C<%test> which will contain:
-
-  ok            did it succeed?  This is the literal 'ok' or 'not ok'.
-  name          name of the test (if any)
-  number        test number (if any)
-
-  type          'todo' or 'skip' (if any)
-  reason        why is it todo or skip? (if any)
-
-It will also catch lone 'not' lines, note it saw them in
-C<< $strap->{saw_lone_not} >> and the line in C<< $strap->{lone_not_line} >>.
-
-=cut
-
-my $Report_Re = <<'REGEX';
-                 ^
-                  (not\ )?               # failure?
-                  ok\b
-                  (?:\s+(\d+))?         # optional test number
-                  \s*
-                  (.*)                  # and the rest
-REGEX
-
-sub _is_test {
-    my($self, $line, $test) = @_;
-
-    # We pulverize the line down into pieces in three parts.
-    if( my($not, $num, $extra)    = $line  =~ /$Report_Re/ox ) {
-        ($test->{name}, my $control) = $extra ? split(/(?:[^\\]|^)#/, $extra) : ();
-        (my $type, $test->{reason})  = $control ? $control =~ /^\s*(\S+)(?:\s+(.*))?$/ : ();
-
-        $test->{number} = $num;
-        $test->{ok}     = $not ? 0 : 1;
-
-        if( defined $type ) {
-            $test->{type}   = $type =~ /^TODO$/i ? 'todo' :
-                              $type =~ /^Skip/i  ? 'skip' : 0;
-        }
-        else {
-            $test->{type} = '';
-        }
-
-        return $YES;
-    }
-    else{
-        # Sometimes the "not " and "ok" will be on separate lines on VMS.
-        # We catch this and remember we saw it.
-        if( $line =~ /^not\s+$/ ) {
-            $self->{saw_lone_not} = 1;
-            $self->{lone_not_line} = $self->{line};
-        }
-
         return $NO;
     }
 }
@@ -735,5 +682,10 @@ Andy Lester C<< <andy@petdance.com> >>.
 L<Test::Harness>
 
 =cut
+
+sub _def_or_blank {
+    return $_[0] if defined $_[0];
+    return "";
+}
 
 1;

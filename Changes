@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+2.47_02 Tue Mar  1 23:15:47 CST 2005
+    [THINGS THAT MIGHT BREAK YOUR CODE]
+    * Test directives for skip tests used to be anything that matches
+      /^skip/i, like the word "skipped", but now it must match
+      /^skip\s+/i.
+
+    [ENHANCEMENTS]
+    * T::H now sets environment variable HARNESS_VERSION, in case a test
+      program wants to know what version of T::H it's running under.
+
 2.47_01 Mon Feb 21 01:14:13 CST 2005
     [FIXES]
     * Fixed a problem submitted by Craig Berry:

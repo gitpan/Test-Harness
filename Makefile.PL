@@ -9,6 +9,7 @@ my @files = qw(
     Harness.pm
     Harness/Iterator.pm
     Harness/Assert.pm
+    Harness/Point.pm
     Harness/Straps.pm
     Harness/TAP.pod
 );

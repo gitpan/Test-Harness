@@ -352,7 +352,7 @@ my %samples = (
                         bonus       => 0,
 
                         details     => [ { 'ok' => 1, actual_ok => 1,
-                                           name => '- -T honored'
+                                           name => '-T honored'
                                          },
                                        ],
                        },
@@ -474,6 +474,7 @@ $SIG{__WARN__} = sub {
 };
 
 for my $test ( sort keys %samples ) {
+    print "# Working on $test\n";
     my $expect = $samples{$test};
 
     for (0..$#{$expect->{details}}) {
@@ -490,7 +491,7 @@ for my $test ( sort keys %samples ) {
     isa_ok( $strap, 'Test::Harness::Straps' );
     my %results = $strap->analyze_file($test_path);
 
-    is_deeply($results{details}, $expect->{details}, "$test details" );
+    is_deeply($results{details}, $expect->{details}, qq{details of "$test"} );
 
     delete $expect->{details};
     delete $results{details};
@@ -510,7 +511,7 @@ for my $test ( sort keys %samples ) {
         delete $expect->{'exit'};
     }
 
-    is_deeply(\%results, $expect, "  the rest $test" );
+    is_deeply(\%results, $expect, qq{ the rest of "$test"} );
 } # for %samples
 
 NON_EXISTENT_FILE: {

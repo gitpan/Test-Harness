@@ -8,6 +8,10 @@ TAP, the Test Anything Protocol, is Perl's simple text-based interface
 between testing modules such as Test::More and the test harness
 Test::Harness.
 
+=head1 TODO
+
+Exit code of the process.
+
 =head1 THE TAP FORMAT
 
 TAP's general format is:
@@ -42,6 +46,10 @@ lines must not be considered test output.
 =head1 TESTS LINES AND THE PLAN
 
 =head2 The plan
+
+The plan tells how many tests will be run, or how many tests have
+run.  It's a check that the test file hasn't stopped prematurely.
+It must appear once, whether at the beginning or end of the output.
 
 The plan is usually the first line of TAP output and it specifies how
 many test points are to follow. For example,
@@ -92,7 +100,7 @@ the following test output
     ok
     ok
 
-will generate
+has five tests.  The sixth is missing.  Test::Harness will generate
 
     FAILED tests 1, 3, 6
     Failed 3/6 tests, 50.00% okay
@@ -107,8 +115,7 @@ the test point.
 Descriptions should not begin with a digit so that they are not confused
 with the test point number.
 
-Currently Test::Harness does nothing with the description but we plan
-to use it in summary.
+The harness may do whatever it wants with the description.
 
 =item * Directive
 
@@ -205,9 +212,10 @@ running, or to delineate a group of tests.
 
 =head2 Anything else
 
-Test::Harness will silently ignore any other output it sees but this behavior
-is not guaranteed in the future.  If you want to place additional output
-in your test script, please use a diagnostic line.
+Any output line that is not a plan, a test line or a diagnostic is
+incorrect.  How a harness handles the incorrect line is undefined.
+Test::Harness silently ignores incorrect lines, but will become more
+stringent in the future.
 
 =head1 EXAMPLES
 
@@ -334,9 +342,14 @@ Andy Lester, based on the original Test::Harness documentation by Michael Schwer
 
 Thanks to
 Pete Krawczyk,
-Paul Johnson
-and
-Ian Langworth for help and contributions.
+Paul Johnson,
+Ian Langworth
+and Nik Clayton
+for help and contributions on this document.
+
+The basis for the TAP format was created by Larry Wall in the
+original test script for Perl 1.  Tim Bunce and Andreas Koenig
+developed it further with their modifications to Test::Harness.
 
 =head1 COPYRIGHT
 
