@@ -6,7 +6,7 @@ package Test::Harness::Straps;
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use Test::Harness::Assert;
 
@@ -89,6 +89,9 @@ sub _init {
     $self->{_is_vms} = $^O eq 'VMS';
 }
 
+=end _private
+
+=back
 
 =head2 Analysis
 
@@ -99,8 +102,8 @@ sub _init {
   my %results = $strap->analyze($name, \@test_output);
 
 Analyzes the output of a single test, assigning it the given $name for
-use in the total report.  Returns the %results of the test.  L<See
-Results>.
+use in the total report.  Returns the %results of the test.  See
+L<Results>.
 
 @test_output should be the raw output from the test, including newlines.
 
@@ -322,6 +325,8 @@ sub _restore_PERL5LIB {
 =head2 Parsing
 
 Methods for identifying what sort of line you're looking at.
+
+=over 4
 
 =item B<_is_comment>
 
@@ -563,9 +568,9 @@ sub _detailize {
     return %details;
 }
 
-=end _private
-
 =back
+
+=end _private
 
 =head1 AUTHOR
 

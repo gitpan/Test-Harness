@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Harness
 
+2.00_04 Sun Dec 16 00:33:32 EST 2001
+    * Major Test::Harness::Straps doc bug.
+
 2.00_03 Sat Dec 15 23:52:17 EST 2001
     * First release candidate
     * 'summary' is now 'details'
