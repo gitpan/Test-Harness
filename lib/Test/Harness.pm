@@ -1,5 +1,4 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.87 2004/08/08 19:22:09 andy Exp $
 
 package Test::Harness;
 
@@ -29,13 +28,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.43_01;
-
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.87 2004/08/08 19:22:09 andy Exp $
+Version 2.43_02
 
 =cut
 
-$VERSION = '2.43_01';
+$VERSION = '2.43_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -469,10 +466,6 @@ sub _run_all_tests {
 
     my $width = _leader_width(@tests);
     foreach my $tfile (@tests) {
-	if ( $Test::Harness::Debug ) {
-	    print "# Running: ", $Strap->_command_line($tfile), "\n";
-	}
-
         $Last_ML_Print = 0;  # so each test prints at least once
         my($leader, $ml) = _mk_leader($tfile, $width);
         local $ML = $ml;
@@ -482,6 +475,9 @@ sub _run_all_tests {
         $tot{files}++;
 
         $Strap->{_seen_header} = 0;
+        if ( $Test::Harness::Debug ) {
+            print "# Running: ", $Strap->_command_line($tfile), "\n";
+        }
         my %results = $Strap->analyze_file($tfile) or
           do { warn $Strap->{error}, "\n";  next };
 
@@ -598,7 +594,7 @@ sub _run_all_tests {
                 @dir_files = @new_dir_files;
             }
         }
-    }
+    } # foreach test
     $tot{bench} = timediff(new Benchmark, $t_start);
 
     $Strap->_restore_PERL5LIB;

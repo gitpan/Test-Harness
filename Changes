@@ -1,5 +1,17 @@
 Revision history for Perl extension Test::Harness
 
+2.43_02 Thu Nov 25 00:20:36 CST 2004
+    [ENHANCEMENTS]
+    * Added more debug output if $Test::Harness::Debug is on.
+
+    [FIXES]
+    * Test::Harness now removes default paths from the paths that it
+      sets in PERL5LIB.  This fixes RT #5649.  Thanks, Schwern.
+
+    [THINGS THAT MIGHT BREAK YOUR CODE]
+    * Test::Harness::Straps' constructor no longer will work as an
+      object method.  You can't say $strap->new any more, but that's
+      OK because you never really wanted to anyway.
 
 2.43_01
     [FIXES]

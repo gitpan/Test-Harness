@@ -1,12 +1,12 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.35 2003/12/31 02:34:22 andy Exp $
+# $Id: Straps.pm,v 1.40 2004/11/25 06:21:40 andy Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.19';
+$VERSION = '0.20';
 
 use Test::Harness::Assert;
 use Test::Harness::Iterator;
@@ -69,8 +69,7 @@ Initialize a new strap.
 =cut
 
 sub new {
-    my($proto) = shift;
-    my($class) = ref $proto || $proto;
+    my $class = shift;
 
     my $self = bless {}, $class;
     $self->_init;
@@ -96,7 +95,7 @@ sub _init {
 
 =head1 Analysis
 
-=head2 C<analyze>
+=head2 $strap->analyze( $name, \@output_lines )
 
   my %results = $strap->analyze($name, \@test_output);
 
@@ -261,6 +260,10 @@ sub analyze_file {
     }
 
     local $ENV{PERL5LIB} = $self->_INC2PERL5LIB;
+    if ( $Test::Harness::Debug ) {
+        local $^W=0; # ignore undef warnings
+        print "# PERL5LIB=$ENV{PERL5LIB}\n";
+    }
 
     # *sigh* this breaks under taint, but open -| is unportable.
     my $line = $self->_command_line($file);
@@ -446,9 +449,21 @@ sub _filtered_INC {
 	s/[\\\/+]$// foreach @inc;
     }
 
-    my %dupes;
-    @inc = grep !$dupes{$_}++, @inc;
+    my %seen;
+    $seen{$_}++ foreach $self->_default_inc();
+    @inc = grep !$seen{$_}++, @inc;
 
+    return @inc;
+}
+
+
+sub _default_inc {
+    my $self = shift;
+
+    local $ENV{PERL5LIB};
+    my $perl = $self->_command;
+    my @inc =`$perl -le "print join qq[\n], \@INC"`;
+    chomp @inc;
     return @inc;
 }
 
@@ -567,12 +582,6 @@ my $Report_Re = <<'REGEX';
                   (?:\s+(\d+))?         # optional test number
                   \s*
                   (.*)                  # and the rest
-REGEX
-
-my $Extra_Re = <<'REGEX';
-                 ^
-                  (.*?) (?:(?:[^\\]|^)# (.*))?
-                 $
 REGEX
 
 sub _is_test {
