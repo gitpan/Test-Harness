@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.77 2003/12/08 03:42:51 andy Exp $
+# $Id: Harness.pm,v 1.78 2003/12/22 04:42:24 andy Exp $
 
 package Test::Harness;
 
@@ -29,13 +29,13 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.39_01
+Version 2.39_02
 
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.77 2003/12/08 03:42:51 andy Exp $
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.78 2003/12/22 04:42:24 andy Exp $
 
 =cut
 
-$VERSION = '2.39_01';
+$VERSION = '2.39_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;

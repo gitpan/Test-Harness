@@ -1,5 +1,10 @@
 Revision history for Perl extension Test::Harness
 
+2.39_02
+    [ENHANCEMENTS]
+    * prove now takes a -l option to add lib/ to @INC.  Now when you're
+      building a module, you don't have to do a make before you run
+      the prove.  Thanks to David Wheeler for the idea.
 
 2.39_01
     [INTERNALS]
