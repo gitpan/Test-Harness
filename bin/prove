@@ -7,52 +7,74 @@ use Getopt::Long;
 use Pod::Usage;
 use File::Spec;
 
+our $VERSION = "0.01";
+
 my @exclude;
+my @ext = ();
 my $shuffle;
-my $recurse;
-my $dry;
+my $dry = 0;
+my $recurse = 0;
+my @thswitches = ();
 
+Getopt::Long::Configure( "no_ignore_case" );
 GetOptions(
-    'help|?'     => sub {pod2usage({-verbose => 2, -input => \*DATA}); exit},
-    'verbose!'   => \$Test::Harness::verbose,
-    'shuffle'    => \$shuffle,
-    'dry'	 => \$dry,
-
-    # Need to implement
-    #'exclude=s'  => \@exclude,
-    #'recurse'    => \$recurse,
-    #'ext'	 => \@extensions,
+    'help|?'        => sub {pod2usage({-verbose => 1, -input => \*DATA}); exit},
+    'man'           => sub {pod2usage({-verbose => 2, -input => \*DATA}); exit},
+    'shuffle'       => \$shuffle,
+    'dry'           => \$dry,
+    'recurse'       => \$recurse,
+    'b|blib'        => sub { push( @thswitches, "-I" . File::Spec->catfile( "blib", "lib" ) ) },
+    'T|taint'       => sub { unshift( @thswitches, "-T" ) }, # Always want -T up front
+    'v|verbose'     => \$Test::Harness::verbose,
+    'V|version'     => sub { print_version(); exit; },
+    'x|exclude=s@'  => sub { warn "--exclude option is unimplemented\n" },
+    'ext=s@'        => \@ext,
 );
+
+# Build up extensions regex
+@ext = map { split /,/ } @ext;
+s/^\.// foreach @ext;
+@ext = ("t") unless @ext;
+my $ext_regex = join( "|", map { quotemeta } @ext );
+$ext_regex = qr/\.($ext_regex)$/;
+
+# Build up TH switches
+$Test::Harness::Switches = join( " ", @thswitches );
 
 my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
-push( @tests, -d $_ ? all_below( $_ ) : $_ ) for @ARGV;
+push( @tests, -d $_ ? all_in( $_ ) : $_ ) for @ARGV;
 
-shuffle(@tests) if $shuffle;
-if ( $dry ) {
-    print join( "\n", @tests, "" );
-} else {
-    runtests(@tests);
+if ( @tests ) {
+    shuffle(@tests) if $shuffle;
+    if ( $dry ) {
+        print join( "\n", @tests, "" );
+    } else {
+        runtests(@tests);
+    }
 }
 
-sub all_below {
+sub all_in {
     my $start = shift;
 
     my @hits = ();
 
-    if ( -d $start ) {
-	next if $start eq ".svn";
-	next if $start eq "CVS";
+    local *DH;
+    if ( opendir( DH, $start ) ) {
+        while ( my $file = readdir DH ) {
+            next if $file eq File::Spec->updir || $file eq File::Spec->curdir;
+            next if $file eq ".svn";
+            next if $file eq "CVS";
 
-	opendir( my $dh, $start ) or return;
-	while ( my $file = readdir $dh ) {
-	    next if $file eq File::Spec->updir || $file eq File::Spec->curdir;
-	    next if $file eq ".svn";
-	    next if $file eq "CVS";
-	    push( @hits, all_below( File::Spec->catfile( $start, $file ) ) ); # XXX Use File::whatever
-	}
+            my $currfile = File::Spec->catfile( $start, $file );
+            if ( -d $currfile ) {
+                push( @hits, all_in( $currfile ) ) if $recurse;
+            } else {
+                push( @hits, $currfile ) if $currfile =~ $ext_regex;
+            }
+        }
     } else {
-	push( @hits, $start ) if $start =~ /\.t$/;
+        warn "$start: $!\n";
     }
 
     return @hits;
@@ -67,52 +89,57 @@ sub shuffle {
     }
 }
 
+sub print_version {
+    print "prove v$VERSION, using Test::Harness $Test::Harness::VERSION\n";
+}
+
 __END__
 
 =head1 NAME
 
-prove -- A test harness utility
+prove -- A command-line tool for running tests against Test::Harness
 
 =head1 SYNOPSIS
 
-B<prove --help> for more information
- 
-    prove [options]
+prove [options] [files/directories]
 
 Options:
 
-    --[no]verbose   Display standard output of test scripts while running them.
-    --shuffle       Run the tests in a random order
-    --exclude       Tests to exclude
-    --help          Display this help
+    -v  --verbose   Display standard output of test scripts while running them.
+    -T  --taint     Run under taint mode
+        --shuffle   Run the tests in a random order.
+    -x  --exclude   Tests to exclude (unimplemented)
+        --ext       Extensions (defaults to .t)
+    -r  --recurse   Recursively descend into directories.
+    -d  --dry       Dry run: Show the tests to run, but don't run them.
+    -b  --blib      Adds blib/lib to the path for your tests, a la "use blib".
+    -V  --version   Display version info
+    -h  --help      Display this help
+        --man       Longer manpage for prove
 
 =head1 OVERVIEW
 
-This program uses C<Test::Harness> to run the results of a test suite.  With no
-arguments, it will run all tests in the current directory (assumes test have a
-C<.t> extension).  However, it will check for a 't' directory in the current
-directory and switch to that one if found.
+F<prove> is a command-line interface to the test-running functionality
+of C<Test::Harness>.  With no arguments, it will run all tests in the
+current directory.
 
 Shell metacharacters may be used with command lines options and will be exanded 
 via C<glob>.
 
 =head1 COMMAND LINE OPTIONS
 
-Note that all options may be specified with a single dash and the first
-letter of the option.
+=head2 -T
 
-=head2 --exclude
+Runs test programs under perl's -T taint mode.
+
+=head2 -x, --exclude
 
 Use this switch to specify which files will not be run as tests.  If used, the
 program assumes all files ending in C<.t> are tests and will skip those that
 match C<--exclude>.  To run all tests but exclude the tests used in the
 previous example:
 
-    prove -e 10item.t -e 10tax.t -e 10tender.t
-
-The above may be written as:
-
-    prove -e '10*.t'
+    prove -x 10item.t -x 10tax.t -x 10tender.t
 
 =head2 --shuffle
 
@@ -121,6 +148,10 @@ This switch will shuffle the tests to be run prior to running them, thus
 ensuring that hidden dependencies in the test order are likely to be revealed.
 The author hopes the run the algorithm on the preceding sentence to see if he
 can produce something slightly less awkward.
+
+=head2 --recurse
+
+Descends into subdirectories of any directories specified, looking for tests.
 
 =head1 BUGS
 
@@ -132,9 +163,17 @@ C<< <bug-test-harness@rt.cpan.org> >>.
 
 =over 4
 
+=item *
+
+-I flag for includes
+
 =item * 
 
 Shuffled tests must be recreatable
+
+=item *
+
+Allow excluding tests
 
 =back
 

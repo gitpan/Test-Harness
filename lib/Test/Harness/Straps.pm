@@ -1,12 +1,12 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.18 2003/08/15 01:29:23 andy Exp $
+# $Id: Straps.pm,v 1.23 2003/11/01 05:57:00 andy Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.15';
+$VERSION = '0.17_02';
 
 use Test::Harness::Assert;
 use Test::Harness::Iterator;
@@ -89,8 +89,9 @@ Initialize the internal state of a strap to make it ready for parsing.
 sub _init {
     my($self) = shift;
 
-    $self->{_is_vms}   = $^O eq 'VMS';
-    $self->{_is_win32} = $^O eq 'Win32';
+    $self->{_is_vms}   = ( $^O eq 'VMS' );
+    $self->{_is_win32} = ( $^O =~ /^(MS)?Win32$/ );
+    $self->{_is_macos} = ( $^O eq 'MacOS' );
 }
 
 =head1 Analysis
@@ -310,26 +311,24 @@ Formats and returns the switches necessary to run the test.
 sub _switches {
     my($self, $file) = @_;
 
+    my @switches = grep { defined } ($Test::Harness::Switches, $ENV{HARNESS_PERL_SWITCHES});
+
     local *TEST;
     open(TEST, $file) or print "can't open $file. $!\n";
-    my $first = <TEST>;
-    my $s = $Test::Harness::Switches || '';
-    $s .= " $ENV{'HARNESS_PERL_SWITCHES'}"
-      if exists $ENV{'HARNESS_PERL_SWITCHES'};
-
-    if ($first =~ /^#!.*\bperl.*\s-\w*([Tt]+)/) {
-        # When taint mode is on, PERL5LIB is ignored.  So we need to put
-        # all that on the command line as -Is.
-        $s .= join " ", qq[ "-$1"], map {qq["-I$_"]} $self->_filtered_INC;
-    }
-    elsif ($^O eq 'MacOS') {
-        # MacPerl's putenv is broken, so it will not see PERL5LIB.
-        $s .= join " ", map {qq["-I$_"]} $self->_filtered_INC;
-    }
-
+    my $shebang = <TEST>;
     close(TEST) or print "can't close $file. $!\n";
 
-    return $s;
+    if ( $shebang =~ /^#!.*\bperl.*\s-\w*([Tt]+)/ ) {
+        # When taint mode is on, PERL5LIB is ignored.  So we need to put
+        # all that on the command line as -Is.
+	push @switches, map qq["-$1"], map {qq["-I$_"]} $self->_filtered_INC;
+    }
+    elsif ( $self->{_is_macos} ) {
+        # MacPerl's putenv is broken, so it will not see PERL5LIB.
+	push @switches, map {qq["-I$_"]} $self->_filtered_INC;
+    }
+
+    return join( " ", @switches );
 }
 
 
@@ -363,12 +362,18 @@ sub _filtered_INC {
     my($self, @inc) = @_;
     @inc = @INC unless @inc;
 
-    # VMS has a 255-byte limit on the length of %ENV entries, so
-    # toss the ones that involve perl_root, the install location
-    # for VMS
     if( $self->{_is_vms} ) {
+	# VMS has a 255-byte limit on the length of %ENV entries, so
+	# toss the ones that involve perl_root, the install location
         @inc = grep !/perl_root/i, @inc;
+
+    } elsif ( $self->{_is_win32} ) {
+	# Lose any trailing backslashes in the Win32 paths
+	s/[\\\/+]$// foreach @inc;
     }
+
+    my %dupes;
+    @inc = grep !$dupes{$_}++, @inc;
 
     return @inc;
 }
@@ -501,8 +506,8 @@ sub _is_test {
 
     # We pulverize the line down into pieces in three parts.
     if( my($not, $num, $extra)    = $line  =~ /$Report_Re/ox ) {
-        my($name, $control) = split /(?:[^\\]|^)#/, $extra if $extra;
-        my($type, $reason)  = $control =~ /^\s*(\S+)(?:\s+(.*))?$/ if $control;
+        my ($name, $control) = $extra ? split(/(?:[^\\]|^)#/, $extra) : ();
+        my ($type, $reason)  = $control ? $control =~ /^\s*(\S+)(?:\s+(.*))?$/ : ();
 
         $test->{number} = $num;
         $test->{ok}     = $not ? 0 : 1;
@@ -520,7 +525,7 @@ sub _is_test {
         return $YES;
     }
     else{
-        # Sometimes the "not " and "ok" will be on seperate lines on VMS.
+        # Sometimes the "not " and "ok" will be on separate lines on VMS.
         # We catch this and remember we saw it.
         if( $line =~ /^not\s+$/ ) {
             $self->{saw_lone_not} = 1;

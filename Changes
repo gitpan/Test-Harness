@@ -4,6 +4,23 @@ The 2.31_xx series of Test::Harness is primarily for getting prove
 out there among the masses, mostly as support for Phalanx.  Not to
 say that we won't fix bugs along the way...
 
+2.31_02	    Fri Oct 31 23:46:03 CST 2003
+    [FEATURES]
+    - Added many more switches to prove: -d for dry run, -x for
+      exclude, and -b for blib.
+
+    [FIXES]
+    - T:H:Straps now recognizes MSWin32 in $^0.
+    - RT#3811: Could do regex matching on garbage in _is_test().
+      Fixed by Yves Orton
+    - RT#3827: Strips backslashes from and normalizes @INC entries
+      for Win32.  Fixed by Yves Orton.
+
+    [INTERNALS]
+    - Added $self->{_is_macos} to the T:H:Strap object.
+    - t/test-harness.t sorts its test results, rather than relying on
+      internal key order.
+
 2.31_01
     [FEATURES]
     - Added "prove" script to run a test or set of tests through the

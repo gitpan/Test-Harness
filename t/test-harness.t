@@ -478,12 +478,15 @@ $Test::Harness::Switches = '"-Mstrict"';
 
 tie *NULL, 'My::Dev::Null' or die $!;
 
-while (my($test, $expect) = each %samples) {
+for my $test ( sort keys %samples ) {
+    my $expect = $samples{$test};
+
     # _run_all_tests() runs the tests but skips the formatting.
     my($totals, $failed);
     my $warning = '';
     my $test_path = File::Spec->catfile($SAMPLE_TESTS, $test);
 
+    print STDERR "# $test\n" if $ENV{TEST_VERBOSE};
     eval {
         select NULL;    # _run_all_tests() isn't as quiet as it should be.
         local $SIG{__WARN__} = sub { $warning .= join '', @_; };
