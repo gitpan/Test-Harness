@@ -1,9 +1,18 @@
 #!/usr/bin/perl -Tw
 
-use strict;
-use lib qw(t/lib);
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
 
-use Test::More 'no_plan';
+use strict;
+
+use Test::More tests => 146;
 
 
 use_ok('Test::Harness::Straps');

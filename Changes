@@ -1,5 +1,13 @@
 Revision history for Perl extension Test::Harness
 
+2.02  Thu Mar 14 18:06:04 EST 2002
+    * Ken Williams fixed the long standing $^X bug.
+    * Added HARNESS_VERBOSE
+    * Fixed a bug where Test::Harness::Straps was considering a test that 
+      is ok but died as passing.
+    - Added the exit and wait codes of the test to the 
+      analyze_file() results.
+
 2.01  Thu Dec 27 18:54:36 EST 2001
     * Added 'passing' to the results to tell you if the test passed
     * Added Test::Harness::Straps example (examples/mini_harness.plx)
@@ -34,9 +42,22 @@ Revision history for Perl extension Test::Harness
     * analyze_file() properly preserves @INC and handles -T switches
     - minor mistake in the test header line parsing
 
-2.00  Sat Sep 29 00:12:03 EDT 2001
+1.26  Mon Nov 12 15:44:01 EST 2001
+    * An excuse to upload a new version to CPAN to get Test::Harness
+      back on the index.
+
+2.00_00  Sat Sep 29 00:12:03 EDT 2001
     * Partial gutting of the internals
     * Added Test::Harness::Straps
+
+1.25  Tue Aug  7 08:51:09 EDT 2001
+    * Fixed a bug with tests failing if they're all skipped
+      reported by Stas Bekman.
+    - Fixed a very minor warning in 5.004_04
+    - Fixed displaying filenames not from @ARGV
+    - Merging with bleadperl
+    -  minor fixes to the filename in the report
+    -  '[no reason given]' skip reason
 
 1.24  Tue Aug  7 08:51:09 EDT 2001
     - Added internal information about number of todo tests

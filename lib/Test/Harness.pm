@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.14.2.13 2002/01/07 22:34:32 schwern Exp $
+# $Id: Harness.pm,v 1.14.2.15 2002/03/14 23:49:34 schwern Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.01';
+$VERSION = '2.02';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -42,7 +42,7 @@ my $Strap = Test::Harness::Straps->new;
 @EXPORT    = qw(&runtests);
 @EXPORT_OK = qw($verbose $switches);
 
-$Verbose  = 0;
+$Verbose  = $ENV{HARNESS_VERBOSE} || 0;
 $Switches = "-w";
 $Columns  = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
 $Columns--;             # Some shells have trouble with a full line of text.
@@ -454,6 +454,8 @@ sub _run_all_tests {
 
         my $fh = _open_test($tfile);
 
+        $tot{files}++;
+
         # state of the current test.
         my %test = (
                     ok          => 0,
@@ -693,7 +695,6 @@ sub _parse_header {
 
 
         $tot->{max} += $test->{max};
-        $tot->{files}++;
     }
     else {
         $is_header = 0;
@@ -712,7 +713,7 @@ sub _open_test {
     my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
                 ? "./perl -I../lib ../utils/perlcc $test "
                   . "-r 2>> ./compilelog |" 
-                : "$^X $s $test|";
+                : "$Config{perlpath} $s $test|";
     $cmd = "MCR $cmd" if $^O eq 'VMS';
 
     if( open(PERL, $cmd) ) {
@@ -1069,17 +1070,18 @@ the script dies with this message.
 
 =over 4
 
-=item C<HARNESS_IGNORE_EXITCODE>
+=item C<HARNESS_ACTIVE>
 
-Makes harness ignore the exit status of child processes when defined.
+Harness sets this before executing the individual tests.  This allows
+the tests to determine if they are being executed through the harness
+or by any other means.
 
-=item C<HARNESS_NOTTY>
+=item C<HARNESS_COLUMNS>
 
-When set to a true value, forces it to behave as though STDOUT were
-not a console.  You may need to set this if you don't want harness to
-output more frequent progress messages using carriage returns.  Some
-consoles may not handle carriage returns properly (which results in a
-somewhat messy output).
+This value will be used for the width of the terminal. If it is not
+set then it will default to C<COLUMNS>. If this is not set, it will
+default to 80. Note that users of Bourne-sh based shells will need to
+C<export COLUMNS> for this module to use that variable.
 
 =item C<HARNESS_COMPILE_TEST>
 
@@ -1100,24 +1102,28 @@ If relative, directory name is with respect to the current directory at
 the moment runtests() was called.  Putting absolute path into 
 C<HARNESS_FILELEAK_IN_DIR> may give more predictable results.
 
+=item C<HARNESS_IGNORE_EXITCODE>
+
+Makes harness ignore the exit status of child processes when defined.
+
+=item C<HARNESS_NOTTY>
+
+When set to a true value, forces it to behave as though STDOUT were
+not a console.  You may need to set this if you don't want harness to
+output more frequent progress messages using carriage returns.  Some
+consoles may not handle carriage returns properly (which results in a
+somewhat messy output).
+
 =item C<HARNESS_PERL_SWITCHES>
 
 Its value will be prepended to the switches used to invoke perl on
 each test.  For example, setting C<HARNESS_PERL_SWITCHES> to C<-W> will
 run all tests with all warnings enabled.
 
-=item C<HARNESS_COLUMNS>
+=item C<HARNESS_VERBOSE>
 
-This value will be used for the width of the terminal. If it is not
-set then it will default to C<COLUMNS>. If this is not set, it will
-default to 80. Note that users of Bourne-sh based shells will need to
-C<export COLUMNS> for this module to use that variable.
-
-=item C<HARNESS_ACTIVE>
-
-Harness sets this before executing the individual tests.  This allows
-the tests to determine if they are being executed through the harness
-or by any other means.
+If true, Test::Harness will output the verbose results of running
+its tests.  Setting $Test::Harness::verbose will override this.
 
 =back
 
@@ -1157,15 +1163,13 @@ Current maintainer is Michael G Schwern E<lt>schwern@pobox.comE<gt>
 Provide a way of running tests quietly (ie. no printing) for automated
 validation of tests.  This will probably take the form of a version
 of runtests() which rather than printing its output returns raw data
-on the state of the tests.
+on the state of the tests.  (Partially done in Test::Harness::Straps)
 
 Fix HARNESS_COMPILE_TEST without breaking its core usage.
 
 Figure a way to report test names in the failure summary.
 
 Rework the test summary so long test names are not truncated as badly.
-
-Merge back into bleadperl.
 
 Deal with VMS's "not \nok 4\n" mistake.
 
@@ -1178,12 +1182,6 @@ Keeping whittling away at _run_all_tests()
 Clean up how the summary is printed.  Get rid of those damned formats.
 
 =head1 BUGS
-
-Test::Harness uses $^X to determine the perl binary to run the tests
-with. Test scripts running via the shebang (C<#!>) line may not be
-portable because $^X is not consistent for shebang scripts across
-platforms. This is no problem when Test::Harness is run with an
-absolute path to the perl binary or when $^X can be found in the path.
 
 HARNESS_COMPILE_TEST currently assumes its run from the Perl source
 directory.

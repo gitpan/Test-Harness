@@ -63,6 +63,7 @@ WriteMakefile(
         foreach my $perl (@perls) {
             $out .= $self->SUPER::test_via_harness($perl, $tests);
         }
+        $out =~ s{-I\$\(PERL_\w*LIB\)}{}g;
 
         return $out;
     }

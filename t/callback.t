@@ -1,6 +1,17 @@
 #!/usr/bin/perl -w
 
-use lib qw(t/lib);
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
+
+my $SAMPLE_TESTS = $ENV{PERL_CORE} ? 'lib/sample-tests' : 't/sample-tests';
+
 use Test::More;
 
 %samples = (
@@ -38,7 +49,7 @@ $strap->{callback} = sub {
                             
 while( my($test, $expect) = each %samples ) {
     local @out = ();
-    $strap->analyze_file("t/sample-tests/$test");
+    $strap->analyze_file("$SAMPLE_TESTS/$test");
 
     is_deeply(\@out, $expect,   "$test callback");
 }

@@ -6,8 +6,11 @@ Remember exit code
 
 Completely redo the print summary code.
 
-Implement Straps callbacks.
+Implement Straps callbacks.  (experimentally implemented)
 
 Straps->analyze_file() not taint clean, don't know if it can be
 
 Fix that damned VMS nit.
+
+HARNESS_TODOFAIL to display TODO failures
+

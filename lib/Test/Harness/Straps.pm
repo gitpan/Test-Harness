@@ -1,12 +1,12 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.1.2.17 2002/01/07 22:34:33 schwern Exp $
+# $Id: Straps.pm,v 1.1.2.18 2002/03/14 23:30:15 schwern Exp $
 
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
 use Config;
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 use Test::Harness::Assert;
 use Test::Harness::Iterator;
@@ -147,12 +147,13 @@ sub _analyze_iterator {
         last if $self->{saw_bailout};
     }
 
+    $totals{skip_all} = $self->{skip_all} if defined $self->{skip_all};
+
     my $passed = $totals{skip_all} || 
-                  ($totals{max} == $totals{seen} && 
+                  ($totals{max} && $totals{seen} &&
+                   $totals{max} == $totals{seen} && 
                    $totals{max} == $totals{ok});
     $totals{passing} = $passed ? 1 : 0;
-
-    $totals{skip_all} = $self->{skip_all} if defined $self->{skip_all};
 
     $self->{totals}{$name} = \%totals;
     return %totals;
@@ -264,7 +265,10 @@ sub analyze_file {
     }
 
     my %results = $self->analyze_fh($file, \*FILE);
-    close FILE;
+    my $exit = close FILE;
+    $results{'wait'} = $?;
+    $results{'exit'} = $? / 256;
+    $results{passing} = 0 unless $? == 0;
 
     $self->_restore_PERL5LIB();
 
@@ -557,6 +561,9 @@ The %results returned from analyze() contain the following information:
 
   passing           true if the whole test is considered a pass 
                     (or skipped), false if its a failure
+
+  exit              the exit code of the test run, if from a file
+  wait              the wait code of the test run, if from a file
 
   max               total tests which should have been run
   seen              total tests actually seen
