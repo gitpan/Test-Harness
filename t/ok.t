@@ -1,4 +1,4 @@
--f "t/core" and unlink "t/core";
+-f "core" and unlink "core";
 print <<END;
 1..4
 ok 1

@@ -1,12 +1,14 @@
 # -*-perl-*-
 
 # As most of the tests fail intentionally, we have to filter our own output
-$silent = 1;
+$Silent = $silent = 1;
 
 
-$afterallexpect = "\QFailed 11/15 test scripts, 26.67% okay. 22/62 subtests failed, 64.52% okay.";
+$afterallexpect = "\QFailed 11/15 test scripts";
 $afterallok = 0;
 while (<>){
+    m|t/dumpcore| and $silent = 0;
+    m|t/error| and $silent = $Silent;
     s/\[.*\]// if $silent;
     next if $silent && ! /^t/ && ! /Failed/;
     print;

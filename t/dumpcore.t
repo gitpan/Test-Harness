@@ -1,5 +1,5 @@
 print STDERR "[I'm gonna core dump after test 1 of 1]";
--d "t" and chdir "t";
+$|=1;
 # We'll remove the core file in the ok.t script
 print <<END;
 1..1

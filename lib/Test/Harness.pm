@@ -1,13 +1,14 @@
 package Test::Harness;
 
+BEGIN {require 5.002;}
 use Exporter;
 use Benchmark;
 use Config;
 use FileHandle;
-use vars qw($VERSION $verbose $switches);
-require 5.002;
+use vars qw($VERSION $verbose $switches $have_devel_corestack);
+$have_devel_corestack = 0;
 
-$VERSION = "1.09";
+$VERSION = "1.11";
 
 @ISA=('Exporter');
 @EXPORT= qw(&runtests);
@@ -71,7 +72,17 @@ sub runtests {
 	$fh->close; # must close to reap child resource values
 	my $wstatus = $?;
 	my $estatus = $wstatus >> 8;
-	if ($ok == $max && $next == $max+1 && ! $estatus) {
+	if ($wstatus) {
+	    print "dubious\n\tTest returned status $estatus (wstat $wstatus)\n";
+	    if (corestatus($wstatus)) { # until we have a wait module
+		if ($have_devel_corestack) {
+		    Devel::CoreStack::stack($^X);
+		} else {
+		    print "\ttest program seems to have generated a core\n";
+		}
+	    }
+	    $bad++;
+	} elsif ($ok == $max && $next == $max+1) {
 	    if ($max) {
 		print "ok\n";
 	    } else {
@@ -91,9 +102,6 @@ sub runtests {
 	} elsif ($next == 0) {
 	    print "FAILED before any test output arrived\n";
 	    $bad++;
-	}
-	if ($wstatus) {
-	    print "\tTest returned status $estatus (wstat $wstatus)\n";
 	}
     }
     my $t_total = timediff(new Benchmark, $t_start);
@@ -116,6 +124,23 @@ sub runtests {
 	}
     }
     printf("Files=%d,  Tests=%d, %s\n", $files, $totmax, timestr($t_total, 'nop'));
+}
+
+sub corestatus {
+    my($st) = @_;
+    my($ret);
+
+    eval {require 'wait.ph'};
+    if ($@) {
+	$ret = $st == 134; # this is for irix 5.3, better than nothing XXX
+    } else {
+	$ret = WCOREDUMP($st);
+    }
+
+    eval {require Devel::CoreStack};
+    $have_devel_corestack++ unless $@;
+
+    $ret;
 }
 
 sub canonfailed ($@) {
