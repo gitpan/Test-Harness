@@ -22,6 +22,7 @@ t/lib/Test/Simple.pm
 t/nonumbers.t
 t/ok.t
 t/pod.t
+t/prove-globbing.t
 t/prove-switches.t
 t/sample-tests/bailout
 t/sample-tests/bignum

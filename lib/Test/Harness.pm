@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.80 2003/12/31 02:39:21 andy Exp $
+# $Id: Harness.pm,v 1.82 2004/03/26 04:43:09 andy Exp $
 
 package Test::Harness;
 
@@ -29,13 +29,13 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.40
+Version 2.41_01
 
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.80 2003/12/31 02:39:21 andy Exp $
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.82 2004/03/26 04:43:09 andy Exp $
 
 =cut
 
-$VERSION = '2.40';
+$VERSION = '2.41_01';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -463,7 +463,8 @@ sub _run_all_tests {
                 bench    => 0,
                );
 
-    my @dir_files = _globdir $Files_In_Dir if defined $Files_In_Dir;
+    my @dir_files;
+    @dir_files = _globdir $Files_In_Dir if defined $Files_In_Dir;
     my $t_start = new Benchmark;
 
     my $width = _leader_width(@tests);

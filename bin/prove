@@ -74,7 +74,7 @@ print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $Test::Harnes
 
 my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
-push( @tests, -d $_ ? all_in( $_ ) : $_ ) for @ARGV;
+push( @tests, -d $_ ? all_in( $_ ) : $_ ) for map { glob } @ARGV;
 
 if ( @tests ) {
     shuffle(@tests) if $shuffle;
