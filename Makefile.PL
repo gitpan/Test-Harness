@@ -49,11 +49,8 @@ WriteMakefile(
 
         my @other_perls = qw(bleadperl
                              perl5.6.1
-                             perl5.6.0
-                             perl5.005_03
-                             perl5.004_05
-                             perl5.004_04
-                             perl5.004
+                             perl5.5.3
+                             perl5.4.0
                             );
 
         my @perls = ($orig_perl);
@@ -63,7 +60,7 @@ WriteMakefile(
         foreach my $perl (@perls) {
             $out .= $self->SUPER::test_via_harness($perl, $tests);
         }
-        $out =~ s{-I\$\(PERL_\w*LIB\)}{}g;
+        $out =~ s{"?-I\$\(PERL_\w*LIB\)"?}{}g;
 
         return $out;
     }

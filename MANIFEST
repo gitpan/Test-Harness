@@ -12,6 +12,7 @@ t/00compile.t
 t/assert.t
 t/base.t
 t/callback.t
+t/lib/if.pm
 t/lib/Test/Builder.pm
 t/lib/Test/More.pm
 t/lib/Test/Simple.pm
