@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.32 2003/11/19 05:52:19 andy Exp $
+# $Id: Straps.pm,v 1.34 2003/11/23 00:02:11 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -262,14 +262,8 @@ sub analyze_file {
 
     local $ENV{PERL5LIB} = $self->_INC2PERL5LIB;
 
-    my $command =  $self->_command();
-    my $switches = $self->_switches($file);
-
-    $file = qq["$file"] if ($file =~ /\s/) && ($file !~ /^".*"$/);
-    my $line = "$command $switches $file";
-    warn "# Running: $line\n" if $Test::Harness::debug;
-
     # *sigh* this breaks under taint, but open -| is unportable.
+    my $line = $self->_command_line($file);
     unless( open(FILE, "$line|") ) {
         print "can't run $file. $!\n";
         return;
@@ -299,6 +293,28 @@ if( $@ ) {
 else {
     *_wait2exit = sub { POSIX::WEXITSTATUS($_[0]) }
 }
+
+=head2 C<_command_line( $file )>
+
+  my $command_line = $self->_command_line();
+
+Returns the full command line that will be run to test I<$file>.
+
+=cut
+
+sub _command_line {
+    my $self = shift;
+    my $file = shift;
+
+    my $command =  $self->_command();
+    my $switches = $self->_switches($file);
+
+    $file = qq["$file"] if ($file =~ /\s/) && ($file !~ /^".*"$/);
+    my $line = "$command $switches $file";
+
+    return $line;
+}
+
 
 =head2 C<_command>
 
@@ -723,6 +739,5 @@ Andy Lester C<< <andy@petdance.com> >>.
 L<Test::Harness>
 
 =cut
-
 
 1;

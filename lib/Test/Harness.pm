@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.73 2003/11/19 05:58:30 andy Exp $
+# $Id: Harness.pm,v 1.76 2003/11/25 04:41:03 andy Exp $
 
 package Test::Harness;
 
@@ -29,13 +29,13 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.37_02
+Version 2.38
 
-    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.73 2003/11/19 05:58:30 andy Exp $
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.76 2003/11/25 04:41:03 andy Exp $
 
 =cut
 
-$VERSION = '2.37_03';
+$VERSION = '2.38';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -254,9 +254,9 @@ Test::Harness.  They are exported on request.
 
 =over 4
 
-=item B<$Test::Harness::verbose>
+=item B<$Test::Harness::Verbose>
 
-The global variable C<$Test::Harness::verbose> is exportable and can be
+The global variable C<$Test::Harness::Verbose> is exportable and can be
 used to let C<runtests()> display the standard output of the script
 without altering the behavior otherwise.  The F<prove> utility's C<-v>
 flag will set this.
@@ -468,16 +468,21 @@ sub _run_all_tests {
 
     my $width = _leader_width(@tests);
     foreach my $tfile (@tests) {
+	if ( $Test::Harness::Debug ) {
+	    print "# Running: ", $Strap->_command_line($tfile), "\n";
+	}
+
         $Last_ML_Print = 0;  # so each test prints at least once
         my($leader, $ml) = _mk_leader($tfile, $width);
         local $ML = $ml;
+
         print $leader;
 
         $tot{files}++;
 
         $Strap->{_seen_header} = 0;
         my %results = $Strap->analyze_file($tfile) or
-          do { warn "$Strap->{error}\n";  next };
+          do { warn $Strap->{error}, "\n";  next };
 
         # state of the current test.
         my @failed = grep { !$results{details}[$_-1]{ok} }
@@ -983,7 +988,7 @@ __END__
 
 C<&runtests> is exported by Test::Harness by default.
 
-C<$verbose> and C<$switches> are exported upon request.
+C<$verbose>, C<$switches> and C<$debug> are exported upon request.
 
 =head1 DIAGNOSTICS
 
@@ -1047,7 +1052,7 @@ directory!
 
 If true, Test::Harness will print debugging information about itself as
 it runs the tests.  This is different from C<HARNESS_VERBOSE>, which prints
-the output from the test being run.  Setting C<$Test::Harness::debug> will
+the output from the test being run.  Setting C<$Test::Harness::Debug> will
 override this, or you can use the C<-d> switch in the F<prove> utility.
 
 =item C<HARNESS_FILELEAK_IN_DIR>

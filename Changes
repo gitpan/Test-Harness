@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Harness
 
+2.38	    Mon Nov 24 22:36:18 CST 2003
+    Released.  See changes below.
+
 2.37_03	    Tue Nov 18 23:51:38 CST 2003
     [ENHANCEMENTS]
     * prove -V now shows the Perl version being used.
@@ -7,6 +10,7 @@ Revision history for Perl extension Test::Harness
       harness runs the tests.  This is different from HARNESS_VERBOSE,
       which shows test output, but not information about the harness
       itself.
+    * Added _command_line() to the Strap API.
 
     [FIXES]
     * Bad interaction with Module::Build:  The strap was only checking
