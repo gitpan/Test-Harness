@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.27_05  Mon Apr 21 15:55:00 CDT 2003
+    - No functional changes.
+    - Fixed circular depency in the test suite.  Thanks, Rob Brown.
+
 2.27_04  Sat Apr 12 21:42:00 CDT 2003
     - Added test for $Test::Harness::Switches patch below.
 
