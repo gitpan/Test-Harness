@@ -27,34 +27,6 @@ are upgrading from a version older than $LAST_API_CHANGE.
 CHANGE_WARN
 }
 
-warn "\a\a\a", <<'UNSTABLE_WARN';
-***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***
-As of version 1.18, Test::Harness is now **UNSTABLE!**
-
-Its undergoing an incremental internal refactoring as well as
-back-porting to older perls (< 5.7.0).  There are no known bugs, but
-it hasn't been well enough tested for such a critical module.
-
-                ** USE AT YOUR OWN RISK!!! **
-
-However, please run the tests and report their success or failure to
-me along with your architecture and Perl version.
-
-I'll pause for a few seconds to allow you to reflect on this...
-kill me now if you have any doubts!
-
-UNSTABLE_WARN
-
-sleep 15;        # give a chance to kill this
-
-warn <<'MORE_WARNING';
-Ok, your funeral.
-
-I'll install myself in site_perl instead of with the core libraries
-for now.  Use "perl Makefile.PL INSTALLDIRS=perl" or
-"make install UNINST=1" to put me into the core.
-***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***WARNING***
-MORE_WARNING
 
 warn "Test::Harness likes to have Devel::CoreStack, but doesn't require it.\n"
   unless eval { require Devel::CoreStack; 1 };
@@ -63,7 +35,7 @@ WriteMakefile(
     NAME            => $PACKAGE,
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
     PREREQ_PM       => { },
-#    INSTALLDIRS     => 'perl',
+    INSTALLDIRS     => 'perl',
     'dist'          => { COMPRESS   => 'gzip -9',
                          SUFFIX     => '.gz',
                          DIST_DEFAULT   => 'all tardist',

@@ -1,9 +1,9 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.10 2001/03/14 23:07:38 schwern Exp $
+# $Id: Harness.pm,v 1.11 2001/05/23 18:24:41 schwern Exp $
 
 package Test::Harness;
 
-require 5.004;  # this might be optimisticly low
+require 5.004;
 use Exporter;
 use Benchmark;
 use Config;
@@ -20,7 +20,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "1.20";
+$VERSION = "1.21";
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -37,7 +37,7 @@ my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 $Verbose  = 0;
 $Switches = "-w";
 $Columns  = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
-
+$Columns--;             # Some shells have trouble with a full line of text.
 
 
 =head1 NAME
@@ -74,7 +74,7 @@ test program.
 
 =over 4
 
-=item B<1..M>
+=item B<'1..M'>
 
 This header tells how many tests there will be.  It should be the
 first line output by your test program (but its okay if its preceded
@@ -188,6 +188,64 @@ ignore them.
   # Life is good, the sun is shining, RAM is cheap.
   not ok 2
   # got 'Bush' expected 'Gore'
+
+=back
+
+
+=head2 Failure
+
+It will happen, your tests will fail.  After you mop up your ego, you
+can begin examining the summary report:
+
+  t/base..............ok                                                       
+  t/nonumbers.........ok                                                      
+  t/ok................ok                                                       
+  t/test-harness......ok                                                       
+  t/waterloo..........dubious                                                  
+          Test returned status 3 (wstat 768, 0x300)
+  DIED. FAILED tests 1, 3, 5, 7, 9, 11, 13, 15, 17, 19
+          Failed 10/20 tests, 50.00% okay
+  Failed Test  Stat Wstat Total Fail  Failed  List of Failed
+  -----------------------------------------------------------------------
+  t/waterloo.t    3   768    20   10  50.00%  1 3 5 7 9 11 13 15 17 19
+  Failed 1/5 test scripts, 80.00% okay. 10/44 subtests failed, 77.27% okay.
+
+Everything passed but t/waterloo.t.  It failed 10 of 20 tests and
+exited with non-zero status indicating something dubious happened.
+
+The columns in the summary report mean:
+
+=over 4
+
+=item B<Failed Test>
+
+The test file which failed.
+
+=item B<Stat>
+
+If the test exited with non-zero, this is its exit status.
+
+=item B<Wstat>
+
+The wait status of the test I<umm, I need a better explanation here>.
+
+=item B<Total>
+
+Total number of tests expected to run.
+
+=item B<Fail>
+
+Number which failed, either from "not ok" or because they never ran.
+
+=item B<Failed>
+
+Percentage of the total tests which failed.
+
+=item B<List of Failed>
+
+A list of the tests which failed.  Successive failures may be
+abbreviated (ie. 15-20 to indicate that tests 15, 16, 17, 18, 19 and
+20 failed).
 
 =back
 
@@ -461,8 +519,6 @@ sub _run_all_tests {
 
     return(\%tot, \%failedtests);
 }
-
-=begin _private
 
 =item B<_mk_leader>
 
@@ -795,7 +851,7 @@ sub _create_fmts {
     my($failedtests) = @_;
 
     my $failed_str = "Failed Test";
-    my $middle_str = " Status Wstat Total Fail  Failed  ";
+    my $middle_str = " Stat Wstat Total Fail  Failed  ";
     my $list_str = "List of Failed";
 
     # Figure out our longest name string for formatting purposes.
@@ -824,7 +880,7 @@ sub _create_fmts {
 
     my $fmt = "format STDOUT =\n"
 	      . "@" . "<" x ($max_namelen - 1)
-              . "	 @>> @>>>> @>>>> @>>> ^##.##%  "
+              . "  @>> @>>>> @>>>> @>>> ^##.##%  "
 	      . "^" . "<" x ($list_len - 1) . "\n"
 	      . '{ $Curtest->{name}, $Curtest->{estat},'
 	      . '  $Curtest->{wstat}, $Curtest->{max},'
@@ -1027,9 +1083,10 @@ Here's how Test::Harness tests itself
 
 =head1 SEE ALSO
 
-L<Test> for writing test scripts, L<Benchmark> for the underlying
-timing routines and L<Devel::CoreStack> to generate core dumps from
-failed tests.
+L<Test> and L<Test::Simple> for writing test scripts, L<Benchmark> for
+the underlying timing routines, L<Devel::CoreStack> to generate core
+dumps from failed tests and L<Devel::Cover> for test coverage
+analysis.
 
 =head1 AUTHORS
 
@@ -1049,9 +1106,21 @@ on the state of the tests.
 
 Fix HARNESS_COMPILE_TEST without breaking its core usage.
 
+Figure a way to report test names in the failure summary.
+
+Rework the test summary so long test names are not truncated as badly.
+
+Merge back into bleadperl.
+
+Deal with VMS's "not \nok 4\n" mistake.
+
+Add option for coverage analysis.
+
 =for _private
 Keeping whittling away at _run_all_tests()
 
+=for _private
+Clean up how the summary is printed.  Get rid of those damned formats.
 
 =head1 BUGS
 

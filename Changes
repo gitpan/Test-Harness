@@ -1,5 +1,12 @@
 Revision history for Perl extension Test::Harness
 
+1.21  Wed May 23 19:22:53 BST 2001
+    * No longer considered unstable.  Merging back with the perl core.
+    - Fixed minor nit about the report summary
+    - Added docs on the meaning of the failure report
+    - Minor POD nits fixed mirroring perl change 9176
+    - TODO and SEE ALSO expanded
+
 1.20  Wed Mar 14 23:09:20 GMT 2001 by Michael G Schwern    *UNSTABLE*
     * Fixed and tested with 5.004!
     - Added EXAMPLE docs
