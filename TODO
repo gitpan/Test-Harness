@@ -13,3 +13,5 @@ Straps->analyze_file() not taint clean, don't know if it can be
 Fix that damned VMS nit.
 
 HARNESS_TODOFAIL to display TODO failures
+
+Add a test for verbose.

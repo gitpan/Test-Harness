@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.24 2002/05/05 02:32:53 schwern Exp $
+# $Id: Harness.pm,v 1.28 2002/05/06 04:44:29 schwern Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.20';
+$VERSION = '2.21';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -663,7 +663,7 @@ sub _show_results {
 my %Handlers = ();
 $Strap->{callback} = sub {
     my($self, $line, $type, $totals) = @_;
-    print if $Verbose;
+    print $line if $Verbose;
 
     my $meth = $Handlers{$type};
     $meth->($self, $line, $type, $totals) if $meth;
@@ -727,30 +727,6 @@ sub _print_ml {
 }
 
 
-sub _open_test {
-    my($test) = shift;
-
-    my $s = _set_switches($test);
-
-    my $perl = -x $^X ? $^X : $Config{perlpath};
-
-    # XXX This is WAY too core specific!
-    my $cmd = ($ENV{'HARNESS_COMPILE_TEST'})
-                ? "./perl -I../lib ../utils/perlcc $test "
-                  . "-r 2>> ./compilelog |" 
-                : "$perl $s $test|";
-    $cmd = "MCR $cmd" if $^O eq 'VMS';
-
-    if( open(PERL, $cmd) ) {
-        return \*PERL;
-    }
-    else {
-        print "can't run $test. $!\n";
-        return;
-    }
-}
-
-
 sub _bonusmsg {
     my($tot) = @_;
 
@@ -776,33 +752,6 @@ sub _bonusmsg {
 
     return $bonusmsg;
 }
-
-# VMS has some subtle nastiness with closing the test files.
-sub _close_fh {
-    my($fh) = shift;
-
-    close($fh); # must close to reap child resource values
-
-    my $wstatus = $Ignore_Exitcode ? 0 : $?;    # Can trust $? ?
-    my $estatus;
-    $estatus = ($^O eq 'VMS'
-                  ? eval 'use vmsish "status"; $estatus = $?'
-                  : $wstatus >> 8);
-
-    return($estatus, $wstatus);
-}
-
-
-# Set up the command-line switches to run perl as.
-sub _set_switches {
-    my($test) = shift;
-
-    my $s = $Switches;
-    $s .= $Strap->_switches($test);
-
-    return $s;
-}
-
 
 # Test program go boom.
 sub _dubious_return {
@@ -844,12 +793,6 @@ sub _dubious_return {
              percent => $percent,
              estat => $estatus, wstat => $wstatus,
            };
-}
-
-
-sub _garbled_output {
-    my($gibberish) = shift;
-    warn "Confusing test output:  '$gibberish'\n";
 }
 
 
