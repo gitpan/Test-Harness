@@ -8,24 +8,28 @@ use Pod::Usage 1.12;
 use File::Spec;
 
 use vars qw( $VERSION );
-$VERSION = "1.00";
+$VERSION = "1.02";
 
 my @ext = ();
 my $shuffle = 0;
 my $debug = 0;
 my $dry = 0;
+my $blib = 0;
 my $recurse = 0;
 my @includes = ();
 my @switches = ();
 
 # Allow cuddling the paths with the -I
-unshift @ARGV, split( " ", $ENV{PROVE_SWITCHES} ) if defined $ENV{PROVE_SWITCHES};
 @ARGV = map { /^(-I)(.+)/ ? ($1,$2) : $_ } @ARGV;
+
+# Stick any default switches at the beginning, so they can be overridden
+# by the command line switches.
+unshift @ARGV, split( " ", $ENV{PROVE_SWITCHES} ) if defined $ENV{PROVE_SWITCHES};
 
 Getopt::Long::Configure( "no_ignore_case" );
 Getopt::Long::Configure( "bundling" );
 GetOptions(
-    'b|blib'        => sub { unshift @includes, File::Spec->catfile( "blib", "lib" ) },
+    'b|blib'        => \$blib,
     'd|debug'	    => \$debug,
     'D|dry'         => \$dry,
     'h|help|?'      => sub {pod2usage({-verbose => 1, -input => \*DATA}); exit},
@@ -46,6 +50,16 @@ s/^\.// foreach @ext;
 @ext = ("t") unless @ext;
 my $ext_regex = join( "|", map { quotemeta } @ext );
 $ext_regex = qr/\.($ext_regex)$/;
+
+# Handle blib includes
+if ( $blib ) {
+    my @blibdirs = blibdirs();
+    if ( @blibdirs ) {
+	unshift @includes, @blibdirs;
+    } else {
+	warn "No blib directories found.\n";
+    }
+}
 
 # Build up TH switches
 push( @switches, map { "-I$_" } @includes );
@@ -103,6 +117,33 @@ sub shuffle {
 
 sub print_version {
     print "prove v$VERSION, using Test::Harness $Test::Harness::VERSION\n";
+}
+
+# Stolen directly from blib.pm
+sub blibdirs {
+    my $dir = File::Spec->curdir;
+    if ($^O eq 'VMS') {
+	($dir = VMS::Filespec::unixify($dir)) =~ s-/\z--;
+    }
+    my $archdir = "arch";
+    if ( $^O eq "MacOS" ) {
+	# Double up the MP::A so that it's not used only once.
+	$archdir = $MacPerl::Architecture = $MacPerl::Architecture;
+    }
+
+    my $i = 5;
+    while ($i--) {
+        my $blib      = File::Spec->catdir( $dir, "blib" );
+        my $blib_lib  = File::Spec->catdir( $blib, "lib" );
+        my $blib_arch = File::Spec->catdir( $blib, $archdir );
+
+	if ( -d $blib && -d $blib_arch && -d $blib_lib ) {
+	    return ($blib_arch,$blib_lib);
+	}
+	$dir = File::Spec->catdir($dir, File::Spec->updir);
+    }
+    warn "$0: Cannot find blib\n";
+    return;
 }
 
 __END__

@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.67 2003/11/13 04:14:04 andy Exp $
+# $Id: Harness.pm,v 1.69 2003/11/14 15:25:31 andy Exp $
 
 package Test::Harness;
 
@@ -16,13 +16,25 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
             @ISA @EXPORT @EXPORT_OK $Last_ML_Print
            );
 
+=head1 NAME
+
+Test::Harness - Run Perl standard test scripts with statistics
+
+=head1 VERSION
+
+Version 2.36
+
+    $Header: /home/cvs/test-harness/lib/Test/Harness.pm,v 1.69 2003/11/14 15:25:31 andy Exp $
+
+=cut
+
+$VERSION = '2.36';
+
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
 *switches = *Switches;
 
 $Have_Devel_Corestack = 0;
-
-$VERSION = '2.35_01';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -48,11 +60,6 @@ $Verbose  = $ENV{HARNESS_VERBOSE} || 0;
 $Switches = "-w";
 $Columns  = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
 $Columns--;             # Some shells have trouble with a full line of text.
-
-
-=head1 NAME
-
-Test::Harness - run perl standard test scripts with statistics
 
 =head1 SYNOPSIS
 
@@ -222,16 +229,14 @@ test script, please use a comment.
 
 =back
 
-
 =head2 Taint mode
 
-Test::Harness will honor the C<-T> in the #! line on your test files.  So
-if you begin a test with:
+Test::Harness will honor the C<-T> or C<-t> in the #! line on your
+test files.  So if you begin a test with:
 
     #!perl -T
 
 the test will be run with taint mode on.
-
 
 =head2 Configuration variables.
 
@@ -243,21 +248,22 @@ Test::Harness.  They are exported on request.
 =item B<$Test::Harness::verbose>
 
 The global variable C<$Test::Harness::verbose> is exportable and can be
-used to let runtests() display the standard output of the script
-without altering the behavior otherwise.
+used to let C<runtests()> display the standard output of the script
+without altering the behavior otherwise.  The F<prove> utility's C<-v>
+flag will set this.
 
 =item B<$Test::Harness::switches>
 
 The global variable C<$Test::Harness::switches> is exportable and can be
 used to set perl command line options used for running the test
-script(s). The default value is C<-w>.
+script(s). The default value is C<-w>. It overrides C<HARNESS_SWITCHES>.
 
 =back
 
 
 =head2 Failure
 
-It will happen, your tests will fail.  After you mop up your ego, you
+It will happen: your tests will fail.  After you mop up your ego, you
 can begin examining the summary report:
 
   t/base..............ok
@@ -290,7 +296,7 @@ If the test exited with non-zero, this is its exit status.
 
 =item B<Wstat>
 
-The wait status of the test I<umm, I need a better explanation here>.
+The wait status of the test.
 
 =item B<Total>
 
@@ -421,7 +427,7 @@ how that script failed.  Its keys are these:
     percent     Percentage of tests which failed
     canon       List of tests which failed (as string).
 
-Needless to say, $failed should be empty if everything passed.
+C<$failed> should be empty if everything passed.
 
 B<NOTE> Currently this function is still noisy.  I'm working on it.
 
