@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.49 2003/07/06 01:46:48 andy Exp $
+# $Id: Harness.pm,v 1.51 2003/07/13 05:15:06 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.28_90';
+$VERSION = '2.28_91';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -35,6 +35,8 @@ END {
 my $Ignore_Exitcode = $ENV{HARNESS_IGNORE_EXITCODE};
 
 my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
+
+my $Ok_Slow = $ENV{HARNESS_OK_SLOW};
 
 $Strap = Test::Harness::Straps->new;
 
@@ -523,7 +525,7 @@ sub _run_all_tests {
                 $failedtests{$tfile}{name} = $tfile;
             }
             elsif($results{seen}) {
-                if (@{$test{failed}}) {
+                if (@{$test{failed}} and $test{max}) {
                     my ($txt, $canon) = canonfailed($test{max},$test{skipped},
                                                     @{$test{failed}});
                     print "$test{ml}$txt";
@@ -745,7 +747,7 @@ sub _print_ml {
 # For slow connections, we save lots of bandwidth by printing only once
 # per second.
 sub _print_ml_less {
-    if( $Last_ML_Print != time ) {
+    if( !$Ok_Slow || $Last_ML_Print != time ) {
         _print_ml(@_);
         $Last_ML_Print = time;
     }
@@ -896,7 +898,7 @@ sub _create_fmts {
     }
 }
 
-sub canonfailed ($@) {
+sub canonfailed ($$@) {
     my($max,$skipped,@failed) = @_;
     my %seen;
     @failed = sort {$a <=> $b} grep !$seen{$_}++, @failed;
@@ -927,13 +929,23 @@ sub canonfailed ($@) {
     }
 
     push @result, "\tFailed $failed/$max tests, ";
-    push @result, sprintf("%.2f",100*(1-$failed/$max)), "% okay";
+    if ($max) {
+	push @result, sprintf("%.2f",100*(1-$failed/$max)), "% okay";
+    } else {
+	push @result, "?% okay";
+    }
     my $ender = 's' x ($skipped > 1);
     my $good = $max - $failed - $skipped;
-    my $goodper = sprintf("%.2f",100*($good/$max));
-    push @result, " (less $skipped skipped test$ender: $good okay, ".
-                  "$goodper%)"
-         if $skipped;
+    if ($skipped) {
+	my $skipmsg = " (less $skipped skipped test$ender: $good okay, ";
+	if ($max) {
+	    my $goodper = sprintf("%.2f",100*($good/$max));
+	    $skipmsg .= "$goodper%)";
+	} else {
+	    $skipmsg .= "?%)";
+	}
+	push @result, $skipmsg;
+    }
     push @result, "\n";
     my $txt = join "", @result;
     ($txt, $canon);
@@ -1037,6 +1049,12 @@ not a console.  You may need to set this if you don't want harness to
 output more frequent progress messages using carriage returns.  Some
 consoles may not handle carriage returns properly (which results in a
 somewhat messy output).
+
+=item C<HARNESS_OK_SLOW>
+
+If true, the C<ok> messages are printed out only every second.
+This reduces output and therefore may for example help testing
+over slow connections.
 
 =item C<HARNESS_PERL_SWITCHES>
 

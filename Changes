@@ -1,5 +1,17 @@
 Revision history for Perl extension Test::Harness
 
+2.28_91	    Sun Jul 13 00:10:00 CDT 2003
+    [ENHANCEMENTS]
+    - Added support for HARNESS_OK_SLOW.
+    - Folded in some changes from bleadperl that spiff up the
+      failure reports.
+
+    [INTERNALS]
+    - Added some isa_ok() checks to the tests.
+    - All Test::Harness* modules are used by use_ok()
+    - Fixed the prototype for the canonfailed() function, not that
+      it matters since it's never called without parens.
+
 2.28_90	    Sat Jul 05 20:21:00 CDT 2003
     [ENHANCEMENTS]
     - Now, when you run a test harnessed, the numbers don't fly by one
