@@ -18,6 +18,7 @@ t/lib/Test/More.pm
 t/lib/Test/Simple.pm
 t/nonumbers.t
 t/ok.t
+t/pod.t
 t/sample-tests/bailout
 t/sample-tests/bignum
 t/sample-tests/combined

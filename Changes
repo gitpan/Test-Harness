@@ -1,5 +1,10 @@
 Revision history for Perl extension Test::Harness
 
+2.27_03  Thu Apr 03 10:47:00 CDT 2003
+    - Fixed straps not respecting $Test::Harness::Switches.  Thanks
+      to Miyagawa for the patch.
+    - Added t/pod.t to test POD validity.
+
 2.27_02  Mon Mar 24 13:17:00 CDT 2003
 2.27_01  Sun Mar 23 19:46:00 CDT 2003
     - Handed over to Andy Lester for further maintenance.
