@@ -1,10 +1,19 @@
 Revision history for Perl extension Test::Harness
 
-2.00  Sat Sep 29 00:12:03 EDT 2001
-    * Partial gutting of the internals
-    * Added Test::Harness::Straps
+1.26  Mon Nov 12 15:44:01 EST 2001
+    * An excuse to upload a new version to CPAN to get Test::Harness
+      back on the index.
 
-1.24  Tue Aug  7 08:51:09 EDT 2001
+1.25  Tue Aug  7 08:51:09 EDT 2001
+    * Fixed a bug with tests failing if they're all skipped
+      reported by Stas Bekman.
+    - Fixed a very minor warning in 5.004_04
+    - Fixed displaying filenames not from @ARGV
+    - Merging with bleadperl
+    -  minor fixes to the filename in the report
+    -  '[no reason given]' skip reason
+
+1.24  2001/08/07 12:52:47   *UNRELEASED*
     - Added internal information about number of todo tests
 
 1.23  Tue Jul 31 15:06:47 EDT 2001

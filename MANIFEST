@@ -2,9 +2,6 @@ Changes
 MANIFEST
 Makefile.PL
 lib/Test/Harness.pm
-lib/Test/Harness/Assert.pm
-lib/Test/Harness/Straps.pm
-t/assert.t
 t/base.t
 t/nonumbers.t
 t/ok.t
@@ -12,8 +9,8 @@ t/sample-tests/bailout
 t/sample-tests/combined
 t/sample-tests/descriptive
 t/sample-tests/duplicates
-t/sample-tests/head_end
-t/sample-tests/head_fail
+t/sample-tests/header_at_end
+t/sample-tests/header_at_end_fail
 t/sample-tests/no_nums
 t/sample-tests/simple
 t/sample-tests/simple_fail
@@ -23,6 +20,4 @@ t/sample-tests/skip_no_msg
 t/sample-tests/todo
 t/sample-tests/todo_inline
 t/sample-tests/with_comments
-t/strap-analyze.t
-t/strap.t
 t/test-harness.t
