@@ -157,6 +157,22 @@ my %samples = (
                                   failed => { },
                                   all_ok => 1,
                                  },
+            'skip_nomsg'      => {
+                                  total => {
+                                            bonus      => 0,
+                                            max        => 1,
+                                            'ok'       => 1,
+                                            files      => 1,
+                                            bad        => 0,
+                                            good       => 1,
+                                            tests      => 1,
+                                            sub_skipped=> 1,
+                                            'todo'     => 0,
+                                            skipped    => 0,
+                                           },
+                                  failed => { },
+                                  all_ok => 1,
+                                 },
             bailout           => 0,
             combined          => {
                                   total => {
@@ -228,7 +244,23 @@ my %samples = (
                                             },
                                   all_ok => 0,
                                  },
-            skip_all          => {
+            skipall          => {
+                                  total => {
+                                            bonus      => 0,
+                                            max        => 0,
+                                            'ok'       => 0,
+                                            files      => 1,
+                                            bad        => 0,
+                                            good       => 1,
+                                            tests      => 1,
+                                            sub_skipped=> 0,
+                                            'todo'     => 0,
+                                            skipped    => 1,
+                                           },
+                                  failed => { },
+                                  all_ok => 1,
+                                 },
+            skipall_nomsg   => {
                                   total => {
                                             bonus      => 0,
                                             max        => 0,
