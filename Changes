@@ -1,19 +1,19 @@
 Revision history for Perl extension Test::Harness
 
-1.26  Mon Nov 12 15:44:01 EST 2001
-    * An excuse to upload a new version to CPAN to get Test::Harness
-      back on the index.
+2.00_03 Sat Dec 15 23:52:17 EST 2001
+    * First release candidate
+    * 'summary' is now 'details'
+    * Test #1 is now element 0 on the details array.  It works out better
+      that way.
+    * analyze_file() is more portable, but no longer taint clean
+    * analyze_file() properly preserves @INC and handles -T switches
+    - minor mistake in the test header line parsing
 
-1.25  Tue Aug  7 08:51:09 EDT 2001
-    * Fixed a bug with tests failing if they're all skipped
-      reported by Stas Bekman.
-    - Fixed a very minor warning in 5.004_04
-    - Fixed displaying filenames not from @ARGV
-    - Merging with bleadperl
-    -  minor fixes to the filename in the report
-    -  '[no reason given]' skip reason
+2.00  Sat Sep 29 00:12:03 EDT 2001
+    * Partial gutting of the internals
+    * Added Test::Harness::Straps
 
-1.24  2001/08/07 12:52:47   *UNRELEASED*
+1.24  Tue Aug  7 08:51:09 EDT 2001
     - Added internal information about number of todo tests
 
 1.23  Tue Jul 31 15:06:47 EDT 2001

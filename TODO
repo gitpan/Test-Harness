@@ -1,0 +1,13 @@
+Trap STDERR.
+
+Implement Straps total_results()
+
+Remember exit code
+
+Completely redo the print summary code.
+
+Implement Straps callbacks.
+
+Straps->analyze_file() not taint clean, don't know if it can be
+
+Fix that damned VMS nit.
