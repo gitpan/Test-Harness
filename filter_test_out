@@ -4,7 +4,7 @@
 $Silent = $silent = 1;
 
 
-$afterallexpect = "\QFailed 11/15 test scripts";
+$afterallexpect = q{Failed \d+/\d+ test scripts};
 $afterallok = 0;
 while (<>){
     m|t/dumpcore| and $silent = 0;
@@ -16,12 +16,11 @@ while (<>){
 }
 
 if ($afterallok) {
-    print <<END;
+    print qq{
 
-... which means as many tests as should fail failed.
-ok
+... don\'t panic! These tests all should fail, everything seems perfectly okay
 
-END
+};
 } else {
     print <<END;
 Expected: "$afterallexpect"

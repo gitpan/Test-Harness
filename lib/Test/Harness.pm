@@ -11,7 +11,7 @@ use vars qw($VERSION $verbose $switches $have_devel_corestack $curtest
 	    @ISA @EXPORT @EXPORT_OK);
 $have_devel_corestack = 0;
 
-$VERSION = "1.14";
+$VERSION = "1.15";
 
 @ISA=('Exporter');
 @EXPORT= qw(&runtests);
@@ -60,11 +60,9 @@ sub runtests {
 	chop($te);
 	print "$te" . '.' x (20 - length($te));
 	my $fh = new FileHandle;
-	if ($^O eq 'VMS') {
-	    $fh->open("MCR $^X $switches $test|") || (print "can't run. $!\n");
-	} else {
-	    $fh->open("$^X $switches $test|")     || (print "can't run. $!\n");
-	}
+	my $cmd = "$^X $switches $test|";
+	$cmd = "MCR $cmd" if $^O eq 'VMS';
+	$fh->open($cmd) or print "can't run. $!\n";
 	$ok = $next = $max = 0;
 	@failed = ();
 	while (<$fh>) {
@@ -179,7 +177,7 @@ sub runtests {
 	  $curtest = $failedtests{$script};
 	  write;
 	}
-	if ($bad > 1) {
+	if ($bad) {
 	    die "Failed $bad/$total test scripts, $pct% okay.$subpct\n";
 	}
     }

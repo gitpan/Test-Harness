@@ -12,6 +12,7 @@ if ($ExtUtils::MakeMaker::VERSION < 5.16) {
 } else {
     @version = (VERSION_FROM => "lib/Test/Harness.pm");
 }
+
 WriteMakefile(
 	NAME => "Test::Harness",
 	DISTNAME => "Test-Harness",
