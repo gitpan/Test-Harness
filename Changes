@@ -1,6 +1,6 @@
 Revision history for Perl extension Test::Harness
 
-2.37_02	    Tue Nov 18 23:15:00 CST 2003
+2.37_03	    Tue Nov 18 23:51:38 CST 2003
     [ENHANCEMENTS]
     * prove -V now shows the Perl version being used.
     * Now there's a HARNESS_DEBUG flag that shows diagnostics as the

@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.31 2003/11/19 04:50:04 andy Exp $
+# $Id: Straps.pm,v 1.32 2003/11/19 05:52:19 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -337,7 +337,8 @@ Formats and returns the switches necessary to run the test.
 sub _switches {
     my($self, $file) = @_;
 
-    my @switches = $self->_cleaned_switches( $Test::Harness::Switches, $ENV{HARNESS_PERL_SWITCHES} );
+    my @existing_switches = $self->_cleaned_switches( $Test::Harness::Switches, $ENV{HARNESS_PERL_SWITCHES} );
+    my @derived_switches;
 
     local *TEST;
     open(TEST, $file) or print "can't open $file. $!\n";
@@ -345,21 +346,21 @@ sub _switches {
     close(TEST) or print "can't close $file. $!\n";
 
     my $taint = ( $shebang =~ /^#!.*\bperl.*\s-\w*([Tt]+)/ );
-    push( @switches, "-$1" ) if $taint;
+    push( @derived_switches, "-$1" ) if $taint;
 
     # When taint mode is on, PERL5LIB is ignored.  So we need to put
     # all that on the command line as -Is.
     # MacPerl's putenv is broken, so it will not see PERL5LIB, tainted or not.
     if ( $taint || $self->{_is_macos} ) {
 	my @inc = $self->_filtered_INC;
-	push @switches, map { "-I$_" } @inc;
+	push @derived_switches, map { "-I$_" } @inc;
     }
 
     # Quote all switches to prevent shell interference, or VMS downcasing
-    for ( @switches ) {
+    for ( @derived_switches ) {
 	$_ = qq["$_"] if /\s/ && !/^".*"$/;
     }
-    return join( " ", @switches );
+    return join( " ", @existing_switches, @derived_switches );
 }
 
 =head2 C<_cleaned_switches>
