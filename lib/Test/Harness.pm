@@ -1,11 +1,9 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.14.2.5 2001/08/12 02:55:08 schwern Exp $
+# $Id: Harness.pm,v 1.17 2001/09/07 06:20:29 schwern Exp $
 
 package Test::Harness;
 
 require 5.004;
-use Test::Harness::Straps;
-use Test::Harness::Assert;
 use Exporter;
 use Benchmark;
 use Config;
@@ -22,7 +20,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "2.00_00";
+$VERSION = 1.25;
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -31,7 +29,6 @@ my $Ignore_Exitcode = $ENV{HARNESS_IGNORE_EXITCODE};
 
 my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 
-my $Strap = Test::Harness::Straps->new;
 
 @ISA = ('Exporter');
 @EXPORT    = qw(&runtests);
@@ -166,19 +163,6 @@ succeed.
 
   not ok 13 # TODO harness the power of the atom
 
-=begin _deprecated
-
-Alternatively, you can specify a list of what tests are todo as part
-of the test header.
-
-  1..23 todo 5 12 23
-
-This only works if the header appears at the beginning of the test.
-
-This style is B<deprecated>.
-
-=end _deprecated
-
 These tests represent a feature to be implemented or a bug to be fixed
 and act as something of an executable "thing to do" list.  They are
 B<not> expected to succeed.  Should a todo test begin succeeding,
@@ -305,15 +289,29 @@ sub runtests {
     my($tot, $failedtests) = _run_all_tests(@tests);
     _show_results($tot, $failedtests);
 
-    my $ok = ($tot->{bad} == 0 && $tot->{max});
+    my $ok = _all_ok($tot);
 
-    assert(($ok xor keys %$failedtests), 
-           q{ok status jives with $failedtests});
+    die q{Assert '$ok xor keys %$failedtests' failed!}
+      unless $ok xor keys %$failedtests;
 
     return $ok;
 }
 
 =begin _private
+
+=item B<_all_ok>
+
+  my $ok = _all_ok(\%tot);
+
+Tells you if this test run is overall successful or not.
+
+=cut
+
+sub _all_ok {
+    my($tot) = shift;
+
+    return $tot->{bad} == 0 && ($tot->{max} || $tot->{skipped}) ? 1 : 0;
+}
 
 =item B<_globdir>
 
@@ -413,10 +411,20 @@ sub _run_all_tests {
     my @dir_files = _globdir $Files_In_Dir if defined $Files_In_Dir;
     my $t_start = new Benchmark;
 
-    foreach my $tfile (@tests) {
-        $Strap->_reset_file_state;
+    my $maxlen = 0;
+    my $maxsuflen = 0;
+    foreach (@tests) { # The same code in t/TEST
+       my $suf    = /\.(\w+)$/ ? $1 : '';
+       my $len    = length;
+       my $suflen = length $suf;
+       $maxlen    = $len    if $len    > $maxlen;
+       $maxsuflen = $suflen if $suflen > $maxsuflen;
+    }
+    # + 3 : we want three dots between the test name and the "ok"
+    my $width = $maxlen + 3 - $maxsuflen;
 
-        my($leader, $ml) = _mk_leader($tfile);
+    foreach my $tfile (@tests) {
+        my($leader, $ml) = _mk_leader($tfile, $width);
         print $leader;
 
         my $fh = _open_test($tfile);
@@ -436,8 +444,6 @@ sub _run_all_tests {
 
         my($seen_header, $tests_seen) = (0,0);
         while (<$fh>) {
-            print if $Verbose;
-
             if( _parse_header($_, \%test, \%tot) ) {
                 warn "Test header seen twice!\n" if $seen_header;
 
@@ -553,22 +559,25 @@ sub _run_all_tests {
 
 =item B<_mk_leader>
 
-  my($leader, $ml) = _mk_leader($test_file);
+  my($leader, $ml) = _mk_leader($test_file, $width);
 
 Generates the 't/foo........' $leader for the given $test_file as well
 as a similar version which will overwrite the current line (by use of
 \r and such).  $ml may be empty if Test::Harness doesn't think you're
 on TTY.
 
+The $width is the width of the "yada/blah.." string.
+
 =cut
 
 sub _mk_leader {
-    my $te = shift;
-    chomp($te);      # XXX chomp?
+    my($te, $width) = @_;
+    chomp($te);
+    $te =~ s/\.\w+$/./;
 
     if ($^O eq 'VMS') { $te =~ s/^.*\.t\./\[.t./s; }
     my $blank = (' ' x 77);
-    my $leader = "$te" . '.' x (20 - length($te));
+    my $leader = "$te" . '.' x ($width - length($te));
     my $ml = "";
 
     $ml = "\r$blank\r$leader"
@@ -584,7 +593,7 @@ sub _show_results {
     my $pct;
     my $bonusmsg = _bonusmsg($tot);
 
-    if ($tot->{bad} == 0 && $tot->{max}) {
+    if (_all_ok($tot)) {
         print "All tests successful$bonusmsg.\n";
     } elsif (!$tot->{tests}){
         die "FAILED--no tests were run for some reason.\n";
@@ -594,9 +603,10 @@ sub _show_results {
             "alas--no output ever seen\n";
     } else {
         $pct = sprintf("%.2f", $tot->{good} / $tot->{tests} * 100);
+        my $percent_ok = 100*$tot->{ok}/$tot->{max};
         my $subpct = sprintf " %d/%d subtests failed, %.2f%% okay.",
                               $tot->{max} - $tot->{ok}, $tot->{max}, 
-                              100*$tot->{ok}/$tot->{max};
+                              $percent_ok;
 
         my($fmt_top, $fmt) = _create_fmts($failedtests);
 
@@ -623,20 +633,32 @@ sub _parse_header {
 
     my $is_header = 0;
 
-    if( $Strap->_is_header($line) ) {
-        $is_header = 1;
+    print $line if $Verbose;
 
-        $test->{max} = $Strap->{max};
-        for ( keys %{$Strap->{todo}} ) { $test->{todo}{$_} = 1; }
-
-        $test->{skip_reason} = $Strap->{skip_all} 
-          if not $test->{max} and defined $Strap->{skip_all};
-
-        $test->{'next'} = 1 unless $test->{'next'};
-
+    # 1..10 todo 4 7 10;
+    if ($line =~ /^1\.\.([0-9]+) todo([\d\s]+);?/i) {
+        $test->{max} = $1;
+        for (split(/\s+/, $2)) { $test->{todo}{$_} = 1; }
 
         $tot->{max} += $test->{max};
         $tot->{files}++;
+
+        $is_header = 1;
+    }
+    # 1..10
+    # 1..0 # skip  Why?  Because I said so!
+    elsif ($line =~ /^1\.\.([0-9]+)
+                      (\s*\#\s*[Ss]kip\S*\s* (.+))?
+                    /x
+          )
+    {
+        $test->{max} = $1;
+        $tot->{max} += $test->{max};
+        $tot->{files}++;
+        $test->{'next'} = 1 unless $test->{'next'};
+        $test->{skip_reason} = $3 if not $test->{max} and defined $3;
+
+        $is_header = 1;
     }
     else {
         $is_header = 0;
@@ -677,53 +699,67 @@ sub _run_one_test {
 sub _parse_test_line {
     my($line, $test, $tot) = @_;
 
-    my %result;
-    if ( $Strap->_is_test($line, \%result) ) {
-        $test->{next} ||= 1;
-        my $this = $test->{next};
+    if ($line =~ /^(not\s+)?ok\b/i) {
+        $test->{'next'} ||= 1;
+        my $this = $test->{'next'};
+        # "not ok 23"
+        if ($line =~ /^(not )?ok\s*(\d*)[^#]*(\s*#.*)?/) {
+            my($not, $tnum, $extra) = ($1, $2, $3);
 
-        my($not, $tnum) = (!$result{ok}, $result{number});
+            $this = $tnum if $tnum;
 
-        $this = $tnum if $tnum;
+            my($type, $reason) = $extra =~ /^\s*#\s*([Ss]kip\S*|TODO)(\s+.+)?/
+              if defined $extra;
 
-        my($type, $reason) = ($result{type}, $result{reason});
+            my($istodo, $isskip);
+            if( defined $type ) {
+                $istodo = 1 if $type =~ /TODO/;
+                $isskip = 1 if $type =~ /skip/i;
+            }
 
-        my($istodo, $isskip);
-        if( defined $type ) {
-            $istodo = 1 if $type eq 'todo';
-            $isskip = 1 if $type eq 'skip';
-        }
+            $test->{todo}{$this} = 1 if $istodo;
 
-        $test->{todo}{$this} = 1 if $istodo;
+            $tot->{todo}++ if $test->{todo}{$this};
 
-        $tot->{todo}++ if $test->{todo}{$this};
-
-        if( $not ) {
-            print "$test->{ml}NOK $this" if $test->{ml};
-            if (!$test->{todo}{$this}) {
-                push @{$test->{failed}}, $this;
-            } else {
+            if( $not ) {
+                print "$test->{ml}NOK $this" if $test->{ml};
+                if (!$test->{todo}{$this}) {
+                    push @{$test->{failed}}, $this;
+                } else {
+                    $test->{ok}++;
+                    $tot->{ok}++;
+                }
+            }
+            else {
+                print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
                 $test->{ok}++;
                 $tot->{ok}++;
+                $test->{skipped}++ if $isskip;
+
+                $reason = '[no reason given]'
+                    if $isskip and not defined $reason;
+                if (defined $reason and defined $test->{skip_reason}) {
+                    # print "was: '$skip_reason' new '$reason'\n";
+                    $test->{skip_reason} = 'various reasons'
+                      if $test->{skip_reason} ne $reason;
+                } elsif (defined $reason) {
+                    $test->{skip_reason} = $reason;
+                }
+
+                $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
             }
         }
-        else {
+        # XXX ummm... dunno
+        elsif ($line =~ /^ok\s*(\d*)\s*\#([^\r]*)$/) { # XXX multiline ok?
+            $this = $1 if $1 > 0;
             print "$test->{ml}ok $this/$test->{max}" if $test->{ml};
             $test->{ok}++;
             $tot->{ok}++;
-            $test->{skipped}++ if $isskip;
-
-            $reason = '[no reason given]'
-              if $isskip and not defined $reason;
-            if (defined $reason and defined $test->{skip_reason}) {
-                # print "was: '$skip_reason' new '$reason'\n";
-                $test->{skip_reason} = 'various reasons'
-                  if $test->{skip_reason} ne $reason;
-            } elsif (defined $reason) {
-                $test->{skip_reason} = $reason;
-            }
-
-            $test->{bonus}++, $tot->{bonus}++ if $test->{todo}{$this};
+        }
+        else {
+            # an ok or not ok not matching the 3 cases above...
+            # just ignore it for compatibility with TEST
+            next;
         }
 
         if ($this > $test->{'next'}) {
@@ -739,12 +775,9 @@ sub _parse_test_line {
         $test->{'next'} = $this + 1;
 
     }
-    else {
-        my $bail_reason;
-        if( $Strap->_is_bail_out($line, \$bail_reason) ) { # bail out!
-            die "FAILED--Further testing stopped" .
-              ($bail_reason ? ": $bail_reason\n" : ".\n");
-        }
+    elsif ($line =~ /^Bail out!\s*(.*)/i) { # magic words
+        die "FAILED--Further testing stopped" .
+            ($1 ? ": $1\n" : ".\n");
     }
 }
 

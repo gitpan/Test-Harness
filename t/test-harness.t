@@ -72,6 +72,7 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 simple_fail      => {
                                      total => {
@@ -89,6 +90,7 @@ BEGIN {
                                      failed => {
                                                 canon      => '2 5',
                                                },
+                                     all_ok => 0,
                                     },
                 descriptive       => {
                                       total => {
@@ -104,6 +106,7 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 no_nums           => {
                                       total => {
@@ -121,6 +124,7 @@ BEGIN {
                                       failed => {
                                                  canon     => '3',
                                                 },
+                                      all_ok => 0,
                                      },
                 todo              => {
                                       total => {
@@ -136,6 +140,7 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 todo_inline       => {
                                       total => {
@@ -151,6 +156,7 @@ BEGIN {
                                                 skipped     => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 skip              => {
                                       total => {
@@ -166,6 +172,7 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 bailout           => 0,
                 combined          => {
@@ -184,6 +191,7 @@ BEGIN {
                                       failed => {
                                                  canon     => '3 9',
                                                 },
+                                      all_ok => 0,
                                      },
                 duplicates        => {
                                       total => {
@@ -201,6 +209,7 @@ BEGIN {
                                       failed => {
                                                  canon     => '??',
                                                 },
+                                      all_ok => 0,
                                      },
                 header_at_end     => {
                                       total => {
@@ -216,6 +225,7 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 header_at_end_fail=> {
                                       total => {
@@ -233,6 +243,7 @@ BEGIN {
                                       failed => {
                                                  canon      => '2',
                                                 },
+                                      all_ok => 0,
                                      },
                 skip_all          => {
                                       total => {
@@ -248,6 +259,7 @@ BEGIN {
                                                 skipped    => 1,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                 with_comments     => {
                                       total => {
@@ -263,10 +275,11 @@ BEGIN {
                                                 skipped    => 0,
                                                },
                                       failed => { },
+                                      all_ok => 1,
                                      },
                );
 
-    $Total_tests = (keys(%samples) * 3) + 1;
+    $Total_tests = (keys(%samples) * 4);
 }
 
 tie *NULL, 'My::Dev::Null' or die $!;
@@ -282,6 +295,8 @@ while (my($test, $expect) = each %samples) {
     select STDOUT;
 
     unless( $@ ) {
+        ok( Test::Harness::_all_ok($totals) == $expect->{all_ok},    
+                                                      "$test - all ok" );
         ok( defined $expect->{total},                 "$test - has total" );
         ok( eqhash( $expect->{total}, 
                     {map { $_=>$totals->{$_} } keys %{$expect->{total}}} ),

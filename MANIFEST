@@ -2,9 +2,6 @@ Changes
 MANIFEST
 Makefile.PL
 lib/Test/Harness.pm
-lib/Test/Harness/Assert.pm
-lib/Test/Harness/Straps.pm
-t/assert.t
 t/base.t
 t/nonumbers.t
 t/ok.t
@@ -23,6 +20,4 @@ t/sample-tests/skip_no_msg
 t/sample-tests/todo
 t/sample-tests/todo_inline
 t/sample-tests/with_comments
-t/strap-analyze.t
-t/strap.t
 t/test-harness.t

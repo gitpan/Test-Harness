@@ -34,9 +34,7 @@ warn "Test::Harness likes to have Devel::CoreStack, but doesn't require it.\n"
 WriteMakefile(
     NAME            => $PACKAGE,
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
-    PREREQ_PM       => { 
-                        Test::More  => 0.09
-                       },
+    PREREQ_PM       => { },
     INSTALLDIRS     => 'perl',
     'dist'          => { COMPRESS   => 'gzip -9',
                          SUFFIX     => '.gz',
@@ -52,3 +50,28 @@ WriteMakefile(
 #     $test =~ s|t/\*\.t|t/*.t 2>&1 \| \$(PERL) t/filter_test_out|;
 #     return $test;
 # }
+
+
+{
+    package MY;
+
+    sub test_via_harness {
+        my($self, $orig_perl, $tests) = @_;
+
+        my @perls = ($orig_perl);
+        push @perls, qw(bleadperl 
+                        perl5.6.1
+                        perl5.005_03 
+                        perl5.004_05 
+                        perl5.004_04
+                        perl5.004)
+          if $ENV{PERL_TEST_ALL};
+
+        my $out;
+        foreach my $perl (@perls) {
+            $out .= $self->SUPER::test_via_harness($perl, $tests);
+        }
+
+        return $out;
+    }
+}
