@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.41_01     Sat Mar 27 23:02:28 CST 2004
+    [FIXES]
+    * Cross-platform test fixes on t/prove-globbing.t
+
 2.41_01     Thu Mar 25 22:42:53 CST 2004
     [ENHANCEMENTS]
     * prove globs the command line, since Win32's shell doesn't.

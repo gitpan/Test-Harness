@@ -23,6 +23,9 @@ GLOBBAGE: {
     my @actual = sort qx/$prove --dry $tests/;
     chomp @actual;
 
-    my @expected = qw( t/prove-globbing.t t/prove-switches.t );
+    my @expected = (
+        File::Spec->catfile( "t", "prove-globbing.t" ),
+        File::Spec->catfile( "t", "prove-switches.t" ),
+    );
     is_deeply( \@actual, \@expected, "Expands the wildcards" );
 }
