@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.46 2004/11/27 05:16:35 andy Exp $
+# $Id: Straps.pm 421 2004-11-27 05:16:35Z andy $
 
 package Test::Harness::Straps;
 

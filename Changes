@@ -1,5 +1,28 @@
 Revision history for Perl extension Test::Harness
 
+2.45_01 Fri Dec 17 22:39:17 CST 2004
+    [THINGS THAT MIGHT BREAK YOUR CODE]
+    * Test::Harness now requires Perl 5.004_05.
+
+    * We no longer try to print a stack if a coredump is detected.
+
+    [FIXES]
+    * Reverted Test::Harness::Iterator::next()'s use of readline, since
+      it fails under Perl 5.5.4.
+
+    * We no longer try to print a stack if a coredump is detected.
+      This means that the external problems we've had with wait.ph
+      now disappear.  This resolves a number of problems that various
+      Linux distros have, and closes a couple of RT tickets like #2729
+      and #7716.
+
+    [ENHANCEMENTS]
+    * Added Test::Harness->strap() method to access the internal strap.
+
+    [DOCUMENTATION]
+    * Obfuscated the rt.cpan.org email address.  The damage is already
+      done, but at least we'll have it hidden going forward.
+
 2.44 Tue Nov 30 18:38:17 CST 2004
     [INTERNALS]
     * De-anonymized the callbacks and handlers in Test::Harness, mostly

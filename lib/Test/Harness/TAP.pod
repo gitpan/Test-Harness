@@ -1,0 +1,34 @@
+=head1 NAME
+
+Test::Harness::TAP - Documentation for the TAP format
+
+=head1 SYNOPSIS
+
+Perl's interface between testing modules like
+Test::More and the test harness Test::Harness
+is a simple text-based format called TAP, the
+Test Anything Protocol.  This is its story.
+
+=head1 DESCRIPTION
+
+=head1 RATIONALE
+
+=head1 ACKNOWLEDGEMENTS
+
+=head1 AUTHORS
+
+Andy Lester, based on the original
+Test::Harness documentation by Michael Schwern.
+
+=head1 COPYRIGHT
+
+Copyright 2003 by
+Michael G Schwern C<< <schwern@pobox.com> >>,
+Andy Lester C<< <andy@petdance.com> >>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See L<http://www.perl.com/perl/misc/Artistic.html>.
+
+=cut

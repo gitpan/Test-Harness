@@ -1,19 +1,25 @@
-require 5.004;
+require 5.004_05;
 
 use ExtUtils::MakeMaker;
 use ExtUtils::Command qw( touch rm_f );
 
-warn "Test::Harness likes to have Devel::CoreStack, but doesn't require it.\n"
-  unless eval { require Devel::CoreStack; 1 };
-
 use constant FLAG_SKIP_PROVE => "t/SKIP-PROVE";
+
+my @files = qw(
+    Harness.pm
+    Harness/Iterator.pm
+    Harness/Assert.pm
+    Harness/Straps.pm
+    Harness/TAP.pod
+);
 
 my %parms = (
     NAME            => "Test::Harness",
     VERSION_FROM    => "lib/Test/Harness.pm",
+    PM              => { map { ("lib/Test/$_" => "\$(INST_LIBDIR)/$_") } @files },
     PREREQ_PM       => { File::Spec => 0.6 },
     INSTALLDIRS     => 'perl',
-    clean	    => { FILES => join( " ", FLAG_SKIP_PROVE, 'Test-Harness-*', '*~' ) },
+    clean           => { FILES => join( " ", FLAG_SKIP_PROVE, 'Test-Harness-*', '*~' ) },
 );
 
 my $install_prove = eval "use Pod::Usage 1.12; 1";

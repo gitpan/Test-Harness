@@ -2,7 +2,7 @@
 
 package Test::Harness;
 
-require 5.004;
+require 5.00405;
 use Test::Harness::Straps;
 use Test::Harness::Assert;
 use Exporter;
@@ -15,7 +15,6 @@ use vars qw(
     @ISA @EXPORT @EXPORT_OK 
     $Verbose $Switches $Debug
     $verbose $switches $debug
-    $Have_Devel_Corestack
     $Curtest
     $Columns 
     $ML $Last_ML_Print
@@ -28,18 +27,16 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.44
+Version 2.45_01
 
 =cut
 
-$VERSION = "2.44";
+$VERSION = "2.45_01";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
 *switches = *Switches;
 *debug    = *Debug;
-
-$Have_Devel_Corestack = 0;
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -56,6 +53,8 @@ my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 my $Ok_Slow = $ENV{HARNESS_OK_SLOW};
 
 $Strap = Test::Harness::Straps->new;
+
+sub strap { return $Strap };
 
 @ISA = ('Exporter');
 @EXPORT    = qw(&runtests);
@@ -814,14 +813,6 @@ sub _dubious_return {
            $wstatus,$wstatus;
     print "\t\t(VMS status is $estatus)\n" if $^O eq 'VMS';
 
-    if (_corestatus($wstatus)) { # until we have a wait module
-        if ($Have_Devel_Corestack) {
-            Devel::CoreStack::stack($^X);
-        } else {
-            print "\ttest program seems to have generated a core\n";
-        }
-    }
-
     $tot->{bad}++;
 
     if ($test->{max}) {
@@ -898,29 +889,6 @@ sub _create_fmts {
     die $@ if $@;
 
     return($fmt_top, $fmt);
-}
-
-{
-    my $tried_devel_corestack;
-
-    sub _corestatus {
-        my($st) = @_;
-
-        my $did_core;
-        eval { # we may not have a WCOREDUMP
-            local $^W = 0;  # *.ph files are often *very* noisy
-            require 'wait.ph';
-            $did_core = WCOREDUMP($st);
-        };
-        if( $@ ) {
-            $did_core = $st & 0200;
-        }
-
-        eval { require Devel::CoreStack; $Have_Devel_Corestack++ } 
-          unless $tried_devel_corestack++;
-
-        return $did_core;
-    }
 }
 
 sub _canonfailed ($$@) {
@@ -1128,26 +1096,8 @@ Here's how Test::Harness tests itself
 
 The included F<prove> utility for running test scripts from the command line,
 L<Test> and L<Test::Simple> for writing test scripts, L<Benchmark> for
-the underlying timing routines, L<Devel::CoreStack> to generate core
-dumps from failed tests and L<Devel::Cover> for test coverage
+the underlying timing routines, and L<Devel::Cover> for test coverage
 analysis.
-
-=head1 AUTHORS
-
-Either Tim Bunce or Andreas Koenig, we don't know. What we know for
-sure is, that it was inspired by Larry Wall's TEST script that came
-with perl distributions for ages. Numerous anonymous contributors
-exist.  Andreas Koenig held the torch for many years, and then
-Michael G Schwern.
-
-Current maintainer is Andy Lester C<< <andy@petdance.com> >>.
-
-=head1 LICENSE
-
-This program is free software; you can redistribute it and/or 
-modify it under the same terms as Perl itself.
-
-See L<http://www.perl.com/perl/misc/Artistic.html>
 
 =head1 TODO
 
@@ -1208,16 +1158,23 @@ directory.
 
 Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
 You can also mail bugs, fixes and enhancements to 
-C<< <bug-test-harness@rt.cpan.org> >>.
+C<< <bug-test-harness >> at C<< rt.cpan.org> >>.
 
 =head1 AUTHORS
 
-Original code by Michael G Schwern, maintained by Andy Lester.
+Either Tim Bunce or Andreas Koenig, we don't know. What we know for
+sure is, that it was inspired by Larry Wall's TEST script that came
+with perl distributions for ages. Numerous anonymous contributors
+exist.  Andreas Koenig held the torch for many years, and then
+Michael G Schwern.
+
+Current maintainer is Andy Lester C<< <andy at petdance.com> >>.
 
 =head1 COPYRIGHT
 
-Copyright 2003 by Michael G Schwern C<< <schwern@pobox.com> >>,
-                  Andy Lester C<< <andy@petdance.com> >>.
+Copyright 2002-2004
+by Michael G Schwern C<< <schwern at pobox.com> >>,
+Andy Lester C<< <andy at petdance.com> >>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
