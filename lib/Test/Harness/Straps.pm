@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.25 2003/11/07 16:06:37 andy Exp $
+# $Id: Straps.pm,v 1.28 2003/11/13 04:24:23 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -262,14 +262,11 @@ sub analyze_file {
 
     local $ENV{PERL5LIB} = $self->_INC2PERL5LIB;
 
-    my $cmd = $self->{_is_vms}   ? "MCR $^X" :
-              $self->{_is_win32} ? Win32::GetShortPathName($^X)
-                                 : $^X;
-
+    my $command =  $self->_command();
     my $switches = $self->_switches($file);
 
     # *sigh* this breaks under taint, but open -| is unportable.
-    unless( open(FILE, "$cmd $switches $file|") ) {
+    unless( open(FILE, qq[$command $switches "$file"|]) ) {
         print "can't run $file. $!\n";
         return;
     }
@@ -299,6 +296,31 @@ else {
     *_wait2exit = sub { POSIX::WEXITSTATUS($_[0]) }
 }
 
+=head2 C<_command>
+
+  my $command = $self->_command();
+
+Returns the command that runs the test.  Combine this with _switches()
+to build a command line.
+
+Typically this is C<$^X>, but you can set C<$ENV{HARNESS_COMMAND}>
+to use a different Perl than what you're running the harness under.
+This might be to run a threaded Perl, for example.
+
+You can also overload this method if you've built your own strap subclass,
+such as a PHP interpreter for a PHP-based strap.
+
+=cut
+
+sub _command {
+    my $self = shift;
+
+    return $ENV{HARNESS_PERL}           if defined $ENV{HARNESS_PERL};
+    return "MCR $^X"                    if $self->{_is_vms};
+    return Win32::GetShortPathName($^X) if $self->{_is_win32};
+    return $^X;
+}
+
 
 =head2 C<_switches>
 
@@ -319,21 +341,18 @@ sub _switches {
     close(TEST) or print "can't close $file. $!\n";
 
     my $taint = ( $shebang =~ /^#!.*\bperl.*\s-\w*([Tt]+)/ );
-    my $mac = $self->{_is_macos};
-
-    push( @switches, '-T' ) if $taint;
-    # MacPerl's putenv is broken, so it will not see PERL5LIB, tainted or not.
-    if ( $mac ) {
-	push @switches, map {qq["-I$_"]} $self->_filtered_INC;
-    }
+    push( @switches, "-$1" ) if $taint;
 
     # When taint mode is on, PERL5LIB is ignored.  So we need to put
     # all that on the command line as -Is.
-    if ( $taint && !$mac ) {
-	push @switches, map qq["-$1"], map {qq["-I$_"]} $self->_filtered_INC;
+    # MacPerl's putenv is broken, so it will not see PERL5LIB, tainted or not.
+    if ( $taint || $self->{_is_macos} ) {
+	my @inc = $self->_filtered_INC;
+	push @switches, map "-I$_", @inc;
     }
 
-    return join( " ", @switches );
+    # Quote all switches to prevent shell interference, or VMS downcasing
+    return join( " ", map { qq["$_"] } @switches );
 }
 
 

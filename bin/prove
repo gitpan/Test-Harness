@@ -19,6 +19,7 @@ my @includes = ();
 my @switches = ();
 
 # Allow cuddling the paths with the -I
+unshift @ARGV, split( " ", $ENV{PROVE_SWITCHES} ) if defined $ENV{PROVE_SWITCHES};
 @ARGV = map { /^(-I)(.+)/ ? ($1,$2) : $_ } @ARGV;
 
 Getopt::Long::Configure( "no_ignore_case" );
@@ -32,7 +33,8 @@ GetOptions(
     'I=s@'          => \@includes,
     'r|recurse'     => \$recurse,
     's|shuffle'     => \$shuffle,
-    'T|taint'       => sub { unshift @switches, "-T" }, # Always want -T up front
+    'T'		    => sub { unshift @switches, "-T" }, # Always want -T up front
+    't'		    => sub { unshift @switches, "-t" }, # Always want -t up front
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
     'ext=s@'        => \@ext,
@@ -46,7 +48,7 @@ my $ext_regex = join( "|", map { quotemeta } @ext );
 $ext_regex = qr/\.($ext_regex)$/;
 
 # Build up TH switches
-unshift( @switches, map { "-I$_" } @includes );
+push( @switches, map { "-I$_" } @includes );
 $Test::Harness::Switches = join( " ", @switches );
 print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $debug;
 
@@ -115,20 +117,22 @@ prove [options] [files/directories]
 
 Options:
 
-    -b  --blib      Adds blib/lib to the path for your tests, a la "use blib".
-    -d  --debug	    Includes extra debugging information.
-    -D  --dry       Dry run: Show the tests to run, but don't run them.
+    -b, --blib      Adds blib/lib to the path for your tests, a la "use blib".
+    -d, --debug	    Includes extra debugging information.
+    -D, --dry       Dry run: Show the tests to run, but don't run them.
         --ext=x     Extensions (defaults to .t)
-    -h  --help      Display this help
-    -H  --man       Longer manpage for prove
+    -h, --help      Display this help
+    -H, --man       Longer manpage for prove
     -I              Add libraries to @INC, as Perl's -I
-    -r  --recurse   Recursively descend into directories.
-    -s  --shuffle   Run the tests in a random order.
-    -T  --taint     Run under taint mode
-    -v  --verbose   Display standard output of test scripts while running them.
-    -V  --version   Display version info
+    -r, --recurse   Recursively descend into directories.
+    -s, --shuffle   Run the tests in a random order.
+    -T	 	    Enable tainting checks
+    -t		    Enable tainting warnings
+    -v, --verbose   Display standard output of test scripts while running them.
+    -V, --version   Display version info
 
-Single-character options may be stacked.
+Single-character options may be stacked.  Default options may be set by
+specifying the PROVE_SWITCHES environment variable.
 
 =head1 OVERVIEW
 
@@ -159,12 +163,14 @@ plus F<t/master.t>.
 
 =item * F<prove> has an easy verbose mode
 
-To get full test program output from C<make test>, you must set
-C<HARNESS_VERBOSE> in the environment.  F<prove> has a C<-v> option.
+F<prove> has a C<-v> option to see the raw output from the tests.
+To do this with C<make test>, you must set C<HARNESS_VERBOSE=1> in
+the environment.
 
 =item * F<prove> can run under taint mode
 
-F<prove>'s C<-T> runs your tests under C<perl -T>.
+F<prove>'s C<-T> runs your tests under C<perl -T>, and C<-t> runs them
+under C<perl -t>.
 
 =item * F<prove> can shuffle tests
 

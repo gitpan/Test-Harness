@@ -1,17 +1,20 @@
 Changes
-MANIFEST
 Makefile.PL
+MANIFEST
+META.yml
 NOTES
 bin/prove
 examples/mini_harness.plx
-lib/Test/Harness.pm
 lib/Test/Harness/Assert.pm
 lib/Test/Harness/Iterator.pm
+lib/Test/Harness.pm
 lib/Test/Harness/Straps.pm
 t/00compile.t
 t/assert.t
 t/base.t
 t/callback.t
+t/inc_taint.t
+t/lib/Dev/Null.pm
 t/lib/if.pm
 t/lib/Test/Builder.pm
 t/lib/Test/More.pm
@@ -19,7 +22,7 @@ t/lib/Test/Simple.pm
 t/nonumbers.t
 t/ok.t
 t/pod.t
-t/prove-includes.t
+t/prove-switches.t
 t/sample-tests/bailout
 t/sample-tests/bignum
 t/sample-tests/combined
@@ -30,6 +33,7 @@ t/sample-tests/die_last_minute
 t/sample-tests/duplicates
 t/sample-tests/head_end
 t/sample-tests/head_fail
+t/sample-tests/inc_taint
 t/sample-tests/lone_not_bug
 t/sample-tests/no_nums
 t/sample-tests/no_output
@@ -44,6 +48,7 @@ t/sample-tests/skipall_nomsg
 t/sample-tests/skip_nomsg
 t/sample-tests/switches
 t/sample-tests/taint
+t/sample-tests/taint_warn
 t/sample-tests/todo
 t/sample-tests/todo_inline
 t/sample-tests/too_many
@@ -52,4 +57,3 @@ t/sample-tests/with_comments
 t/strap-analyze.t
 t/strap.t
 t/test-harness.t
-META.yml                                 Module meta-data (added by MakeMaker)

@@ -1,5 +1,27 @@
 Revision history for Perl extension Test::Harness
 
+2.35_01     Wed Nov 12 23:08:45 CST 2003
+    [FIXES]
+    * Fixed taint-handling and path preservation under MacOS.  Thanks to
+      Schwern for the patch and the tests.
+
+    * Preserves case of -t or -T in the shebang line of the test.
+
+    [ENHANCEMENTS]
+    * Added -t to prove analogous to Perl's -t.  Removed the --taint
+      switch.
+
+    * prove can take default options from the PROVE_SWITCHES variable.
+
+    * Added HARNESS_PERL to allow you to specify the Perl interpreter
+      to run the tests as.
+
+    * prove's --perl switch sets the HARNESS_PERL on the fly for you.
+
+    * Quotes the switches and filename in the subprogram.  This helps
+      with filenames with spaces that are subject to shell mangling.
+
+
 2.34        Sat Nov  8 22:09:15 CST 2003
     [FIXES]
     * Allowed prove to run on Perl versions < 5.6.0.

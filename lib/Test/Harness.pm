@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.65 2003/11/09 04:09:49 andy Exp $
+# $Id: Harness.pm,v 1.67 2003/11/13 04:14:04 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.34';
+$VERSION = '2.35_01';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -1056,6 +1056,14 @@ somewhat messy output).
 If true, the C<ok> messages are printed out only every second.  This
 reduces output and may help increase testing speed over slow
 connections, or with very large numbers of tests.
+
+=item C<HARNESS_PERL>
+
+Usually your tests will be run by C<$^X>, the currently-executing Perl.
+However, you may want to have it run by a different executable, such as
+a threading perl, or a different version.
+
+If you're using the F<prove> utility, you can use the C<--perl> switch.
 
 =item C<HARNESS_PERL_SWITCHES>
 

@@ -13,7 +13,7 @@ my %parms = (
     VERSION_FROM    => "lib/Test/Harness.pm",
     PREREQ_PM       => { File::Spec => 0.6 },
     INSTALLDIRS     => 'perl',
-    clean	    => { FILES => FLAG_SKIP_PROVE },
+    clean	    => { FILES => join( " ", FLAG_SKIP_PROVE, 'Test-Harness-*', '*~' ) },
 );
 
 my $install_prove = eval "use Pod::Usage 1.12; 1";
