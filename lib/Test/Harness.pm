@@ -27,11 +27,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.45_02
+Version 2.46
 
 =cut
 
-$VERSION = "2.45_02";
+$VERSION = "2.46";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -463,7 +463,7 @@ sub _run_all_tests {
 
   my($leader, $ml) = _mk_leader($test_file, $width);
 
-Generates the 't/foo........' $leader for the given C<$test_file> as well
+Generates the 't/foo........' leader for the given C<$test_file> as well
 as a similar version which will overwrite the current line (by use of
 \r and such).  C<$ml> may be empty if Test::Harness doesn't think you're
 on TTY.

@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Harness
 
+2.46    Thu Jan 20 11:50:59 CST 2005
+    Released.
+
 2.45_02 Fri Dec 31 14:57:33 CST 2004
     [ENHANCEMENTS]
     * Turns off buffering on both STDERR and STDOUT, so that the two
