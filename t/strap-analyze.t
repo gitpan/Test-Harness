@@ -132,7 +132,9 @@ my %samples = (
                         'skip'      => 0,
                         bonus       => 0,
 
-                        details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 4
+                        details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 3,
+                                            { 'ok' => 1, actual_ok => 1, diagnostics =>
+                                            "comment\nmore ignored stuff\nand yet more\n" }
                                        ],
                        },
 
@@ -170,7 +172,10 @@ my %samples = (
 
                            details  => [ { 'ok' => 1, actual_ok => 1 },
                                          { 'ok' => 0, actual_ok => 0 },
-                                         ({ 'ok'=> 1, actual_ok => 1 }) x 2
+                                         { 'ok' => 1, actual_ok => 1 },
+                                         { 'ok' => 1, actual_ok => 1,
+                                         diagnostics =>
+                                            "comment\nmore ignored stuff\nand yet more\n" }
                                        ],
                           },
 
@@ -205,8 +210,7 @@ my %samples = (
                         'skip'        => 0,
                         bonus       => 0,
 
-                        details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 5
-                                       ]
+                        details     => [ ({ 'ok' => 1, actual_ok => 1 }) x 5 ],
                        },
 
    simple_fail      => {

@@ -23,6 +23,7 @@ t/pod.t
 t/prove-globbing.t
 t/prove-switches.t
 t/strap-analyze.t
+t/strap-diagnostics.t
 t/strap.t
 t/test-harness.t
 

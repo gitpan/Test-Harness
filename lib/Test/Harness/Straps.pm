@@ -1,23 +1,18 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm 450 2004-12-20 04:51:42Z andy $
-
 package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
-use Config;
-$VERSION = '0.20';
+$VERSION = '0.21';
 
+use Config;
 use Test::Harness::Assert;
 use Test::Harness::Iterator;
 
 # Flags used as return values from our methods.  Just for internal 
 # clarification.
-my $TRUE  = (1==1);
-my $FALSE = !$TRUE;
-my $YES   = $TRUE;
-my $NO    = $FALSE;
-
+my $YES   = (1==1);
+my $NO    = !$YES;
 
 =head1 NAME
 
@@ -58,9 +53,9 @@ The interface is currently incomplete.  I<Please> contact the author
 if you'd like a feature added or something change or just have
 comments.
 
-=head1 Construction
+=head1 CONSTRUCTION
 
-=head2 C<new>
+=head2 new()
 
   my $strap = Test::Harness::Straps->new;
 
@@ -70,14 +65,14 @@ Initialize a new strap.
 
 sub new {
     my $class = shift;
+    my $self  = bless {}, $class;
 
-    my $self = bless {}, $class;
     $self->_init;
 
     return $self;
 }
 
-=head2 C<_init>
+=head2 $strap->_init
 
   $strap->_init;
 
@@ -93,11 +88,11 @@ sub _init {
     $self->{_is_macos} = ( $^O eq 'MacOS' );
 }
 
-=head1 Analysis
+=head1 ANALYSIS
 
 =head2 $strap->analyze( $name, \@output_lines )
 
-  my %results = $strap->analyze($name, \@test_output);
+    my %results = $strap->analyze($name, \@test_output);
 
 Analyzes the output of a single test, assigning it the given C<$name>
 for use in the total report.  Returns the C<%results> of the test.
@@ -228,6 +223,12 @@ sub _analyze_line {
         $type = 'bailout';
         $self->{saw_bailout} = 1;
     }
+    elsif (my $diagnostics = $self->_is_diagnostic_line( $line )) {
+        my $test = $totals->{details}[-1];
+        $test->{diagnostics} ||=  '';
+        $test->{diagnostics}  .= $diagnostics;
+        $type = 'other';
+    }
     else {
         $type = 'other';
     }
@@ -237,9 +238,16 @@ sub _analyze_line {
     $self->{'next'} = $result{number} + 1 if $type eq 'test';
 }
 
-=head2 C<analyze_fh>
+sub _is_diagnostic_line {
+    my ($self, $line) = @_;
+    return if index( $line, '# Looks like you failed' ) == 0;
+    $line =~ s/^#\s//;
+    return $line;
+}
 
-  my %results = $strap->analyze_fh($name, $test_filehandle);
+=head2 $strap->analyze_fh( $name, $test_filehandle )
+
+    my %results = $strap->analyze_fh($name, $test_filehandle);
 
 Like C<analyze>, but it reads from the given filehandle.
 
@@ -252,9 +260,9 @@ sub analyze_fh {
     return $self->_analyze_iterator($name, $it);
 }
 
-=head2 C<analyze_file>
+=head2 $strap->analyze_file( $test_file )
 
-  my %results = $strap->analyze_file($test_file);
+    my %results = $strap->analyze_file($test_file);
 
 Like C<analyze>, but it runs the given C<$test_file> and parses its
 results.  It will also use that name for the total report.
@@ -282,13 +290,14 @@ sub analyze_file {
 
     # *sigh* this breaks under taint, but open -| is unportable.
     my $line = $self->_command_line($file);
-    unless( open(FILE, "$line|") ) {
+
+    unless ( open(FILE, "$line|" )) {
         print "can't run $file. $!\n";
         return;
     }
 
     my %results = $self->analyze_fh($file, \*FILE);
-    my $exit = close FILE;
+    my $exit    = close FILE;
     $results{'wait'} = $?;
     if( $? && $self->{_is_vms} ) {
         eval q{use vmsish "status"; $results{'exit'} = $?};
@@ -312,9 +321,7 @@ else {
     *_wait2exit = sub { POSIX::WEXITSTATUS($_[0]) }
 }
 
-=head2 C<_command_line( $file )>
-
-  my $command_line = $self->_command_line();
+=head2 $strap->_command_line( $file )
 
 Returns the full command line that will be run to test I<$file>.
 
@@ -334,14 +341,12 @@ sub _command_line {
 }
 
 
-=head2 C<_command>
+=head2 $strap->_command()
 
-  my $command = $self->_command();
-
-Returns the command that runs the test.  Combine this with _switches()
+Returns the command that runs the test.  Combine this with C<_switches()>
 to build a command line.
 
-Typically this is C<$^X>, but you can set C<$ENV{HARNESS_COMMAND}>
+Typically this is C<$^X>, but you can set C<$ENV{HARNESS_PERL}>
 to use a different Perl than what you're running the harness under.
 This might be to run a threaded Perl, for example.
 
@@ -360,9 +365,7 @@ sub _command {
 }
 
 
-=head2 C<_switches>
-
-  my $switches = $self->_switches($file);
+=head2 $strap->_switches( $file )
 
 Formats and returns the switches necessary to run the test.
 
@@ -399,9 +402,7 @@ sub _switches {
     return join( " ", @existing_switches, @derived_switches );
 }
 
-=head2 C<_cleaned_switches>
-
-  my @switches = $self->_cleaned_switches( @switches_from_user );
+=head2 $strap->_cleaned_switches( @switches_from_user )
 
 Returns only defined, non-blank, trimmed switches from the parms passed.
 
@@ -424,7 +425,7 @@ sub _cleaned_switches {
     return @switches;
 }
 
-=head2 C<_INC2PERL5LIB>
+=head2 $strap->_INC2PERL5LIB
 
   local $ENV{PERL5LIB} = $self->_INC2PERL5LIB;
 
@@ -441,7 +442,7 @@ sub _INC2PERL5LIB {
     return join $Config{path_sep}, $self->_filtered_INC;
 }
 
-=head2 C<_filtered_INC>
+=head2 $strap->_filtered_INC()
 
   my @filtered_inc = $self->_filtered_INC;
 
@@ -477,13 +478,13 @@ sub _default_inc {
 
     local $ENV{PERL5LIB};
     my $perl = $self->_command;
-    my @inc =`$perl -le "print join qq[\n], \@INC"`;
+    my @inc =`$perl -le "print join qq[\\n], \@INC"`;
     chomp @inc;
     return @inc;
 }
 
 
-=head2 C<_restore_PERL5LIB>
+=head2 $strap->_restore_PERL5LIB()
 
   $self->_restore_PERL5LIB;
 
@@ -709,11 +710,12 @@ There is one final item, the details.
                     each test looks like this:
 
     $results{details}[$test_num - 1] = 
-            { ok        => is the test considered ok?
-              actual_ok => did it literally say 'ok'?
-              name      => name of the test (if any)
-              type      => 'skip' or 'todo' (if any)
-              reason    => reason for the above (if any)
+            { ok          => is the test considered ok?
+              actual_ok   => did it literally say 'ok'?
+              name        => name of the test (if any)
+              diagnostics => test diagnostics (if any)
+              type        => 'skip' or 'todo' (if any)
+              reason      => reason for the above (if any)
             };
 
 Element 0 of the details is test #1.  I tried it with element 1 being
