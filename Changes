@@ -4,6 +4,16 @@ The 2.31_xx series of Test::Harness is primarily for getting prove
 out there among the masses, mostly as support for Phalanx.  Not to
 say that we won't fix bugs along the way...
 
+2.31_05	    Thu Nov  6 14:56:22 CST 2003
+    [FIXES]
+    - If a MacPerl script had a shebang with -T, the -T wouldn't get
+      passed as a switch.
+    - Removed the -T on three *.t files, which didn't need them, and 
+      which were causing problems.
+    - Conditionally installs bin/prove, depending on whether Pod::Usage
+      is available, which prove needs.
+    - Removed old leftover code from Makefile.PL.
+
 2.31_04	    Mon Nov  3 23:36:06 CST 2003
     Minor tweaks here and there, almost ready to release.
 

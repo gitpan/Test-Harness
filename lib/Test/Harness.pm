@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.61 2003/11/04 05:37:49 andy Exp $
+# $Id: Harness.pm,v 1.63 2003/11/06 20:57:29 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.31_04';
+$VERSION = '2.31_05';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -163,12 +163,14 @@ emitted if the test script is skipped completely:
 
 =item B<Todo tests>
 
-If the standard output line contains the substring C< # TODO> after
+If the standard output line contains the substring C< # TODO > after
 C<not ok> or C<not ok NUMBER>, it is counted as a todo test.  The text
 afterwards is the thing that has to be done before this test will
 succeed.
 
   not ok 13 # TODO harness the power of the atom
+
+Note that the TODO must have a space after it. 
 
 =begin _deprecated
 

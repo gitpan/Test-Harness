@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.23 2003/11/01 05:57:00 andy Exp $
+# $Id: Straps.pm,v 1.24 2003/11/04 16:00:57 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -318,14 +318,19 @@ sub _switches {
     my $shebang = <TEST>;
     close(TEST) or print "can't close $file. $!\n";
 
-    if ( $shebang =~ /^#!.*\bperl.*\s-\w*([Tt]+)/ ) {
-        # When taint mode is on, PERL5LIB is ignored.  So we need to put
-        # all that on the command line as -Is.
-	push @switches, map qq["-$1"], map {qq["-I$_"]} $self->_filtered_INC;
-    }
-    elsif ( $self->{_is_macos} ) {
-        # MacPerl's putenv is broken, so it will not see PERL5LIB.
+    my $taint = ( $shebang =~ /^#!.*\bperl.*\s-\w*([Tt]+)/ );
+    my $mac = $self->{_is_macos};
+
+    push( @switches, '-T' ) if $taint;
+    # MacPerl's putenv is broken, so it will not see PERL5LIB, tainted or not.
+    if ( $mac ) {
 	push @switches, map {qq["-I$_"]} $self->_filtered_INC;
+    }
+
+    # When taint mode is on, PERL5LIB is ignored.  So we need to put
+    # all that on the command line as -Is.
+    if ( $taint && !$mac ) {
+	push @switches, map qq["-$1"], map {qq["-I$_"]} $self->_filtered_INC;
     }
 
     return join( " ", @switches );

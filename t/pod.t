@@ -1,13 +1,16 @@
 BEGIN {
-    eval "use Test::More";
-    if ($@) {
-	print "1..0 # SKIPPED: Test::More not installed.\n";
-	exit;
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
     }
 }
 
 use File::Spec;
 use File::Find;
+use Test::More;
 use strict;
 
 eval "use Test::Pod 0.95";
