@@ -8,7 +8,7 @@ use FileHandle;
 use vars qw($VERSION $verbose $switches $have_devel_corestack);
 $have_devel_corestack = 0;
 
-$VERSION = "1.11";
+$VERSION = "1.12";
 
 @ISA=('Exporter');
 @EXPORT= qw(&runtests);
@@ -132,7 +132,9 @@ sub corestatus {
 
     eval {require 'wait.ph'};
     if ($@) {
-	$ret = $st == 134; # this is for irix 5.3, better than nothing XXX
+      SWITCH: {
+	    $ret = ($st & 0200); # Tim says, this is for 90%
+	}
     } else {
 	$ret = WCOREDUMP($st);
     }
