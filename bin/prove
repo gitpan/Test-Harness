@@ -7,7 +7,7 @@ use Getopt::Long;
 use Pod::Usage;
 use File::Spec;
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 my @ext = ();
 my $shuffle = 0;
@@ -34,7 +34,7 @@ GetOptions(
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
     'ext=s@'        => \@ext,
-);
+) or exit 1;
 
 # Build up extensions regex
 @ext = map { split /,/ } @ext;
@@ -57,7 +57,7 @@ if ( @tests ) {
     if ( $dry ) {
         print join( "\n", @tests, "" );
     } else {
-	print "# ", scalar @tests, " tests to run\n";
+	print "# ", scalar @tests, " tests to run\n" if $debug;
         runtests(@tests);
     }
 }
@@ -135,6 +135,46 @@ current directory.
 Shell metacharacters may be used with command lines options and will be exanded 
 via C<glob>.
 
+=head1 PROVE VS. "MAKE TEST"
+
+F<prove> has a number of advantages over C<make test> when doing development.
+
+=over 4
+
+=item * F<prove> is designed as a development tool
+
+Perl users typically run the test harness through a makefile via
+C<make test>.  That's fine for module distributions, but it's
+suboptimal for a test/code/debug development cycle.
+
+=item * F<prove> is granular 
+
+F<prove> lets your run against only the files you want to check.
+Running C<prove t/live/ t/master.t> checks every F<*.t> in F<t/live>,
+plus F<t/master.t>.
+
+=item * F<prove> has an easy verbose mode
+
+To get full test program output from C<make test>, you must set
+C<HARNESS_VERBOSE> in the environment.  F<prove> has a C<-v> option.
+
+=item * F<prove> can run under taint mode
+
+F<prove>'s C<-T> runs your tests under C<perl -T>.
+
+=item * F<prove> can shuffle tests
+
+You can use F<prove>'s C<--shuffle> option to try to excite problems
+that don't show up when tests are run in the same order every time.
+
+=item * Not everything is a module
+
+More and more users are using Perl's testing tools outside the
+context of a module distribution, and may not even use a makefile
+at all.
+
+=back
+
 =head1 COMMAND LINE OPTIONS
 
 =head2 -b, --blib
@@ -197,6 +237,10 @@ C<< <bug-test-harness@rt.cpan.org> >>.
 =item *
 
 Shuffled tests must be recreatable
+
+=item *
+
+Add a flag to run prove under Devel::Cover
 
 =back
 
