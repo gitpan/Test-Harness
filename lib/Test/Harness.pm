@@ -28,11 +28,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.43_02
+Version 2.44
 
 =cut
 
-$VERSION = '2.43_02';
+$VERSION = "2.44";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -696,8 +696,14 @@ sub _show_results {
 }
 
 
-my %Handlers = ();
-$Strap->{callback} = sub {
+my %Handlers = (
+    header => \&header_handler,
+    test => \&test_handler,
+    bailout => \&bailout_handler,
+);
+
+$Strap->{callback} = \&strap_callback;
+sub strap_callback {
     my($self, $line, $type, $totals) = @_;
     print $line if $Verbose;
 
@@ -706,7 +712,7 @@ $Strap->{callback} = sub {
 };
 
 
-$Handlers{header} = sub {
+sub header_handler {
     my($self, $line, $type, $totals) = @_;
 
     warn "Test header seen more than once!\n" if $self->{_seen_header};
@@ -718,7 +724,7 @@ $Handlers{header} = sub {
          $totals->{max}  < $totals->{seen};
 };
 
-$Handlers{test} = sub {
+sub test_handler {
     my($self, $line, $type, $totals) = @_;
 
     my $curr = $totals->{seen};
@@ -750,7 +756,7 @@ $Handlers{test} = sub {
 
 };
 
-$Handlers{bailout} = sub {
+sub bailout_handler {
     my($self, $line, $type, $totals) = @_;
 
     die "FAILED--Further testing stopped" .

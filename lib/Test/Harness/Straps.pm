@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Straps.pm,v 1.40 2004/11/25 06:21:40 andy Exp $
+# $Id: Straps.pm,v 1.46 2004/11/27 05:16:35 andy Exp $
 
 package Test::Harness::Straps;
 
@@ -160,14 +160,7 @@ sub _analyze_line {
     $self->{line}++;
 
     my $type;
-    if( $self->_is_header($line) ) {
-        $type = 'header';
-
-        $self->{saw_header}++;
-
-        $totals->{max} += $self->{max};
-    }
-    elsif( $self->_is_test($line, \%result) ) {
+    if ( $self->_is_test($line, \%result) ) {
         $type = 'test';
 
         $totals->{seen}++;
@@ -203,11 +196,33 @@ sub _analyze_line {
             warn "Can't detailize, too big.\n";
         }
         else {
-            $totals->{details}[$result{number} - 1] = 
-                               {$self->_detailize($pass, \%result)};
+            #Generates the details based on the last test line seen.  C<$pass> is
+            #true if it was considered to be a passed test.  C<%test> is the results
+            #of the test you're summarizing.
+            my $details = {
+                ok         => $pass,
+                actual_ok  => $result{ok}
+            };
+
+            assert( defined( $details->{ok} ) && defined( $details->{actual_ok} ) );
+
+            # We don't want these to be undef because they are often
+            # checked and don't want the checker to have to deal with
+            # uninitialized vars.
+            foreach my $piece (qw(name type reason)) {
+                $details->{$piece} = defined $result{$piece} ? $result{$piece} : '';
+            }
+            $totals->{details}[$result{number} - 1] = $details;
         }
 
         # XXX handle counter mismatch
+    }
+    elsif ( $self->_is_header($line) ) {
+        $type = 'header';
+
+        $self->{saw_header}++;
+
+        $totals->{max} += $self->{max};
     }
     elsif ( $self->_is_bail_out($line, \$self->{bailout_reason}) ) {
         $type = 'bailout';
@@ -234,7 +249,7 @@ sub analyze_fh {
     my($self, $name, $fh) = @_;
 
     my $it = Test::Harness::Iterator->new($fh);
-    $self->_analyze_iterator($name, $it);
+    return $self->_analyze_iterator($name, $it);
 }
 
 =head2 C<analyze_file>
@@ -589,12 +604,11 @@ sub _is_test {
 
     # We pulverize the line down into pieces in three parts.
     if( my($not, $num, $extra)    = $line  =~ /$Report_Re/ox ) {
-        my ($name, $control) = $extra ? split(/(?:[^\\]|^)#/, $extra) : ();
-        my ($type, $reason)  = $control ? $control =~ /^\s*(\S+)(?:\s+(.*))?$/ : ();
+        ($test->{name}, my $control) = $extra ? split(/(?:[^\\]|^)#/, $extra) : ();
+        (my $type, $test->{reason})  = $control ? $control =~ /^\s*(\S+)(?:\s+(.*))?$/ : ();
 
         $test->{number} = $num;
         $test->{ok}     = $not ? 0 : 1;
-        $test->{name}   = $name;
 
         if( defined $type ) {
             $test->{type}   = $type =~ /^TODO$/i ? 'todo' :
@@ -603,7 +617,6 @@ sub _is_test {
         else {
             $test->{type} = '';
         }
-        $test->{reason} = $reason;
 
         return $YES;
     }
@@ -705,36 +718,6 @@ There is one final item, the details.
 
 Element 0 of the details is test #1.  I tried it with element 1 being
 #1 and 0 being empty, this is less awkward.
-
-=head2 C<_detailize>
-
-  my %details = $strap->_detailize($pass, \%test);
-
-Generates the details based on the last test line seen.  C<$pass> is
-true if it was considered to be a passed test.  C<%test> is the results
-of the test you're summarizing.
-
-=cut
-
-sub _detailize {
-    my($self, $pass, $test) = @_;
-
-    my %details = ( ok         => $pass,
-                    actual_ok  => $test->{ok}
-                  );
-
-    assert( !(grep !defined $details{$_}, keys %details),
-            'test contains the ok and actual_ok info' );
-
-    # We don't want these to be undef because they are often
-    # checked and don't want the checker to have to deal with
-    # uninitialized vars.
-    foreach my $piece (qw(name type reason)) {
-        $details{$piece} = defined $test->{$piece} ? $test->{$piece} : '';
-    }
-
-    return %details;
-}
 
 =head1 EXAMPLES
 

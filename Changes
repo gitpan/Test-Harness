@@ -1,5 +1,20 @@
 Revision history for Perl extension Test::Harness
 
+2.44 Tue Nov 30 18:38:17 CST 2004
+    [INTERNALS]
+    * De-anonymized the callbacks and handlers in Test::Harness, mostly
+      so I can profile better.
+
+    * Checks _is_header() only if _is_line() fails first.  No point
+      in checking every line of the input for something that can only
+      occur once.
+
+    * Inline the _detailize() function, which was getting called once
+      per line of input.  Reduced execution time about 5-7%.
+
+    * Removed unnecessary temporary variables in Test::Harness::Straps
+      and in Test::Harness::Iterator.
+
 2.43_02 Thu Nov 25 00:20:36 CST 2004
     [ENHANCEMENTS]
     * Added more debug output if $Test::Harness::Debug is on.
