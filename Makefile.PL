@@ -1,4 +1,4 @@
-require 5.004_05;
+require 5.005_03;
 
 use ExtUtils::MakeMaker;
 use ExtUtils::Command qw( touch rm_f );

@@ -3,7 +3,7 @@ package Test::Harness::Straps;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 use Config;
 use Test::Harness::Assert;
@@ -149,12 +149,15 @@ sub _analyze_iterator {
 
 
 sub _analyze_line {
-    my($self, $line, $totals) = @_;
+    my $self = shift;
+    my $line = shift;
+    my $totals = shift;
 
     $self->{line}++;
 
     my $linetype;
-    if ( my $point = Test::Harness::Point->from_test_line( $line ) ) {
+    my $point = Test::Harness::Point->from_test_line( $line );
+    if ( $point ) {
         $linetype = 'test';
 
         $totals->{seen}++;
@@ -210,11 +213,7 @@ sub _analyze_line {
             # uninitialized vars.
             $totals->{details}[$point->number - 1] = $details;
         }
-
-        $self->{'next'} = $point->number + 1;
-
-        # XXX handle counter mismatch
-    }
+    } # test point
     elsif ( $line =~ /^not\s+$/ ) {
         $linetype = 'other';
         # Sometimes the "not " and "ok" will be on separate lines on VMS.
@@ -244,7 +243,10 @@ sub _analyze_line {
     }
 
     $self->{callback}->($self, $line, $linetype, $totals) if $self->{callback};
-}
+
+    $self->{'next'} = $point->number + 1 if $point;
+} # _analyze_line
+
 
 sub _is_diagnostic_line {
     my ($self, $line) = @_;

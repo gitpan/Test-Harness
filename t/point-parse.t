@@ -1,4 +1,4 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -w
 
 BEGIN {
     if ( $ENV{PERL_CORE} ) {
@@ -100,6 +100,7 @@ for my $line ( sort keys %$testlines ) {
     my $fields = $testlines->{$line};
     for my $property ( sort keys %$fields ) {
         my $value = $fields->{$property};
-        is( $point->$property, $value, "$property on $line" );
+        is( eval "\$point->$property", $value, "$property on $line" );
+        # Perls pre-5.6 can't handle $point->$property, and must be eval()d
     }
 }
