@@ -1,5 +1,5 @@
 # -*- Mode: cperl; cperl-indent-level: 4 -*-
-# $Id: Harness.pm,v 1.57 2003/11/01 05:57:00 andy Exp $
+# $Id: Harness.pm,v 1.60 2003/11/03 15:21:31 andy Exp $
 
 package Test::Harness;
 
@@ -22,7 +22,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = '2.31_02';
+$VERSION = '2.31_03';
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -240,13 +240,13 @@ Test::Harness.  They are exported on request.
 
 =item B<$Test::Harness::verbose>
 
-The global variable $Test::Harness::verbose is exportable and can be
+The global variable C<$Test::Harness::verbose> is exportable and can be
 used to let runtests() display the standard output of the script
 without altering the behavior otherwise.
 
 =item B<$Test::Harness::switches>
 
-The global variable $Test::Harness::switches is exportable and can be
+The global variable C<$Test::Harness::switches> is exportable and can be
 used to set perl command line options used for running the test
 script(s). The default value is C<-w>.
 
@@ -388,9 +388,9 @@ sub _globdir {
 
   my($total, $failed) = _run_all_tests(@test_files);
 
-Runs all the given @test_files (as runtests()) but does it quietly (no
-report).  $total is a hash ref summary of all the tests run.  Its keys
-and values are this:
+Runs all the given C<@test_files> (as C<runtests()>) but does it
+quietly (no report).  $total is a hash ref summary of all the tests
+run.  Its keys and values are this:
 
     bonus           Number of individual todo tests unexpectedly passed
     max             Number of individual tests ran
@@ -404,8 +404,8 @@ and values are this:
     tests           Number of test files originally given
     skipped         Number of test files skipped
 
-If $total->{bad} == 0 and $total->{max} > 0, you've got a successful
-test.
+If C<< $total->{bad} == 0 >> and C<< $total->{max} > 0 >>, you've
+got a successful test.
 
 $failed is a hash ref of all the test scripts which failed.  Each key
 is the name of a test script, each value is another hash representing
@@ -587,12 +587,12 @@ sub _run_all_tests {
 
   my($leader, $ml) = _mk_leader($test_file, $width);
 
-Generates the 't/foo........' $leader for the given $test_file as well
+Generates the 't/foo........' $leader for the given C<$test_file> as well
 as a similar version which will overwrite the current line (by use of
-\r and such).  $ml may be empty if Test::Harness doesn't think you're
+\r and such).  C<$ml> may be empty if Test::Harness doesn't think you're
 on TTY.
 
-The $width is the width of the "yada/blah.." string.
+The C<$width> is the width of the "yada/blah.." string.
 
 =cut
 
@@ -968,7 +968,6 @@ C<&runtests> is exported by Test::Harness by default.
 
 C<$verbose> and C<$switches> are exported upon request.
 
-
 =head1 DIAGNOSTICS
 
 =over 4
@@ -1052,9 +1051,9 @@ somewhat messy output).
 
 =item C<HARNESS_OK_SLOW>
 
-If true, the C<ok> messages are printed out only every second.
-This reduces output and therefore may for example help testing
-over slow connections.
+If true, the C<ok> messages are printed out only every second.  This
+reduces output and may help increase testing speed over slow
+connections, or with very large numbers of tests.
 
 =item C<HARNESS_PERL_SWITCHES>
 
@@ -1065,7 +1064,7 @@ run all tests with all warnings enabled.
 =item C<HARNESS_VERBOSE>
 
 If true, Test::Harness will output the verbose results of running
-its tests.  Setting $Test::Harness::verbose will override this.
+its tests.  Setting C<$Test::Harness::verbose> will override this.
 
 =back
 

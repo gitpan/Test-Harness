@@ -9,25 +9,30 @@ use File::Spec;
 
 our $VERSION = "0.01";
 
-my @exclude;
 my @ext = ();
-my $shuffle;
+my $shuffle = 0;
+my $debug = 0;
 my $dry = 0;
 my $recurse = 0;
-my @thswitches = ();
+my @includes = ();
+my @switches = ();
+
+# Allow cuddling the paths with the -I
+@ARGV = map { /^(-I)(.+)/ ? ($1,$2) : $_ } @ARGV;
 
 Getopt::Long::Configure( "no_ignore_case" );
 GetOptions(
-    'help|?'        => sub {pod2usage({-verbose => 1, -input => \*DATA}); exit},
-    'man'           => sub {pod2usage({-verbose => 2, -input => \*DATA}); exit},
-    'shuffle'       => \$shuffle,
-    'dry'           => \$dry,
-    'recurse'       => \$recurse,
-    'b|blib'        => sub { push( @thswitches, "-I" . File::Spec->catfile( "blib", "lib" ) ) },
-    'T|taint'       => sub { unshift( @thswitches, "-T" ) }, # Always want -T up front
+    'b|blib'        => sub { unshift @includes, File::Spec->catfile( "blib", "lib" ) },
+    'd|debug'	    => \$debug,
+    'D|dry'         => \$dry,
+    'h|help|?'      => sub {pod2usage({-verbose => 1, -input => \*DATA}); exit},
+    'H|man'         => sub {pod2usage({-verbose => 2, -input => \*DATA}); exit},
+    'I=s@'          => \@includes,
+    'r|recurse'     => \$recurse,
+    's|shuffle'     => \$shuffle,
+    'T|taint'       => sub { unshift @switches, "-T" }, # Always want -T up front
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
-    'x|exclude=s@'  => sub { warn "--exclude option is unimplemented\n" },
     'ext=s@'        => \@ext,
 );
 
@@ -39,7 +44,9 @@ my $ext_regex = join( "|", map { quotemeta } @ext );
 $ext_regex = qr/\.($ext_regex)$/;
 
 # Build up TH switches
-$Test::Harness::Switches = join( " ", @thswitches );
+unshift( @switches, map { "-I$_" } @includes );
+$Test::Harness::Switches = join( " ", @switches );
+print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $debug;
 
 my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
@@ -50,6 +57,7 @@ if ( @tests ) {
     if ( $dry ) {
         print join( "\n", @tests, "" );
     } else {
+	print "# ", scalar @tests, " tests to run\n";
         runtests(@tests);
     }
 }
@@ -105,17 +113,18 @@ prove [options] [files/directories]
 
 Options:
 
-    -v  --verbose   Display standard output of test scripts while running them.
-    -T  --taint     Run under taint mode
-        --shuffle   Run the tests in a random order.
-    -x  --exclude   Tests to exclude (unimplemented)
-        --ext       Extensions (defaults to .t)
-    -r  --recurse   Recursively descend into directories.
-    -d  --dry       Dry run: Show the tests to run, but don't run them.
     -b  --blib      Adds blib/lib to the path for your tests, a la "use blib".
-    -V  --version   Display version info
+    -d  --debug	    Includes extra debugging information.
+    -D  --dry       Dry run: Show the tests to run, but don't run them.
+        --ext       Extensions (defaults to .t)
     -h  --help      Display this help
-        --man       Longer manpage for prove
+    -H  --man       Longer manpage for prove
+    -I              Add libraries to @INC, as Perl's -I
+    -r  --recurse   Recursively descend into directories.
+    -s  --shuffle   Run the tests in a random order.
+    -T  --taint     Run under taint mode
+    -v  --verbose   Display standard output of test scripts while running them.
+    -V  --version   Display version info
 
 =head1 OVERVIEW
 
@@ -128,30 +137,52 @@ via C<glob>.
 
 =head1 COMMAND LINE OPTIONS
 
-=head2 -T
+=head2 -b, --blib
+
+Adds blib/lib to the path for your tests, a la "use blib".
+
+=head2 -d, --debug
+
+Include debug information about how F<prove> is being run.  This
+option doesn't show the output from the test scripts.  That's handled
+by -v,--verbose.
+
+=head2 -D, --dry
+
+Dry run: Show the tests to run, but don't run them.
+
+=head2 --ext
+
+Extensions (defaults to .t)
+
+=head2 -I
+
+Add libraries to @INC, as Perl's -I
+
+=head2 -r, --recurse
+
+Descends into subdirectories of any directories specified, looking for tests.
+
+=head2 -s, --shuffle
+
+Sometimes tests are accidentally dependent on tests that have been
+run before.  This switch will shuffle the tests to be run prior to
+running them, thus ensuring that hidden dependencies in the test
+order are likely to be revealed.  The author hopes the run the
+algorithm on the preceding sentence to see if he can produce something
+slightly less awkward.
+
+=head2 -T, --taint
 
 Runs test programs under perl's -T taint mode.
 
-=head2 -x, --exclude
+=head2 -v, --verbose
 
-Use this switch to specify which files will not be run as tests.  If used, the
-program assumes all files ending in C<.t> are tests and will skip those that
-match C<--exclude>.  To run all tests but exclude the tests used in the
-previous example:
+Display standard output of test scripts while running them.
 
-    prove -x 10item.t -x 10tax.t -x 10tender.t
+=head2 -V, --version
 
-=head2 --shuffle
-
-Sometimes tests are accidentally dependent on tests that have been run before.
-This switch will shuffle the tests to be run prior to running them, thus
-ensuring that hidden dependencies in the test order are likely to be revealed.
-The author hopes the run the algorithm on the preceding sentence to see if he
-can produce something slightly less awkward.
-
-=head2 --recurse
-
-Descends into subdirectories of any directories specified, looking for tests.
+Display version info.
 
 =head1 BUGS
 
@@ -165,15 +196,7 @@ C<< <bug-test-harness@rt.cpan.org> >>.
 
 =item *
 
--I flag for includes
-
-=item * 
-
 Shuffled tests must be recreatable
-
-=item *
-
-Allow excluding tests
 
 =back
 

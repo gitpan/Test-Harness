@@ -19,6 +19,7 @@ t/lib/Test/Simple.pm
 t/nonumbers.t
 t/ok.t
 t/pod.t
+t/prove-includes.t
 t/sample-tests/bailout
 t/sample-tests/bignum
 t/sample-tests/combined
