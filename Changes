@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.20  Sat May  4 22:31:20 EDT 2002
+    * An almost complete conversion of the Test::Harness test parsing
+      to use Test::Harness::Straps.
+
 2.04  Tue Apr 30 00:54:49 EDT 2002
     * Changing the output format of skips
     - Taking into account VMS's special exit codes in the tests.
