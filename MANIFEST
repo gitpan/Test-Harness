@@ -1,0 +1,20 @@
+Changes
+MANIFEST			This file
+Makefile.PL
+README				The basics
+filter_test_out			script to make out own tests look sane
+lib/Test/Harness.pm		The module
+t/0.t				Test scripts
+t/base.t
+t/die.t
+t/dumpcore.t
+t/error.t
+t/fail.t
+t/gobbled.t
+t/mixed.t
+t/multicanon.t
+t/nonumbers.t
+t/nonumbersmix.t
+t/nonumbersmix2.t
+t/notests.t
+t/ok.t

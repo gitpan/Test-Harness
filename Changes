@@ -1,0 +1,29 @@
+=head1 v1.07 February 23 1996 by Andreas Koenig
+
+Gisle sent me a documentation patch that showed me, that the
+unless(/^#/) is unnessessary. Applied the patch and deleted the block
+checking for "comment" lines. -- All lines are comment lines that do
+not match /^1\.\.([0-9]+)/ or /^(not\s+)?ok\b/.
+
+Ilyaz request to print "ok (empty test case)" whenever we say 1..0
+implemented.
+
+Harness now doesn't abort anymore if we received confused test output,
+just warns instead.
+
+=head1 v1.05 January 31 1996 by Andreas Koenig
+
+More updates on docu and introduced the liberality that the script
+output may omit the test numbers.
+
+=head1 v1.03 January 28 1996 by Andreas Koenig
+
+Added the statistics for subtests. Updated the documentation.
+
+=head1 v1.02 by Andreas Koenig
+
+This version reports a list of the tests that failed accompanied by
+some trivial statistics. The older (unnumbered) version stopped
+processing after the first failed test.
+
+Additionally it reports the exit status if there is one.

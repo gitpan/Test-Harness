@@ -1,0 +1,29 @@
+# -*-perl-*-
+
+# As most of the tests fail intentionally, we have to filter our own output
+$silent = 1;
+
+
+$afterallexpect = "\QFailed 11/15 test scripts, 26.67% okay. 22/62 subtests failed, 64.52% okay.";
+$afterallok = 0;
+while (<>){
+    s/\[.*\]// if $silent;
+    next if $silent && ! /^t/ && ! /Failed/;
+    print;
+    $afterallok++ if m|^$afterallexpect|;
+}
+
+if ($afterallok) {
+    print <<END;
+
+... which means as many tests as should fail failed.
+ok
+
+END
+} else {
+    print <<END;
+Expected: "$afterallexpect"
+Not ok
+END
+    die "Not ok";
+}

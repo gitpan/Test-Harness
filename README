@@ -1,0 +1,30 @@
+The module Test::Harness implements a simple interface for running
+standard perl tests. Those produce some output similar to
+
+1..5
+ok 1
+ok 2
+ok 3
+ok 4
+ok 5
+
+The Test::Harness module runs such tests and watches the output and
+summarizes the results.
+
+To install run
+
+    perl Makefile.PL
+    make install
+
+You may also run 'make test'. Be prepared that most of the tests will
+fail. This is intentional.
+
+This software is Copyright (C) 1994-1996 by Larry Wall, Tim Bunce and
+Andreas Koenig. It may be copied, used and redistributed under the
+same terms as perl.
+
+
+Test'n'joy;
+andreas
+
+January 22, 1996
