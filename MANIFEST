@@ -7,6 +7,7 @@ t/sample-tests/combined
 t/sample-tests/descriptive
 t/sample-tests/duplicates
 t/sample-tests/header_at_end
+t/sample-tests/header_at_end_fail
 t/sample-tests/no_nums
 t/sample-tests/simple
 t/sample-tests/simple_fail

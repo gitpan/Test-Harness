@@ -20,7 +20,7 @@ use vars qw($VERSION $Verbose $Switches $Have_Devel_Corestack $Curtest
 
 $Have_Devel_Corestack = 0;
 
-$VERSION = "1.21";
+$VERSION = "1.22";
 
 $ENV{HARNESS_ACTIVE} = 1;
 
@@ -51,6 +51,9 @@ Test::Harness - run perl standard test scripts with statistics
   runtests(@test_files);
 
 =head1 DESCRIPTION
+
+B<STOP!> If all you want to do is write a test script, consider using
+Test::Simple.  Otherwise, read on.
 
 (By using the Test module, you can write test scripts without
 knowing the exact output this module expects.  However, if you need to
@@ -189,6 +192,12 @@ ignore them.
   not ok 2
   # got 'Bush' expected 'Gore'
 
+=item B<Anything else>
+
+Any other output Test::Harness sees it will silently ignore B<BUT WE
+PLAN TO CHANGE THIS!> If you wish to place additional output in your
+test script, please use a comment.
+
 =back
 
 
@@ -197,11 +206,11 @@ ignore them.
 It will happen, your tests will fail.  After you mop up your ego, you
 can begin examining the summary report:
 
-  t/base..............ok                                                       
-  t/nonumbers.........ok                                                      
-  t/ok................ok                                                       
-  t/test-harness......ok                                                       
-  t/waterloo..........dubious                                                  
+  t/base..............ok
+  t/nonumbers.........ok
+  t/ok................ok
+  t/test-harness......ok
+  t/waterloo..........dubious
           Test returned status 3 (wstat 768, 0x300)
   DIED. FAILED tests 1, 3, 5, 7, 9, 11, 13, 15, 17, 19
           Failed 10/20 tests, 50.00% okay
@@ -363,7 +372,7 @@ sub _run_all_tests {
                 tests    => scalar @tests,
                 sub_skipped  => 0,
                 skipped  => 0,
-                bench    => 0
+                bench    => 0,
                );
 
     # pass -I flags to children
@@ -555,9 +564,9 @@ sub _show_results {
 
     if ($tot->{bad} == 0 && $tot->{max}) {
 	print "All tests successful$bonusmsg.\n";
-    } elsif ($tot->{tests}==0){
+    } elsif (!$tot->{tests}){
 	die "FAILED--no tests were run for some reason.\n";
-    } elsif ($tot->{max} == 0) {
+    } elsif (!$tot->{max}) {
 	my $blurb = $tot->{tests}==1 ? "script" : "scripts";
 	die "FAILED--$tot->{tests} test $blurb could be run, ".
             "alas--no output ever seen\n";
@@ -659,7 +668,8 @@ sub _parse_test_line {
     my($line, $test, $tot) = @_;
 
     if ($line =~ /^(not\s+)?ok\b/i) {
-        my $this = $test->{'next'} || 1;
+        $test->{next} ||= 1;
+        my $this = $test->{'next'};
         # "not ok 23"
         if ($line =~ /^(not )?ok\s*(\d*)(\s*#.*)?/) {
 	    my($not, $tnum, $extra) = ($1, $2, $3);
@@ -717,8 +727,7 @@ sub _parse_test_line {
         }
 
         if ($this > $test->{'next'}) {
-            # print "Test output counter mismatch [test $this]\n";
-            # no need to warn probably
+            print "Test output counter mismatch [test $this]\n";
             push @{$test->{failed}}, $test->{'next'}..$this-1;
         }
         elsif ($this < $test->{'next'}) {
