@@ -32,6 +32,7 @@ t/sample-tests/lone_not_bug
 t/sample-tests/no_nums
 t/sample-tests/no_output
 t/sample-tests/out_of_order
+t/sample-tests/segfault
 t/sample-tests/shbang_misparse
 t/sample-tests/simple
 t/sample-tests/simple_fail
@@ -42,6 +43,7 @@ t/sample-tests/skip_nomsg
 t/sample-tests/taint
 t/sample-tests/todo
 t/sample-tests/todo_inline
+t/sample-tests/too_many
 t/sample-tests/vms_nit
 t/sample-tests/with_comments
 t/strap-analyze.t
