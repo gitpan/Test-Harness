@@ -1,5 +1,14 @@
 Revision history for Perl extension Test::Harness
 
+2.30        Thu Aug 14 20:04:00 CDT 2003
+    No functional changes in this version.  It's only to make some doc
+    tweaks, and bump up the version number in T:H:Straps.
+
+    [DOCUMENTATION]
+    - Changed Schwern to Andy as the maintainer.
+    - Incorporated the TODO file into Harness.pm proper.
+    - Cleaned up formatting in Test::Harness::Straps.
+
 2.29	    Wed Jul 17 14:08:00 CDT 2003
     - Released as 2.29.
 

@@ -2,7 +2,6 @@ Changes
 MANIFEST
 Makefile.PL
 NOTES
-TODO
 examples/mini_harness.plx
 lib/Test/Harness.pm
 lib/Test/Harness/Assert.pm
