@@ -1,6 +1,9 @@
 Revision history for Perl extension Test::Harness
 
-NEXT Wed Mar  2 16:52:55 CST 2005
+2.48    Fri Apr 22 22:41:46 CDT 2005
+    Released after weeks of non-complaint.
+
+2.47_03 Wed Mar  2 16:52:55 CST 2005
     [THINGS THAT MIGHT BREAK YOUR CODE]
     * Test::Harness now requires Perl 5.005_03 or above.
 

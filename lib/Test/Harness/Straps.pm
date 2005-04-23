@@ -167,39 +167,31 @@ sub _analyze_line {
         # happens often on VMS if you do:
         #   print "not " unless $test;
         #   print "ok $num\n";
-        if( $self->{saw_lone_not} && 
-            ($self->{lone_not_line} == $self->{line} - 1) ) 
-        {
+        if ( $self->{lone_not_line} && ($self->{lone_not_line} == $self->{line} - 1) ) {
             $point->set_ok( 0 );
         }
 
-        my $pass = $point->ok;
         if ( $self->{todo}{$point->number} ) {
             $point->set_directive_type( 'todo' );
         }
 
         if ( $point->is_todo ) {
             $totals->{todo}++;
-            $pass = 1;
             $totals->{bonus}++ if $point->ok;
         }
         elsif ( $point->is_skip ) {
             $totals->{skip}++;
-            $pass = 1;
         }
 
-        $totals->{ok}++ if $pass;
+        $totals->{ok}++ if $point->pass;
 
         if ( ($point->number > 100000) && ($point->number > $self->{max}) ) {
             warn "Enormous test number seen [test ", $point->number, "]\n";
             warn "Can't detailize, too big.\n";
         }
         else {
-            #Generates the details based on the last test line seen.  C<$pass> is
-            #true if it was considered to be a passed test.  C<%test> is the results
-            #of the test you're summarizing.
             my $details = {
-                ok          => $pass,
+                ok          => $point->pass,
                 actual_ok   => $point->ok,
                 name        => _def_or_blank( $point->description ),
                 type        => _def_or_blank( $point->directive_type ),
@@ -207,10 +199,6 @@ sub _analyze_line {
             };
 
             assert( defined( $details->{ok} ) && defined( $details->{actual_ok} ) );
-
-            # We don't want these to be undef because they are often
-            # checked and don't want the checker to have to deal with
-            # uninitialized vars.
             $totals->{details}[$point->number - 1] = $details;
         }
     } # test point
@@ -218,7 +206,6 @@ sub _analyze_line {
         $linetype = 'other';
         # Sometimes the "not " and "ok" will be on separate lines on VMS.
         # We catch this and remember we saw it.
-        $self->{saw_lone_not} = 1;
         $self->{lone_not_line} = $self->{line};
     }
     elsif ( $self->_is_header($line) ) {
@@ -619,7 +606,6 @@ sub _reset_file_state {
     $self->{line}       = 0;
     $self->{saw_header} = 0;
     $self->{saw_bailout}= 0;
-    $self->{saw_lone_not} = 0;
     $self->{lone_not_line} = 0;
     $self->{bailout_reason} = '';
     $self->{'next'}       = 1;

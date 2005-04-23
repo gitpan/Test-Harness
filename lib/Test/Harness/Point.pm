@@ -87,6 +87,11 @@ sub set_ok          {
     my $ok = shift;
     $self->{ok} = $ok ? 1 : 0;
 }
+sub pass {
+    my $self = shift;
+
+    return ($self->ok || $self->is_todo || $self->is_skip) ? 1 : 0;
+}
 
 sub number          { my $self = shift; $self->{number} }
 sub set_number      { my $self = shift; $self->{number} = shift }

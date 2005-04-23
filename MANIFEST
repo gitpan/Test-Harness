@@ -1,7 +1,6 @@
 Changes
 Makefile.PL
 MANIFEST
-META.yml
 NOTES
 bin/prove
 examples/mini_harness.plx
@@ -27,7 +26,6 @@ t/point-parse.t
 t/prove-globbing.t
 t/prove-switches.t
 t/strap-analyze.t
-t/strap-diagnostics.t
 t/strap.t
 t/test-harness.t
 t/version.t
@@ -69,3 +67,4 @@ t/sample-tests/todo_inline
 t/sample-tests/too_many
 t/sample-tests/vms_nit
 t/sample-tests/with_comments
+META.yml                                 Module meta-data (added by MakeMaker)
