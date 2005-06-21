@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.50 Tue Jun 21 14:32:12 CDT 2005
+    [FIXES]
+    * Added some includes in t/strap-analyze.t to make Cygwin happy.
+
 2.49_02 Tue Jun 21 09:54:44 CDT 2005
     [FIXES]
     * Added some includes in t/test_harness.t to make Cygwin happy.
