@@ -10,7 +10,7 @@ use Benchmark;
 use Config;
 use strict;
 
-our $has_time_hires;
+use vars '$has_time_hires';
 
 BEGIN {
     eval "use Time::HiRes 'time'";
@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.49_01
+Version 2.49_02
 
 =cut
 
-$VERSION = "2.49_01";
+$VERSION = "2.49_02";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
