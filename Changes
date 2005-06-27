@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Harness
 
+2.52 Sun Jun 26 23:05:19 CDT 2005
+    No changes
+
 2.51_02
     [ENHANCEMENTS]
     * The Test::Harness timer is now off by default.  Set HARNESS_TIMER
