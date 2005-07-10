@@ -417,6 +417,24 @@ my %samples = (
                                             },
                                   all_ok => 0,
                                  },
+            bignum_many       => {
+                                  total => {
+                                            bonus      => 0,
+                                            max        => 2,
+                                            'ok'       => 11,
+                                            files      => 1,
+                                            bad        => 1,
+                                            good       => 0,
+                                            tests      => 1,
+                                            sub_skipped=> 0,
+                                            'todo'     => 0,
+                                            skipped    => 0,
+                                           },
+                                  failed => {
+                                             canon      => '3-100000',
+                                            },
+                                  all_ok => 0,
+                                 },
             'shbang_misparse' => {
                                   total => {
                                             bonus      => 0,
@@ -469,7 +487,7 @@ my %samples = (
                                  },
            );
 
-plan tests => (keys(%samples) * 8);
+plan tests => (keys(%samples) * 7);
 
 use Test::Harness;
 my @_INC = map { qq{"-I$_"} } @INC;
@@ -520,20 +538,20 @@ SKIP: {
                                                   "$test - failed" );
     }
 
-    SKIP: {
-        skip "special tests for bignum", 1 unless $test eq 'bignum';
-        is( $warning, <<WARN );
-Enormous test number seen [test 100001]
-Can't detailize, too big.
+    my $expected_warnings = "";
+    if ( $test eq "bignum" ) {
+        $expected_warnings = <<WARN;
 Enormous test number seen [test 136211425]
 Can't detailize, too big.
 WARN
-
     }
-
-    SKIP: {
-        skip "bignum has known warnings", 1 if $test eq 'bignum';
-        is( $warning, '' );
+    elsif ( $test eq 'bignum_many' ) {
+        $expected_warnings = <<WARN;
+Enormous test number seen [test 100001]
+Can't detailize, too big.
+WARN
     }
-}
-}
+    my $desc = $expected_warnings ? 'Got proper warnings' : 'No warnings';
+    is( $warning, $expected_warnings, "$test - $desc" );
+} # taint SKIP block
+} # for tests

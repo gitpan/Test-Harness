@@ -1,5 +1,11 @@
 Revision history for Perl extension Test::Harness
 
+2.53_01 Sun Jul 10 10:45:27 CDT 2005
+    [FIXES]
+    * If we go over 100,000 tests, it used to print out a warning for
+      every test over 100,000.  Now, we stop after the first.  Thanks to
+      Sebastien Aperghis-Tramoni.
+
 2.52 Sun Jun 26 23:05:19 CDT 2005
     No changes
 
