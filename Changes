@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Harness
 
+2.53_02 Thu Aug 25 21:37:01 CDT 2005
+    [FIXES]
+    * File order in prove is now sorted within the directory.  It's not
+      the sorting that's important as much as the deterministic results.
+      Thanks to Adam Kennedy and Casey West for pointing this out,
+      independently of each other, with 12 hours of the other.
+
+    [INTERNALS]
+    * Fix calls to podusage() to not use the DATA typeglob.  Thanks sungo.
+
 2.53_01 Sun Jul 10 10:45:27 CDT 2005
     [FIXES]
     * If we go over 100,000 tests, it used to print out a warning for
