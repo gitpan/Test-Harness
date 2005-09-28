@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.56 Wed Sep 28 16:04:00 CDT 2005
+    [FIXES]
+    * Incorporate bleadperl patch to fix Test::Harness on VMS.
+
 2.54 Wed Sep 28 09:52:19 CDT 2005
     [FIXES]
     * Test counts were wrong, so wouldn't install on Perls < 5.8.0.
