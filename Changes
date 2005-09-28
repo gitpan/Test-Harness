@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Harness
 
+2.54 Wed Sep 28 09:52:19 CDT 2005
+    [FIXES]
+    * Test counts were wrong, so wouldn't install on Perls < 5.8.0.
+
 2.53_02 Thu Aug 25 21:37:01 CDT 2005
     [FIXES]
     * File order in prove is now sorted within the directory.  It's not
