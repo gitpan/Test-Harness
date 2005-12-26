@@ -35,11 +35,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.56
+Version 2.57_01
 
 =cut
 
-$VERSION = "2.56";
+$VERSION = "2.57_01";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -54,9 +54,6 @@ END {
     delete $ENV{HARNESS_ACTIVE};
     delete $ENV{HARNESS_VERSION};
 }
-
-# Some experimental versions of OS/2 build have broken $?
-my $Ignore_Exitcode = $ENV{HARNESS_IGNORE_EXITCODE};
 
 my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 
@@ -359,10 +356,10 @@ sub _run_all_tests {
         if ( $Timer ) {
             $elapsed = time - $test_start_time;
             if ( $has_time_hires ) {
-                $elapsed = sprintf( " %8.3fs", $elapsed );
+                $elapsed = sprintf( " %8d ms", $elapsed*1000 );
             }
             else {
-                $elapsed = sprintf( " %8ss", $elapsed ? $elapsed : "<1" );
+                $elapsed = sprintf( " %8s s", $elapsed ? $elapsed : "<1" );
             }
         }
         else {
@@ -946,10 +943,6 @@ If relative, directory name is with respect to the current directory at
 the moment runtests() was called.  Putting absolute path into 
 C<HARNESS_FILELEAK_IN_DIR> may give more predictable results.
 
-=item C<HARNESS_IGNORE_EXITCODE>
-
-Makes harness ignore the exit status of child processes when defined.
-
 =item C<HARNESS_NOTTY>
 
 When set to a true value, forces it to behave as though STDOUT were
@@ -1050,17 +1043,48 @@ Clean up how the summary is printed.  Get rid of those damned formats.
 
 =head1 BUGS
 
-HARNESS_COMPILE_TEST currently assumes it's run from the Perl source
-directory.
+Please report any bugs or feature requests to
+C<bug-test-harness at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Harness>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
 
-Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
-You can also mail bugs, fixes and enhancements to 
-C<< <bug-test-harness >> at C<< rt.cpan.org> >>.
+=head1 SUPPORT
+
+You can find documentation for this module with the F<perldoc> command.
+
+    perldoc Test::Harness
+
+You can get docs for F<prove> with
+
+    prove --man
+
+You can also look for information at:
+
+=over 4
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Test-Harness>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Test-Harness>
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Harness>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Test-Harness>
+
+=back
 
 =head1 AUTHORS
 
 Either Tim Bunce or Andreas Koenig, we don't know. What we know for
-sure is, that it was inspired by Larry Wall's TEST script that came
+sure is, that it was inspired by Larry Wall's F<TEST> script that came
 with perl distributions for ages. Numerous anonymous contributors
 exist.  Andreas Koenig held the torch for many years, and then
 Michael G Schwern.

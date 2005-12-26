@@ -1,5 +1,19 @@
 Revision history for Perl extension Test::Harness
 
+2.57_01 Mon Dec 26 01:39:07 CST 2005
+    [FIXES]
+    * Removed code and docs mentioning HARNESS_IGNORE_EXITCODE, which
+      is not used anywhere.
+
+    [ENHANCEMENTS]
+    * If we have hi-res timings, then they're shown in integer
+      milliseconds, rather than fractional seconds.
+
+    * Added the --perl switch to prove.
+
+    [DOCUMENTATION]
+    * Added links to CPAN support sites.
+
 2.56 Wed Sep 28 16:04:00 CDT 2005
     [FIXES]
     * Incorporate bleadperl patch to fix Test::Harness on VMS.

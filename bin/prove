@@ -36,6 +36,7 @@ GetOptions(
     'H|man'         => sub {pod2usage({-verbose => 2}); exit},
     'I=s@'          => \@includes,
     'l|lib'         => \$lib,
+    'perl'          => \$ENV{HARNESS_PERL},
     'r|recurse'     => \$recurse,
     's|shuffle'     => \$shuffle,
     't'             => sub { unshift @switches, "-t" }, # Always want -t up front
@@ -170,20 +171,21 @@ prove [options] [files/directories]
 
 Options:
 
-    -b, --blib      Adds blib/lib to the path for your tests, a la "use blib".
-    -d, --debug     Includes extra debugging information.
-    -D, --dry       Dry run: Show the tests to run, but don't run them.
+    -b, --blib      Adds blib/lib to the path for your tests, a la "use blib"
+    -d, --debug     Includes extra debugging information
+    -D, --dry       Dry run: Show the tests to run, but don't run them
         --ext=x     Extensions (defaults to .t)
     -h, --help      Display this help
     -H, --man       Longer manpage for prove
     -I              Add libraries to @INC, as Perl's -I
-    -l, --lib       Add lib to the path for your tests.
-    -r, --recurse   Recursively descend into directories.
-    -s, --shuffle   Run the tests in a random order.
+    -l, --lib       Add lib to the path for your tests
+        --perl      Sets the name of the Perl executable to use
+    -r, --recurse   Recursively descend into directories
+    -s, --shuffle   Run the tests in a random order
     -T              Enable tainting checks
     -t              Enable tainting warnings
         --timer     Print elapsed time after each test file
-    -v, --verbose   Display standard output of test scripts while running them.
+    -v, --verbose   Display standard output of test scripts while running them
     -V, --version   Display version info
 
 Single-character options may be stacked.  Default options may be set by
@@ -275,6 +277,11 @@ Add libraries to @INC, as Perl's -I.
 
 Add C<lib> to @INC.  Equivalent to C<-Ilib>.
 
+=head2 --perl
+
+Sets the C<HARNESS_PERL> environment variable, which controls what
+Perl executable will run the tests.
+
 =head2 -r, --recurse
 
 Descends into subdirectories of any directories specified, looking for tests.
@@ -327,11 +334,11 @@ Shuffled tests must be recreatable
 
 =head1 AUTHORS
 
-Andy Lester C<< <andy@petdance.com> >>
+Andy Lester C<< <andy at petdance.com> >>
 
 =head1 COPYRIGHT
 
-Copyright 2005 by Andy Lester C<< <andy@petdance.com> >>.
+Copyright 2005 by Andy Lester C<< <andy at petdance.com> >>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
