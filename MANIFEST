@@ -10,6 +10,7 @@ lib/Test/Harness/Iterator.pm
 lib/Test/Harness/Point.pm
 lib/Test/Harness/Straps.pm
 lib/Test/Harness/TAP.pod
+lib/Test/Harness/Util.pm
 
 t/00compile.t
 t/assert.t

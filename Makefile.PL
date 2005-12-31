@@ -12,6 +12,7 @@ my @files = qw(
     Harness/Point.pm
     Harness/Straps.pm
     Harness/TAP.pod
+    Harness/Util.pm
 );
 
 my %parms = (

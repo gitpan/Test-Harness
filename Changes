@@ -1,5 +1,21 @@
 Revision history for Perl extension Test::Harness
 
+2.57_02 Fri Dec 30 23:51:17 CST 2005
+    [THINGS THAT MAY BREAK YOUR CODE]
+    * prove's --ext option has been removed.  I'm betting that nobody used it.
+
+    [ENHANCEMENTS]
+    * prove can now take -w and -W switches, analogous to those in perl.
+      This means that "prove -wlb t/*.t" is exactly the same as "make test".
+      Thanks to Rob Kinyon.
+    * Started a Test::Harness::Util module for code that may be reused
+      by other Harness-using modules.
+
+    [INTERNALS]
+    * The t/prove*.t tests now use $^X to call prove.  Thanks to Yves Orton.
+    * Test::Harness::Straps no longer uses Win32::GetShortPathName().
+      Thanks to Gisle Aas.
+
 2.57_01 Mon Dec 26 01:39:07 CST 2005
     [FIXES]
     * Removed code and docs mentioning HARNESS_IGNORE_EXITCODE, which

@@ -357,8 +357,8 @@ such as a PHP interpreter for a PHP-based strap.
 sub _command {
     my $self = shift;
 
-    return $ENV{HARNESS_PERL}           if defined $ENV{HARNESS_PERL};
-    return Win32::GetShortPathName($^X) if $self->{_is_win32};
+    return $ENV{HARNESS_PERL}   if defined $ENV{HARNESS_PERL};
+    return qq["$^X"]            if $self->{_is_win32} && ($^X =~ /[^\w\.\/\\]/);
     return $^X;
 }
 
@@ -664,8 +664,8 @@ See F<examples/mini_harness.plx> for an example of use.
 
 =head1 AUTHOR
 
-Michael G Schwern C<< <schwern@pobox.com> >>, currently maintained by
-Andy Lester C<< <andy@petdance.com> >>.
+Michael G Schwern C<< <schwern at pobox.com> >>, currently maintained by
+Andy Lester C<< <andy at petdance.com> >>.
 
 =head1 SEE ALSO
 

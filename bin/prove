@@ -3,6 +3,8 @@
 use strict;
 
 use Test::Harness;
+use Test::Harness::Util qw( all_in blibdirs shuffle );
+
 use Getopt::Long;
 use Pod::Usage 1.12;
 use File::Spec;
@@ -10,7 +12,6 @@ use File::Spec;
 use vars qw( $VERSION );
 $VERSION = "1.04";
 
-my @ext = ();
 my $shuffle = 0;
 my $dry = 0;
 my $blib = 0;
@@ -41,27 +42,22 @@ GetOptions(
     's|shuffle'     => \$shuffle,
     't'             => sub { unshift @switches, "-t" }, # Always want -t up front
     'T'             => sub { unshift @switches, "-T" }, # Always want -T up front
+    'w'             => sub { push @switches, '-w' },
+    'W'             => sub { push @switches, '-W' },
     'timer'         => \$Test::Harness::Timer,
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
-    'ext=s@'        => \@ext,
 ) or exit 1;
 
 $ENV{TEST_VERBOSE} = 1 if $Test::Harness::verbose;
-
-# Build up extensions regex
-@ext = map { split /,/ } @ext;
-s/^\.// foreach @ext;
-@ext = ("t") unless @ext;
-my $ext_regex = join( "|", map { quotemeta } @ext );
-$ext_regex = qr/\.($ext_regex)$/;
 
 # Handle blib includes
 if ( $blib ) {
     my @blibdirs = blibdirs();
     if ( @blibdirs ) {
         unshift @includes, @blibdirs;
-    } else {
+    }
+    else {
         warn "No blib directories found.\n";
     }
 }
@@ -78,85 +74,22 @@ print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $Test::Harnes
 
 my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
-push( @tests, -d $_ ? all_in( $_ ) : $_ ) for map { glob } @ARGV;
+push( @tests, -d $_ ? all_in( { recurse => $recurse, start => $_ } ) : $_ ) for map { glob } @ARGV;
 
 if ( @tests ) {
     shuffle(@tests) if $shuffle;
     if ( $dry ) {
         print join( "\n", @tests, "" );
-    } else {
+    }
+    else {
         print "# ", scalar @tests, " tests to run\n" if $Test::Harness::debug;
         runtests(@tests);
-    }
-}
-
-sub all_in {
-    my $start = shift;
-
-    my @hits = ();
-
-    local *DH;
-    if ( opendir( DH, $start ) ) {
-        my @files = sort readdir DH;
-        closedir DH;
-        for my $file ( @files ) {
-            next if $file eq File::Spec->updir || $file eq File::Spec->curdir;
-            next if $file eq ".svn";
-            next if $file eq "CVS";
-
-            my $currfile = File::Spec->catfile( $start, $file );
-            if ( -d $currfile ) {
-                push( @hits, all_in( $currfile ) ) if $recurse;
-            } else {
-                push( @hits, $currfile ) if $currfile =~ $ext_regex;
-            }
-        }
-    } else {
-        warn "$start: $!\n";
-    }
-
-    return @hits;
-}
-
-sub shuffle {
-    # Fisher-Yates shuffle
-    my $i = @_;
-    while ($i) {
-        my $j = rand $i--;
-        @_[$i, $j] = @_[$j, $i];
     }
 }
 
 sub print_version {
     printf( "prove v%s, using Test::Harness v%s and Perl v%vd\n",
         $VERSION, $Test::Harness::VERSION, $^V );
-}
-
-# Stolen directly from blib.pm
-sub blibdirs {
-    my $dir = File::Spec->curdir;
-    if ($^O eq 'VMS') {
-        ($dir = VMS::Filespec::unixify($dir)) =~ s-/\z--;
-    }
-    my $archdir = "arch";
-    if ( $^O eq "MacOS" ) {
-        # Double up the MP::A so that it's not used only once.
-        $archdir = $MacPerl::Architecture = $MacPerl::Architecture;
-    }
-
-    my $i = 5;
-    while ($i--) {
-        my $blib      = File::Spec->catdir( $dir, "blib" );
-        my $blib_lib  = File::Spec->catdir( $blib, "lib" );
-        my $blib_arch = File::Spec->catdir( $blib, $archdir );
-
-        if ( -d $blib && -d $blib_arch && -d $blib_lib ) {
-            return ($blib_arch,$blib_lib);
-        }
-        $dir = File::Spec->catdir($dir, File::Spec->updir);
-    }
-    warn "$0: Cannot find blib\n";
-    return;
 }
 
 __END__
@@ -174,7 +107,6 @@ Options:
     -b, --blib      Adds blib/lib to the path for your tests, a la "use blib"
     -d, --debug     Includes extra debugging information
     -D, --dry       Dry run: Show the tests to run, but don't run them
-        --ext=x     Extensions (defaults to .t)
     -h, --help      Display this help
     -H, --man       Longer manpage for prove
     -I              Add libraries to @INC, as Perl's -I
@@ -262,12 +194,6 @@ by -v,--verbose.
 =head2 -D, --dry
 
 Dry run: Show the tests to run, but don't run them.
-
-=head2 --ext=extension
-
-Specify extensions of the test files to run.  By default, these are .t,
-but you may have other non-.t test files, most likely .sh shell scripts.
-The --ext is repeatable.
 
 =head2 -I
 
