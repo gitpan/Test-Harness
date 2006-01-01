@@ -1,5 +1,22 @@
 Revision history for Perl extension Test::Harness
 
+2.57_03
+
+    [THINGS THAT MAY BREAK YOUR CODE]
+    * Internal functions _run_all_tests() and _show_results() no longer
+      exist.  You shouldn't have been using them anyway since they're
+      prepended with underscores.
+
+    [INTERNALS]
+    * Added the ability to send test output to a filehandle of
+      one's choosing.  Two internal functions are now exposed:
+      execute_tests() and get_results() (formerly _run_all_tests() and
+      _show_results()).  This should allow CPANPLUS to work properly
+      with Module::Build.  Thanks to Ken Williams.
+
+    [DOCUMENTATION]
+    * Hid the documentation for the private methods in Test::Harness::Straps.
+
 2.57_02 Fri Dec 30 23:51:17 CST 2005
     [THINGS THAT MAY BREAK YOUR CODE]
     * prove's --ext option has been removed.  I'm betting that nobody used it.
