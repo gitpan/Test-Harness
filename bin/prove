@@ -7,6 +7,7 @@ use Test::Harness::Util qw( all_in blibdirs shuffle );
 
 use Getopt::Long;
 use Pod::Usage 1.12;
+use File::Glob;
 use File::Spec;
 
 use vars qw( $VERSION );
@@ -74,7 +75,8 @@ print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $Test::Harnes
 
 my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
-push( @tests, -d $_ ? all_in( { recurse => $recurse, start => $_ } ) : $_ ) for map { glob } @ARGV;
+push( @tests, -d $_ ? all_in( { recurse => $recurse, start => $_ } ) : $_ )
+    for map { File::Glob::bsd_glob($_) } @ARGV;
 
 if ( @tests ) {
     shuffle(@tests) if $shuffle;
@@ -102,7 +104,7 @@ prove -- A command-line tool for running tests against Test::Harness
 
 prove [options] [files/directories]
 
-Options:
+=head1 OPTIONS
 
     -b, --blib      Adds blib/lib to the path for your tests, a la "use blib"
     -d, --debug     Includes extra debugging information
@@ -130,7 +132,7 @@ of C<Test::Harness>.  With no arguments, it will run all tests in the
 current directory.
 
 Shell metacharacters may be used with command lines options and will be exanded 
-via C<glob>.
+via C<File::Glob::bsd_glob>.
 
 =head1 PROVE VS. "MAKE TEST"
 
