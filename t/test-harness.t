@@ -511,7 +511,7 @@ SKIP: {
     print STDERR "# $test\n" if $ENV{TEST_VERBOSE};
     eval {
         local $SIG{__WARN__} = sub { $warning .= join '', @_; };
-        ($totals, $failed) = Test::Harness::execute_tests(tests => [$test_path], out => *NULL);
+        ($totals, $failed) = Test::Harness::execute_tests(tests => [$test_path], out => \*NULL);
     };
 
     # $? is unreliable in MacPerl, so we'll just fudge it.

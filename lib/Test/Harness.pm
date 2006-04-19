@@ -16,7 +16,7 @@ use vars qw(
     @ISA @EXPORT @EXPORT_OK 
     $Verbose $Switches $Debug
     $verbose $switches $debug
-    $Columns 
+    $Columns
     $Timer
     $ML $Last_ML_Print
     $Strap
@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.57_04
+Version 2.57_05
 
 =cut
 
-$VERSION = "2.57_04";
+$VERSION = "2.57_05";
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -210,8 +210,8 @@ sub runtests {
 
     local ($\, $,);
 
-    my($tot, $failedtests) = execute_tests(tests => \@tests);
-    print get_results($tot, $failedtests);
+    my ($tot, $failedtests,$todo_passed) = execute_tests(tests => \@tests);
+    print get_results($tot, $failedtests,$todo_passed);
 
     my $ok = _all_ok($tot);
 
@@ -296,7 +296,8 @@ sub execute_tests {
     _autoflush($out);
     _autoflush(\*STDERR);
 
-    my(%failedtests);
+    my %failedtests;
+    my %todo_passed;
 
     # Test-wide totals.
     my(%tot) = (
@@ -351,11 +352,16 @@ sub execute_tests {
         # state of the current test.
         my @failed = grep { !$results{details}[$_-1]{ok} }
                      1..@{$results{details}};
+        my @todo_pass = grep { $results{details}[$_-1]{ok} &&
+                               $results{details}[$_-1]{type} eq 'todo' }
+                        1..@{$results{details}};
+
         my %test = (
                     ok          => $results{ok},
                     'next'      => $Strap->{'next'},
                     max         => $results{max},
                     failed      => \@failed,
+                    todo_pass   => \@todo_pass,
                     bonus       => $results{bonus},
                     skipped     => $results{skip},
                     skip_reason => $results{skip_reason},
@@ -377,8 +383,21 @@ sub execute_tests {
                 my @msg;
                 push(@msg, "$test{skipped}/$test{max} skipped: $test{skip_reason}")
                     if $test{skipped};
-                push(@msg, "$test{bonus}/$test{max} unexpectedly succeeded")
-                    if $test{bonus};
+                if ($test{bonus}) {
+                    my ($txt, $canon) = _canondetail($test{max},$test{skipped},'TODO passed',
+                                                    @{$test{todo_pass}});
+                    $todo_passed{$tfile} = {
+                        canon   => $canon,
+                        max     => $test{max},
+                        failed  => $test{bonus},
+                        name    => $tfile,
+                        percent => 100*$test{bonus}/$test{max},
+                        estat   => '',
+                        wstat   => '',
+                    };
+
+                    push(@msg, "$test{bonus}/$test{max} unexpectedly succeeded\n$txt");
+                }
                 print $out "$test{ml}ok$elapsed\n        ".join(', ', @msg)."\n";
             }
             elsif ( $test{max} ) {
@@ -415,7 +434,7 @@ sub execute_tests {
             }
             elsif($results{seen}) {
                 if (@{$test{failed}} and $test{max}) {
-                    my ($txt, $canon) = _canonfailed($test{max},$test{skipped},
+                    my ($txt, $canon) = _canondetail($test{max},$test{skipped},'Failed',
                                                     @{$test{failed}});
                     print $out "$test{ml}$txt";
                     $failedtests{$tfile} = { canon   => $canon,
@@ -471,7 +490,7 @@ sub execute_tests {
 
     $Strap->_restore_PERL5LIB;
 
-    return(\%tot, \%failedtests);
+    return(\%tot, \%failedtests, \%todo_passed);
 }
 
 # Turns on autoflush for the handle passed
@@ -537,7 +556,10 @@ sub _leader_width {
 }
 
 sub get_results {
-    my($tot, $failedtests) = @_;
+    my $tot = shift;
+    my $failedtests = shift;
+    my $todo_passed = shift;
+
     my $out = '';
 
     my $pct;
@@ -545,6 +567,16 @@ sub get_results {
 
     if (_all_ok($tot)) {
         $out .= "All tests successful$bonusmsg.\n";
+        if ($tot->{bonus}) {
+            my($fmt_top, $fmt) = _create_fmts("Passed",$todo_passed);
+            # Now write to formats
+            for my $script (sort keys %{$todo_passed||{}}) {
+                my $Curtest = $todo_passed->{$script};
+
+                $out .= swrite( $fmt_top );
+                $out .= swrite( $fmt, @{ $Curtest }{qw(name estat wstat max failed percent canon)} );
+            }
+        }
     }
     elsif (!$tot->{tests}){
         die "FAILED--no tests were run for some reason.\n";
@@ -561,7 +593,7 @@ sub get_results {
                               $tot->{max} - $tot->{ok}, $tot->{max}, 
                               $percent_ok;
 
-        my($fmt_top, $fmt1, $fmt2) = _create_fmts($failedtests);
+        my($fmt_top, $fmt1, $fmt2) = _create_fmts("Failed",$failedtests);
 
         # Now write to formats
         for my $script (sort keys %$failedtests) {
@@ -696,7 +728,6 @@ sub _bonusmsg {
                      . ($tot->{sub_skipped} != 1 ? 's' : '')
                      . " skipped";
     }
-
     return $bonusmsg;
 }
 
@@ -721,7 +752,7 @@ sub _dubious_return {
         else {
             push @{$test->{failed}}, $test->{'next'}..$test->{max};
             $failed = @{$test->{failed}};
-            (my $txt, $canon) = _canonfailed($test->{max},$test->{skipped},@{$test->{failed}});
+            (my $txt, $canon) = _canondetail($test->{max},$test->{skipped},'Failed',@{$test->{failed}});
             $percent = 100*(scalar @{$test->{failed}})/$test->{max};
             print "DIED. ",$txt;
         }
@@ -736,11 +767,13 @@ sub _dubious_return {
 
 
 sub _create_fmts {
-    my($failedtests) = @_;
+    my $type = shift;
+    my $failedtests = shift;
 
-    my $failed_str = "Failed Test";
-    my $middle_str = " Stat Wstat Total Fail  Failed  ";
-    my $list_str = "List of Failed";
+    my $short = substr($type,0,4);
+    my $failed_str = "$type Test";
+    my $middle_str = " Stat Wstat Total $short  $type  ";
+    my $list_str = "List of $type";
 
     # Figure out our longest name string for formatting purposes.
     my $max_namelen = length($failed_str);
@@ -774,18 +807,23 @@ sub _create_fmts {
     return($fmt_top, $fmt1, $fmt2);
 }
 
-sub _canonfailed ($$@) {
-    my($max,$skipped,@failed) = @_;
+sub _canondetail {
+    my $max = shift;
+    my $skipped = shift;
+    my $type = shift;
+    my @detail = @_;
+
     my %seen;
-    @failed = sort {$a <=> $b} grep !$seen{$_}++, @failed;
-    my $failed = @failed;
+    @detail = sort {$a <=> $b} grep !$seen{$_}++, @detail;
+    my $detail = @detail;
     my @result = ();
     my @canon = ();
     my $min;
-    my $last = $min = shift @failed;
+    my $last = $min = shift @detail;
     my $canon;
-    if (@failed) {
-        for (@failed, $failed[-1]) { # don't forget the last one
+    my $uc_type = uc($type);
+    if (@detail) {
+        for (@detail, $detail[-1]) { # don't forget the last one
             if ($_ > $last+1 || $_ == $last) {
                 push @canon, ($min == $last) ? $last : "$min-$last";
                 $min = $_;
@@ -793,24 +831,26 @@ sub _canonfailed ($$@) {
             $last = $_;
         }
         local $" = ", ";
-        push @result, "FAILED tests @canon\n";
+        push @result, "$uc_type tests @canon\n";
         $canon = join ' ', @canon;
     }
     else {
-        push @result, "FAILED test $last\n";
+        push @result, "$uc_type test $last\n";
         $canon = $last;
     }
 
-    push @result, "\tFailed $failed/$max tests, ";
+    return (join("", @result), $canon)
+        if $type=~/todo/i;
+    push @result, "\t$type $detail/$max tests, ";
     if ($max) {
-	push @result, sprintf("%.2f",100*(1-$failed/$max)), "% okay";
+	push @result, sprintf("%.2f",100*(1-$detail/$max)), "% okay";
     }
     else {
 	push @result, "?% okay";
     }
     my $ender = 's' x ($skipped > 1);
     if ($skipped) {
-        my $good = $max - $failed - $skipped;
+        my $good = $max - $detail - $skipped;
 	my $skipmsg = " (less $skipped skipped test$ender: $good okay, ";
 	if ($max) {
 	    my $goodper = sprintf("%.2f",100*($good/$max));

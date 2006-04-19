@@ -1,5 +1,14 @@
 Revision history for Perl extension Test::Harness
 
+2.57_05 Wed Apr 19 00:31:10 CDT 2006
+    [ENHANCEMENTS]
+    * Now shows details of the tests that unexpectedly pass, instead of
+      just giving a number.  Thanks, demerphq!
+
+    [INTERNALS]
+    * Fixed globbing to work under Perls before 5.6.0.  Before Perl 5.6.0,
+      prove just uses the internal glob() function.
+
 2.57_04 Mon Apr 17 13:35:10 CDT 2006
     [ENHANCEMENTS]
     * prove's globbing is now done with File::Glob::bsd_glob().

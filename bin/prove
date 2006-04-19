@@ -7,7 +7,6 @@ use Test::Harness::Util qw( all_in blibdirs shuffle );
 
 use Getopt::Long;
 use Pod::Usage 1.12;
-use File::Glob;
 use File::Spec;
 
 use vars qw( $VERSION );
@@ -73,10 +72,20 @@ push( @switches, map { /\s/ && !/^".*"$/ ? qq["-I$_"] : "-I$_" } @includes );
 $Test::Harness::Switches = join( " ", @switches );
 print "# \$Test::Harness::Switches: $Test::Harness::Switches\n" if $Test::Harness::debug;
 
-my @tests;
 @ARGV = File::Spec->curdir unless @ARGV;
-push( @tests, -d $_ ? all_in( { recurse => $recurse, start => $_ } ) : $_ )
-    for map { File::Glob::bsd_glob($_) } @ARGV;
+my @argv_globbed;
+my @tests;
+if ( $] >= 5.006 ) {
+    require File::Glob;
+    @argv_globbed = map { File::Glob::bsd_glob($_) } @ARGV;
+}
+else {
+    @argv_globbed = map { glob } @ARGV;
+}
+
+for ( @argv_globbed ) {
+    push( @tests, -d $_ ? all_in( { recurse => $recurse, start => $_ } ) : $_ )
+}
 
 if ( @tests ) {
     shuffle(@tests) if $shuffle;
