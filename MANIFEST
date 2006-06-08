@@ -17,6 +17,7 @@ t/assert.t
 t/base.t
 t/callback.t
 t/harness.t
+t/failure.t
 t/from_line.t
 t/inc_taint.t
 t/nonumbers.t
