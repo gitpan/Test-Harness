@@ -44,6 +44,7 @@ GetOptions(
     'T'             => sub { unshift @switches, "-T" }, # Always want -T up front
     'w'             => sub { push @switches, '-w' },
     'W'             => sub { push @switches, '-W' },
+    'strap'         => \$ENV{HARNESS_STRAP_CLASS},
     'timer'         => \$Test::Harness::Timer,
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
@@ -125,6 +126,7 @@ prove [options] [files/directories]
         --perl      Sets the name of the Perl executable to use
     -r, --recurse   Recursively descend into directories
     -s, --shuffle   Run the tests in a random order
+        --strap     Define strap class to use
     -T              Enable tainting checks
     -t              Enable tainting warnings
         --timer     Print elapsed time after each test file
@@ -231,6 +233,11 @@ running them, thus ensuring that hidden dependencies in the test
 order are likely to be revealed.  The author hopes the run the
 algorithm on the preceding sentence to see if he can produce something
 slightly less awkward.
+
+=head2 --strap
+
+Sets the HARNESS_STRAP_CLASS variable to set which Test::Harness::Straps
+variable to use in running the tests.
 
 =head2 -t
 

@@ -1,5 +1,11 @@
 Revision history for Perl extension Test::Harness
 
+NEXT
+    [ENHANCEMENTS]
+    * Added test straps overload via HARNESS_STRAP_OVERLOAD environment
+      variable.  prove now takes a --strap=class parameter.  Thanks,
+      Adam Kennedy.
+
 2.63_01 Fri Jun 30 16:59:50 CDT 2006
     [ENHANCEMENTS]
     * Failed tests used to say "NOK x", and now say "NOK x/y".

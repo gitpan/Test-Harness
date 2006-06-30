@@ -227,7 +227,7 @@ sub _analyze_line {
         $linetype = 'other';
     }
 
-    $self->{callback}->($self, $line, $linetype, $results) if $self->{callback};
+    $self->callback->($self, $line, $linetype, $results) if $self->callback;
 
     $self->{'next'} = $point->number + 1 if $point;
 } # _analyze_line
@@ -632,6 +632,16 @@ L<Test::Harness>
 sub _def_or_blank {
     return $_[0] if defined $_[0];
     return "";
+}
+
+sub set_callback {
+    my $self = shift;
+    $self->{callback} = shift;
+}
+
+sub callback {
+    my $self = shift;
+    return $self->{callback};
 }
 
 1;

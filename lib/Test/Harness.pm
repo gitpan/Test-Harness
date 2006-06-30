@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.63_01
+Version 2.63_02
 
 =cut
 
-$VERSION = '2.63_01';
+$VERSION = '2.63_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -56,7 +56,37 @@ END {
 
 my $Files_In_Dir = $ENV{HARNESS_FILELEAK_IN_DIR};
 
-$Strap = Test::Harness::Straps->new;
+# Stolen from Params::Util
+sub _CLASS {
+    (defined $_[0] and ! ref $_[0] and $_[0] =~ m/^[^\W\d]\w*(?:::\w+)*$/s) ? $_[0] : undef;
+}
+
+# Strap Overloading
+if ( $ENV{HARNESS_STRAPS_CLASS} ) {
+    die "Set HARNESS_STRAP_CLASS, singular, not HARNESS_STRAPS_CLASS";
+}
+my $HARNESS_STRAP_CLASS  = $ENV{HARNESS_STRAP_CLASS} || 'Test::Harness::Straps';
+if ( $HARNESS_STRAP_CLASS =~ /\.pm$/ ) {
+    # "Class" is actually a filename, that should return the
+    # class name as its true return value.
+    $HARNESS_STRAP_CLASS = require $HARNESS_STRAP_CLASS;
+    if ( !_CLASS($HARNESS_STRAP_CLASS) ) {
+        die "HARNESS_STRAP_CLASS '$HARNESS_STRAP_CLASS' is not a valid class name";
+    }
+}
+else {
+    # It is a class name within the current @INC
+    if ( !_CLASS($HARNESS_STRAP_CLASS) ) {
+        die "HARNESS_STRAP_CLASS '$HARNESS_STRAP_CLASS' is not a valid class name";
+    }
+    eval "require $HARNESS_STRAP_CLASS";
+    die $@ if $@;
+}
+if ( !$HARNESS_STRAP_CLASS->isa('Test::Harness::Straps') ) {
+    die "HARNESS_STRAP_CLASS '$HARNESS_STRAP_CLASS' must be a Test::Harness::Straps subclass";
+}
+
+$Strap = $HARNESS_STRAP_CLASS->new;
 
 sub strap { return $Strap };
 
@@ -618,12 +648,12 @@ sub swrite {
 
 
 my %Handlers = (
-    header => \&header_handler,
-    test => \&test_handler,
+    header  => \&header_handler,
+    test    => \&test_handler,
     bailout => \&bailout_handler,
 );
 
-$Strap->{callback} = \&strap_callback;
+$Strap->set_callback(\&strap_callback);
 sub strap_callback {
     my($self, $line, $type, $totals) = @_;
     print $line if $Verbose;
@@ -989,6 +1019,21 @@ If true, Test::Harness will output the verbose results of running
 its tests.  Setting C<$Test::Harness::verbose> will override this,
 or you can use the C<-v> switch in the F<prove> utility.
 
+If true, Test::Harness will output the verbose results of running
+its tests.  Setting C<$Test::Harness::verbose> will override this,
+or you can use the C<-v> switch in the F<prove> utility.
+
+=item C<HARNESS_STRAP_CLASS>
+
+Defines the Test::Harness::Straps subclass to use.  The value may either
+be a filename or a class name.
+
+If HARNESS_STRAP_CLASS is a class name, the class must be in C<@INC>
+like any other class.
+
+If HARNESS_STRAP_CLASS is a filename, the .pm file must return the name
+of the class, instead of the canonical "1".
+
 =back
 
 =head1 EXAMPLE
@@ -1038,8 +1083,6 @@ Implement Straps total_results()
 Remember exit code
 
 Completely redo the print summary code.
-
-Implement Straps callbacks.  (experimentally implemented)
 
 Straps->analyze_file() not taint clean, don't know if it can be
 
