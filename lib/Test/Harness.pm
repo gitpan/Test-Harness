@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.62
+Version 2.63_01
 
 =cut
 
-$VERSION = '2.62';
+$VERSION = '2.63_01';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -333,7 +333,7 @@ sub execute_tests {
             print $out "# Running: ", $Strap->_command_line($tfile), "\n";
         }
         my $test_start_time = $Timer ? time : 0;
-        my %results = $Strap->analyze_file($tfile) or
+        my $results = $Strap->analyze_file($tfile) or
           do { warn $Strap->{error}, "\n";  next };
         my $elapsed;
         if ( $Timer ) {
@@ -350,35 +350,36 @@ sub execute_tests {
         }
 
         # state of the current test.
-        my @failed = grep { !$results{details}[$_-1]{ok} }
-                     1..@{$results{details}};
-        my @todo_pass = grep { $results{details}[$_-1]{actual_ok} &&
-                               $results{details}[$_-1]{type} eq 'todo' }
-                        1..@{$results{details}};
+        my @failed = grep { !$results->details->[$_-1]{ok} }
+                     1..@{$results->details};
+        my @todo_pass = grep { $results->details->[$_-1]{actual_ok} &&
+                               $results->details->[$_-1]{type} eq 'todo' }
+                        1..@{$results->details};
 
         my %test = (
-                    ok          => $results{ok},
-                    'next'      => $Strap->{'next'},
-                    max         => $results{max},
-                    failed      => \@failed,
-                    todo_pass   => \@todo_pass,
-                    todo        => $results{todo},
-                    bonus       => $results{bonus},
-                    skipped     => $results{skip},
-                    skip_reason => $results{skip_reason},
-                    skip_all    => $Strap->{skip_all},
-                    ml          => $ml,
-                   );
+            ok          => $results->ok,
+            'next'      => $Strap->{'next'},
+            max         => $results->max,
+            failed      => \@failed,
+            todo_pass   => \@todo_pass,
+            todo        => $results->todo,
+            bonus       => $results->bonus,
+            skipped     => $results->skip,
+            skip_reason => $results->skip_reason,
+            skip_all    => $Strap->{skip_all},
+            ml          => $ml,
+        );
 
-        $tot{bonus}       += $results{bonus};
-        $tot{max}         += $results{max};
-        $tot{ok}          += $results{ok};
-        $tot{todo}        += $results{todo};
-        $tot{sub_skipped} += $results{skip};
+        $tot{bonus}       += $results->bonus;
+        $tot{max}         += $results->max;
+        $tot{ok}          += $results->ok;
+        $tot{todo}        += $results->todo;
+        $tot{sub_skipped} += $results->skip;
 
-        my($estatus, $wstatus) = @results{qw(exit wait)};
+        my $estatus = $results->exit;
+        my $wstatus = $results->wait;
 
-        if ($results{passing}) {
+        if ( $results->passing ) {
             # XXX Combine these first two
             if ($test{max} and $test{skipped} + $test{bonus}) {
                 my @msg;
@@ -420,7 +421,7 @@ sub execute_tests {
             }
             # List overruns as failures.
             else {
-                my $details = $results{details};
+                my $details = $results->details;
                 foreach my $overrun ($test{max}+1..@$details) {
                     next unless ref $details->[$overrun-1];
                     push @{$test{failed}}, $overrun
@@ -432,7 +433,7 @@ sub execute_tests {
                                                        $estatus, $wstatus);
                 $failedtests{$tfile}{name} = $tfile;
             }
-            elsif($results{seen}) {
+            elsif ( $results->seen ) {
                 if (@{$test{failed}} and $test{max}) {
                     my ($txt, $canon) = _canondetail($test{max},$test{skipped},'Failed',
                                                     @{$test{failed}});
@@ -640,30 +641,29 @@ sub header_handler {
     $self->{_seen_header}++;
 
     warn "1..M can only appear at the beginning or end of tests\n"
-      if $totals->{seen} && 
-         $totals->{max}  < $totals->{seen};
+      if $totals->seen && ($totals->max < $totals->seen);
 };
 
 sub test_handler {
     my($self, $line, $type, $totals) = @_;
 
-    my $curr = $totals->{seen};
+    my $curr = $totals->seen;
     my $next = $self->{'next'};
-    my $max  = $totals->{max};
-    my $detail = $totals->{details}[-1];
+    my $max  = $totals->max;
+    my $detail = $totals->details->[-1];
 
     if( $detail->{ok} ) {
         _print_ml_less("ok $curr/$max");
 
         if( $detail->{type} eq 'skip' ) {
-            $totals->{skip_reason} = $detail->{reason}
-              unless defined $totals->{skip_reason};
-            $totals->{skip_reason} = 'various reasons'
-              if $totals->{skip_reason} ne $detail->{reason};
+            $totals->set_skip_reason( $detail->{reason} )
+              unless defined $totals->skip_reason;
+            $totals->set_skip_reason( 'various reasons' )
+              if $totals->skip_reason ne $detail->{reason};
         }
     }
     else {
-        _print_ml("NOK $curr");
+        _print_ml("NOK $curr/$max");
     }
 
     if( $curr > $next ) {

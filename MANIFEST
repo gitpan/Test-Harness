@@ -8,6 +8,7 @@ lib/Test/Harness.pm
 lib/Test/Harness/Assert.pm
 lib/Test/Harness/Iterator.pm
 lib/Test/Harness/Point.pm
+lib/Test/Harness/Results.pm
 lib/Test/Harness/Straps.pm
 lib/Test/Harness/TAP.pod
 lib/Test/Harness/Util.pm

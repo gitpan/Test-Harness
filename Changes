@@ -1,5 +1,14 @@
 Revision history for Perl extension Test::Harness
 
+2.63_01 Fri Jun 30 16:59:50 CDT 2006
+    [ENHANCEMENTS]
+    * Failed tests used to say "NOK x", and now say "NOK x/y".
+      Thanks to Will Coleda.
+
+    * Added the Test::Harness::Results object, so we have a well-defined
+      object, and not just a hash that we pass around.  Thanks to YAPC::NA
+      2006 Hackathon!
+
 2.62 Thu Jun  8 14:11:57 CDT 2006
     [FIXES]
     * Restored the behavior of dying if any subtests failed.  This is a

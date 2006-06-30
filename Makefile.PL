@@ -10,6 +10,7 @@ my @files = qw(
     Harness/Iterator.pm
     Harness/Assert.pm
     Harness/Point.pm
+    Harness/Results.pm
     Harness/Straps.pm
     Harness/TAP.pod
     Harness/Util.pm
