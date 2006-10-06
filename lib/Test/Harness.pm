@@ -24,7 +24,7 @@ use vars qw(
 );
 
 BEGIN {
-    eval "use Time::HiRes 'time'";
+    eval q{use Time::HiRes 'time'};
     $has_time_hires = !$@;
 }
 
@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.63_02
+Version 2.64
 
 =cut
 
-$VERSION = '2.63_02';
+$VERSION = '2.64';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -63,7 +63,7 @@ sub _CLASS {
 
 # Strap Overloading
 if ( $ENV{HARNESS_STRAPS_CLASS} ) {
-    die "Set HARNESS_STRAP_CLASS, singular, not HARNESS_STRAPS_CLASS";
+    die 'Set HARNESS_STRAP_CLASS, singular, not HARNESS_STRAPS_CLASS';
 }
 my $HARNESS_STRAP_CLASS  = $ENV{HARNESS_STRAP_CLASS} || 'Test::Harness::Straps';
 if ( $HARNESS_STRAP_CLASS =~ /\.pm$/ ) {
@@ -96,7 +96,7 @@ sub strap { return $Strap };
 
 $Verbose  = $ENV{HARNESS_VERBOSE} || 0;
 $Debug    = $ENV{HARNESS_DEBUG} || 0;
-$Switches = "-w";
+$Switches = '-w';
 $Columns  = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
 $Columns--;             # Some shells have trouble with a full line of text.
 $Timer    = $ENV{HARNESS_TIMER} || 0;
