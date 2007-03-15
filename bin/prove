@@ -10,7 +10,7 @@ use Pod::Usage 1.12;
 use File::Spec;
 
 use vars qw( $VERSION );
-$VERSION = '2.64';
+$VERSION = '2.65_01';
 
 my $shuffle = 0;
 my $dry = 0;
@@ -18,7 +18,7 @@ my $blib = 0;
 my $lib = 0;
 my $recurse = 0;
 my @includes = ();
-my @switches = ();
+my @switches = ('-w');
 
 # Allow cuddling the paths with the -I
 @ARGV = map { /^(-I)(.+)/ ? ($1,$2) : $_ } @ARGV;
@@ -42,8 +42,9 @@ GetOptions(
     's|shuffle'     => \$shuffle,
     't'             => sub { unshift @switches, '-t' }, # Always want -t up front
     'T'             => sub { unshift @switches, '-T' }, # Always want -T up front
-    'w'             => sub { push @switches, '-w' },
+    'w'             => sub { },
     'W'             => sub { push @switches, '-W' },
+    'X'             => sub { push @switches, '-X' },
     'strap=s'       => \$ENV{HARNESS_STRAP_CLASS},
     'timer'         => \$Test::Harness::Timer,
     'v|verbose'     => \$Test::Harness::verbose,
@@ -132,6 +133,9 @@ prove [options] [files/directories]
         --timer     Print elapsed time after each test file
     -v, --verbose   Display standard output of test scripts while running them
     -V, --version   Display version info
+    -w              Enable many useful warnings (on by default)
+    -W              Enable all warnings
+    -X              Disable all warnings
 
 Single-character options may be stacked.  Default options may be set by
 specifying the PROVE_SWITCHES environment variable.
@@ -260,6 +264,21 @@ TEST_VERBOSE in case your tests rely on them.
 
 Display version info.
 
+=head2 -w
+
+Runs tests with warnings turned on (-w).  This is the default so
+its effectively a no-op.
+
+=head2 -W
+
+Enables all warnings regardless of C<no warnings> using the -W flag.
+See L<perlrun> for details.
+
+=head2 -X
+
+Disables all warnings regardless of C<use warnings> using the -X
+flag.  See L<perlrun> for details.
+
 =head1 BUGS
 
 Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
@@ -282,7 +301,7 @@ Andy Lester C<< <andy at petdance.com> >>
 
 =head1 COPYRIGHT
 
-Copyright 2004-2006 by Andy Lester C<< <andy at petdance.com> >>.
+Copyright 2004-2007 by Andy Lester C<< <andy at petdance.com> >>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
