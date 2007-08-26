@@ -8,6 +8,7 @@ BEGIN {
     else {
         unshift @INC, 't/lib';
     }
+    delete $ENV{HARNESS_VERBOSE};
 }
 
 use strict;

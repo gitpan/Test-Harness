@@ -12,6 +12,11 @@ use vars qw( @ISA @EXPORT @EXPORT_OK );
 @EXPORT = ();
 @EXPORT_OK = qw( all_in shuffle blibdirs );
 
+use vars qw( %skip_files );
+BEGIN {
+    %skip_files = map {($_,1)} ( File::Spec->updir, File::Spec->curdir, '.svn', 'CVS' );
+}
+
 =head1 NAME
 
 Test::Harness::Util - Utility functions for Test::Harness::*
@@ -42,6 +47,12 @@ Starting point for the search.  Defaults to ".".
 
 Flag to say whether it should recurse.  Default to true.
 
+=item visited_files
+
+A hashref for tracking which files have been visited. This is useful
+if the B<recurse> parm is true, and will be recursing into directories
+containing circular symlinks.
+
 =back
 
 =cut
@@ -57,17 +68,21 @@ sub all_in {
     my @hits = ();
     my $start = $parms{start};
 
+    $parms{visited_files} ||= {};
+
     local *DH;
     if ( opendir( DH, $start ) ) {
         my @files = sort readdir DH;
         closedir DH;
         for my $file ( @files ) {
-            next if $file eq File::Spec->updir || $file eq File::Spec->curdir;
-            next if $file eq ".svn";
-            next if $file eq "CVS";
+            next if $skip_files{$file};
 
             my $currfile = File::Spec->catfile( $start, $file );
-            if ( -d $currfile ) {
+
+            my ( $dev, $ino ) = lstat $currfile;
+            next if ($dev and $parms{visited_files}{$dev, $ino}++);
+
+            if ( -d _ ) {
                 push( @hits, all_in( { %parms, start => $currfile } ) ) if $parms{recurse};
             }
             else {
@@ -98,7 +113,7 @@ sub shuffle {
 }
 
 
-=head2 blibdir()
+=head2 blibdirs()
 
 Finds all the blib directories.  Stolen directly from blib.pm
 

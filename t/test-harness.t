@@ -8,6 +8,7 @@ BEGIN {
     else {
         unshift @INC, 't/lib';
     }
+    delete $ENV{HARNESS_VERBOSE};
 }
 
 use strict;
@@ -27,7 +28,7 @@ my $IsVMS     = $^O eq 'VMS';
 
 # VMS uses native, not POSIX, exit codes.
 # MacPerl's exit codes are broken.
-my $die_estat = $IsVMS     ? 44 : 
+my $die_estat = $IsVMS     ? 44 :
                 $IsMacPerl ? 0  :
                              1;
 

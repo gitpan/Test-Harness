@@ -42,9 +42,13 @@ sub MY::postamble {
 
 tags:
 	ctags -f tags --recurse --totals \
-		--exclude=blib/ --exclude=t/lib \
+		--exclude=blib --exclude=t/lib \
 		--exclude=.svn --exclude='*~' \
 		--languages=Perl --langmap=Perl:+.t \
+
+critic:
+	perlcritic -1 -q -profile perlcriticrc bin/prove lib/ t/*.t
+
 MAKE_FRAG
 }
 

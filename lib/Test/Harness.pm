@@ -34,11 +34,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.65_01
+Version 2.65_02
 
 =cut
 
-$VERSION = '2.65_01';
+$VERSION = '2.65_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -282,9 +282,9 @@ information will be written to the currently selected output
 filehandle (usually C<STDOUT>), or to the filehandle given by the
 C<out> parameter.  The I<out> is optional.
 
-Returns a list of two values, C<$total> and C<$failed>, describing the
-results.  C<$total> is a hash ref summary of all the tests run.  Its
-keys and values are this:
+Returns a list of three values: C<$total>, C<$failed> and C<$todo>,
+describing the results.  C<$total> is a hash ref summary of all the
+tests run.  Its keys and values are this:
 
     bonus           Number of individual todo tests unexpectedly passed
     max             Number of individual tests ran
@@ -301,7 +301,7 @@ keys and values are this:
 If C<< $total->{bad} == 0 >> and C<< $total->{max} > 0 >>, you've
 got a successful test.
 
-C<$failed> is a hash ref of all the test scripts that failed.  Each key
+C<$failed> is a hashref of all the test scripts that failed.  Each key
 is the name of a test script, each value is another hash representing
 how that script failed.  Its keys are these:
 
@@ -313,6 +313,8 @@ how that script failed.  Its keys are these:
     canon       List of tests which failed (as string).
 
 C<$failed> should be empty if everything passed.
+
+C<$todo> is a hashref of all the todo tests that passed anyway.
 
 =cut
 
@@ -1157,7 +1159,7 @@ Current maintainer is Andy Lester C<< <andy at petdance.com> >>.
 
 =head1 COPYRIGHT
 
-Copyright 2002-2006
+Copyright 2002-2007
 by Michael G Schwern C<< <schwern at pobox.com> >>,
 Andy Lester C<< <andy at petdance.com> >>.
 

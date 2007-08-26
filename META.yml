@@ -1,13 +1,11 @@
---- #YAML:1.0
-name:                Test-Harness
-version:             2.65_01
-abstract:            ~
-license:             unknown
-generated_by:        ExtUtils::MakeMaker version 6.30_01
-author:              ~
-distribution_type:   module
-requires:     
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Test-Harness
+version:      2.65_02
+version_from: lib/Test/Harness.pm
+installdirs:  perl
+requires:
     File::Spec:                    0.6
-meta-spec:
-    url: <http://module-build.sourceforge.net/META-spec-new.html>;
-    version: 1.1
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.30

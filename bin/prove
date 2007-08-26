@@ -10,7 +10,7 @@ use Pod::Usage 1.12;
 use File::Spec;
 
 use vars qw( $VERSION );
-$VERSION = '2.65_01';
+$VERSION = '2.65_02';
 
 my $shuffle = 0;
 my $dry = 0;
@@ -40,15 +40,15 @@ GetOptions(
     'perl=s'        => \$ENV{HARNESS_PERL},
     'r|recurse'     => \$recurse,
     's|shuffle'     => \$shuffle,
+    'strap=s'       => \$ENV{HARNESS_STRAP_CLASS},
     't'             => sub { unshift @switches, '-t' }, # Always want -t up front
     'T'             => sub { unshift @switches, '-T' }, # Always want -T up front
-    'w'             => sub { },
-    'W'             => sub { push @switches, '-W' },
-    'X'             => sub { push @switches, '-X' },
-    'strap=s'       => \$ENV{HARNESS_STRAP_CLASS},
     'timer'         => \$Test::Harness::Timer,
     'v|verbose'     => \$Test::Harness::verbose,
     'V|version'     => sub { print_version(); exit; },
+    'w'             => sub { }, # on by default
+    'W'             => sub { push @switches, '-W' },
+    'X'             => sub { push @switches, '-X' },
 ) or exit 1;
 
 $ENV{TEST_VERBOSE} = 1 if $Test::Harness::verbose;
@@ -234,9 +234,7 @@ Descends into subdirectories of any directories specified, looking for tests.
 Sometimes tests are accidentally dependent on tests that have been
 run before.  This switch will shuffle the tests to be run prior to
 running them, thus ensuring that hidden dependencies in the test
-order are likely to be revealed.  The author hopes the run the
-algorithm on the preceding sentence to see if he can produce something
-slightly less awkward.
+order are likely to be revealed.
 
 =head2 --strap
 
@@ -266,8 +264,8 @@ Display version info.
 
 =head2 -w
 
-Runs tests with warnings turned on (-w).  This is the default so
-its effectively a no-op.
+Runs tests with warnings turned on using Perl's C<-w> switch.  This is
+the default behavior.
 
 =head2 -W
 

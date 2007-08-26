@@ -44,6 +44,9 @@ Test::Harness::Straps - detailed analysis of test results
 B<THIS IS ALPHA SOFTWARE> in that the interface is subject to change
 in incompatible ways.  It is otherwise stable.
 
+Further, work is underway for Test::Harness 3.0, which will do away with
+Straps entirely.
+
 Test::Harness is limited to printing out its results.  This makes
 analysis of the test results difficult for anything but a human.  To
 make it easier for programs to work with test results, we provide
@@ -296,7 +299,7 @@ sub analyze_file {
 
     $results->set_wait($?);
     if ( $? && $self->{_is_vms} ) {
-        eval q{use vmsish "status"; $results->set_exit($?); };
+        $results->set_exit($?);
     }
     else {
         $results->set_exit( _wait2exit($?) );
@@ -355,7 +358,9 @@ sub _command {
     my $self = shift;
 
     return $ENV{HARNESS_PERL}   if defined $ENV{HARNESS_PERL};
-    return qq["$^X"]            if $self->{_is_win32} && ($^X =~ /[^\w\.\/\\]/);
+
+    # Quote our interpreter if it has spaces in the filename and isn't quoted.
+    return qq["$^X"]            if (($^X =~ /\s/) && ($^X !~ /^["']/));
     return $^X;
 }
 
@@ -478,6 +483,7 @@ sub _filtered_INC {
             local $ENV{PERL5LIB};
             my @inc =`$perl -le "print join qq[\\n], \@INC"`;
             chomp @inc;
+            return @inc;
         }];
         return @{$cache{$perl}};
     }
