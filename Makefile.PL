@@ -1,55 +1,23 @@
-require 5.004_05;
+use ExtUtils::MakeMaker qw/WriteMakefile prompt/;
 
-use ExtUtils::MakeMaker;
-use ExtUtils::Command qw( touch rm_f );
+use strict;
 
-use constant FLAG_SKIP_PROVE => "t/SKIP-PROVE";
+eval 'use ExtUtils::MakeMaker::Coverage';
+warn
+  "\nOptional ExtUtils::MakeMaker::Coverage not available. Everything should\n",
+  "still work correctly but you won't be able to run the coverage tests by\n",
+  "typing \"make testcover\". If you subsequently install Devel::Cover please\n",
+  "re-run \"perl Makefile.PL\" to include the testcover target.\n\n"
+  if $@;
 
-my @files = qw(
-    Harness.pm
-    Harness/Iterator.pm
-    Harness/Assert.pm
-    Harness/Point.pm
-    Harness/Results.pm
-    Harness/Straps.pm
-    Harness/TAP.pod
-    Harness/Util.pm
+WriteMakefile(
+    'NAME'         => 'Test::Harness',
+    'VERSION_FROM' => 'lib/Test/Harness.pm',
+    'PREREQ_PM'    => {
+    },
+    'INSTALLDIRS' => 'site',
+    'PL_FILES'    => {},
+    'LICENSE'     => 'perl',
+    'test'        => { 'TESTS' => 't/*.t t/compat/*.t' },
+    'EXE_FILES'   => ["bin/prove"],
 );
-
-my %parms = (
-    NAME            => "Test::Harness",
-    VERSION_FROM    => "lib/Test/Harness.pm",
-    PM              => { map { ("lib/Test/$_" => "\$(INST_LIBDIR)/$_") } @files },
-    PREREQ_PM       => { File::Spec => 0.6 },
-    INSTALLDIRS     => 'perl',
-    clean           => { FILES => join( " ", FLAG_SKIP_PROVE, 'Test-Harness-*', '*~' ) },
-);
-
-my $install_prove = eval "use Pod::Usage 1.12; 1";
-if ( $install_prove ) {
-    $parms{EXE_FILES} = [ 'bin/prove' ];
-    local @ARGV = FLAG_SKIP_PROVE;
-    rm_f();
-} else {
-    warn "Pod::Usage 1.12 or higher not found, so prove utility will not be installed.\n";
-    local @ARGV = FLAG_SKIP_PROVE;
-    touch();
-}
-
-sub MY::postamble {
-    return <<'MAKE_FRAG';
-.PHONY: tags
-
-tags:
-	ctags -f tags --recurse --totals \
-		--exclude=blib --exclude=t/lib \
-		--exclude=.svn --exclude='*~' \
-		--languages=Perl --langmap=Perl:+.t \
-
-critic:
-	perlcritic -1 -q -profile perlcriticrc bin/prove lib/ t/*.t
-
-MAKE_FRAG
-}
-
-WriteMakefile( %parms );
