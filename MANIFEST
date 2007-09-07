@@ -1,15 +1,19 @@
 bin/prove
 Build.PL
 Changes
+Changes-2.64
 examples/bin/forked_tests.pl
 examples/bin/test_html.pl
 examples/bin/tprove_gtk
+examples/harness-hook/hook.pl
+examples/harness-hook/lib/Harness/Hook.pm
 examples/my_exec
 examples/README
 examples/t/10-stuff.t
 examples/t/ruby.t
 examples/test_urls.txt
 HACKING.pod
+lib/App/Prove.pm
 lib/TAP/Base.pm
 lib/TAP/Harness.pm
 lib/TAP/Harness/Color.pm
@@ -56,6 +60,8 @@ t/150-yamlish.t
 t/160-yamlish-writer.t
 t/170-yamlish-output.t
 t/180-unicode.t
+t/190-nofork.t
+t/200-prove.t
 t/compat/000-compile.t
 t/compat/010-failure.t
 t/compat/020-inc_taint.t
@@ -67,6 +73,7 @@ t/data/sample.yml
 t/lib/Dev/Null.pm
 t/lib/if.pm
 t/lib/IO/Capture.pm
+t/lib/NoFork.pm
 t/lib/Test/Builder.pm
 t/lib/Test/More.pm
 t/lib/Test/Simple.pm

@@ -13,7 +13,7 @@ use TAP::Parser::Result::YAML;
 
 BEGIN {
     no strict 'refs';
-    foreach my $token (qw<plan comment test bailout version unknown yaml>) {
+    foreach my $token (qw( plan comment test bailout version unknown yaml )) {
         my $method = "is_$token";
         *$method = sub { return $token eq shift->type };
     }
@@ -27,11 +27,11 @@ TAP::Parser::Result - TAP::Parser output
 
 =head1 VERSION
 
-Version 2.99_01
+Version 2.99_02
 
 =cut
 
-$VERSION = '2.99_01';
+$VERSION = '2.99_02';
 
 =head2 DESCRIPTION
 

@@ -16,11 +16,11 @@ TAP::Parser::Source::Perl - Stream Perl output
 
 =head1 VERSION
 
-Version 2.99_01
+Version 2.99_02
 
 =cut
 
-$VERSION = '2.99_01';
+$VERSION = '2.99_02';
 
 =head1 DESCRIPTION
 
@@ -116,7 +116,7 @@ sub get_stream {
     # PERL5LIB
     my @libs;
     for ( grep { $_ !~ /:/ } @switches ) {
-        push @libs, $1 if / ^ -I (.*) $ /x;
+        push @libs, $1 if / ^ ['"]? -I (.*?) ['"]? $ /x;
     }
 
     my $previous = $ENV{PERL5LIB};

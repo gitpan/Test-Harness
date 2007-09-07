@@ -29,7 +29,7 @@ use TAP::Harness;
 use TAP::Harness::Color;
 
 my @HARNESSES = 'TAP::Harness';
-my $PLAN      = 73;
+my $PLAN      = 102;
 
 if ( TAP::Harness::Color->can_color ) {
     push @HARNESSES, 'TAP::Harness::Color';
@@ -126,11 +126,14 @@ foreach my $HARNESS (@HARNESSES) {
         'ok',
         'All tests successful.',
     );
-
+    my $status           = pop @output;
+    my $expected_status  = qr{^Result: PASS$};
     my $summary          = pop @output;
-    my $expected_summary = qr/^Files=1, Tests=1,  \d+ wallclock secs/;
+    my $expected_summary = qr{^Files=1, Tests=1,  \d+ wallclock secs};
 
     is_deeply \@output, \@expected, '... and the output should be correct';
+    like $status, $expected_status,
+      '... and the status line should be correct';
     like $summary, $expected_summary,
       '... and the report summary should look correct';
 
@@ -146,10 +149,14 @@ foreach my $HARNESS (@HARNESSES) {
         'All tests successful.',
     );
 
+    $status           = pop @output;
+    $expected_status  = qr{^Result: PASS$};
     $summary          = pop @output;
     $expected_summary = qr/^Files=1, Tests=1,  \d+ wallclock secs/;
 
     is_deeply \@output, \@expected, '... and the output should be correct';
+    like $status, $expected_status,
+      '... and the status line should be correct';
     like $summary, $expected_summary,
       '... and the report summary should look correct';
 
@@ -163,10 +170,14 @@ foreach my $HARNESS (@HARNESSES) {
         'All tests successful.',
     );
 
+    $status           = pop @output;
+    $expected_status  = qr{^Result: PASS$};
     $summary          = pop @output;
     $expected_summary = qr/^Files=1, Tests=1,  \d+ wallclock secs/;
 
     is_deeply \@output, \@expected, '... and the output should be correct';
+    like $status, $expected_status,
+      '... and the status line should be correct';
     like $summary, $expected_summary,
       '... and the report summary should look correct';
 
@@ -175,8 +186,15 @@ foreach my $HARNESS (@HARNESSES) {
     @output = ();
     _runtests( $harness, 't/source_tests/harness_failure' );
 
-    my @summary = @output[ 5 .. ( $#output - 1 ) ];
-    @output   = @output[ 0 .. 4 ];
+    $status  = pop @output;
+    $summary = pop @output;
+
+    like $status, qr{^Result: FAIL$},
+      '... and the status line should be correct';
+
+    my @summary = @output[ 5 .. $#output ];
+    @output = @output[ 0 .. 4 ];
+
     @expected = (
         't/source_tests/harness_failure....',
         '1..2',
@@ -184,8 +202,10 @@ foreach my $HARNESS (@HARNESSES) {
         'not ok 2 - this is another test',
         'Failed 1/2 subtests',
     );
+
     is_deeply \@output, \@expected,
       '... and failing test output should be correct';
+
     my @expected_summary = (
         'Test Summary Report',
         '-------------------',
@@ -193,6 +213,7 @@ foreach my $HARNESS (@HARNESSES) {
         'Failed tests:',
         '2',
     );
+
     is_deeply \@summary, \@expected_summary,
       '... and the failure summary should also be correct';
 
@@ -201,7 +222,8 @@ foreach my $HARNESS (@HARNESSES) {
     @output = ();
     _runtests( $harness_whisper, 't/source_tests/harness_failure' );
 
-    pop @output;    # get rid of summary line
+    $status   = pop @output;
+    $summary  = pop @output;
     @expected = (
         't/source_tests/harness_failure....',
         'Failed 1/2 subtests',
@@ -211,6 +233,10 @@ foreach my $HARNESS (@HARNESSES) {
         'Failed tests:',
         '2',
     );
+
+    like $status, qr{^Result: FAIL$},
+      '... and the status line should be correct';
+
     is_deeply \@output, \@expected,
       '... and failing test output should be correct';
 
@@ -219,7 +245,8 @@ foreach my $HARNESS (@HARNESSES) {
     @output = ();
     _runtests( $harness_mute, 't/source_tests/harness_failure' );
 
-    pop @output;    # get rid of summary line
+    $status   = pop @output;
+    $summary  = pop @output;
     @expected = (
         'Test Summary Report',
         '-------------------',
@@ -227,6 +254,10 @@ foreach my $HARNESS (@HARNESSES) {
         'Failed tests:',
         '2',
     );
+
+    like $status, qr{^Result: FAIL$},
+      '... and the status line should be correct';
+
     is_deeply \@output, \@expected,
       '... and failing test output should be correct';
 
@@ -250,6 +281,7 @@ foreach my $HARNESS (@HARNESSES) {
         '3',
     );
 
+    $status           = pop @output;
     $summary          = pop @output;
     $expected_summary = qr/^Files=1, Tests=3,  \d+ wallclock secs/;
 
@@ -257,11 +289,25 @@ foreach my $HARNESS (@HARNESSES) {
     like $summary, $expected_summary,
       '... and the report summary should look correct';
 
+    like $status, qr{^Result: PASS$},
+      '... and the status line should be correct';
+
     # normal tests with bad tap
 
     # install callback handler
     my $parser;
     my $callback_count = 0;
+
+    my @callback_log = ();
+
+    for my $evt (qw(made_parser before_runtests after_runtests)) {
+        $harness->callback(
+            $evt => sub {
+                push @callback_log, $evt;
+            }
+        );
+    }
+
     $harness->callback(
         made_parser => sub {
             $parser = shift;
@@ -273,7 +319,8 @@ foreach my $HARNESS (@HARNESSES) {
     _runtests( $harness, 't/source_tests/harness_badtap' );
     chomp(@output);
 
-    @output = map { trim($_) } @output;
+    @output   = map { trim($_) } @output;
+    $status   = pop @output;
     @summary  = @output[ 6 .. ( $#output - 1 ) ];
     @output   = @output[ 0 .. 5 ];
     @expected = (
@@ -286,6 +333,8 @@ foreach my $HARNESS (@HARNESSES) {
     );
     is_deeply \@output, \@expected,
       '... and failing test output should be correct';
+    like $status, qr{^Result: FAIL$},
+      '... and the status line should be correct';
     @expected_summary = (
         'Test Summary Report',
         '-------------------',
@@ -298,6 +347,9 @@ foreach my $HARNESS (@HARNESSES) {
       '... and the badtap summary should also be correct';
 
     cmp_ok( $callback_count, '==', 1, 'callback called once' );
+    is_deeply( \@callback_log,
+        [ 'before_runtests', 'made_parser', 'after_runtests' ],
+        'callback log matches' );
     isa_ok $parser, 'TAP::Parser';
 
     # coverage testing for _should_show_failures
@@ -319,9 +371,36 @@ foreach my $HARNESS (@HARNESSES) {
         '2',
     );
 
-    $summary          = pop @output;
-    $expected_summary = qr/^Files=1, Tests=2,  \d+ wallclock secs/;
+    $status  = pop @output;
+    $summary = pop @output;
 
+    like $status, qr{^Result: FAIL$},
+      '... and the status line should be correct';
+    $expected_summary = qr/^Files=1, Tests=2,  \d+ wallclock secs/;
+    is_deeply \@output, \@expected, '... and the output should be correct';
+
+    # check the status output for no tests
+
+    @output = ();
+    _runtests( $harness_failures, 't/sample-tests/no_output' );
+
+    chomp(@output);
+
+    @expected = (
+        't/sample-tests/no_output....',
+        'No subtests run',
+        'Test Summary Report',
+        '-------------------',
+        't/sample-tests/no_output (Wstat: 0 Tests: 0 Failed: 0)',
+        'Parse errors: No plan found in TAP output',
+    );
+
+    $status  = pop @output;
+    $summary = pop @output;
+
+    like $status, qr{^Result: NOTESTS$},
+      '... and the status line should be correct';
+    $expected_summary = qr/^Files=1, Tests=2,  \d+ wallclock secs/;
     is_deeply \@output, \@expected, '... and the output should be correct';
 
     #XXXX
@@ -332,7 +411,7 @@ SKIP: {
 
     my $cat = '/bin/cat';
     unless ( -e $cat ) {
-        skip "no '$cat'", 1;
+        skip "no '$cat'", 2;
     }
 
     my $capture = IO::Capture->new_handle;
@@ -348,6 +427,9 @@ SKIP: {
     eval { _runtests( $harness, 't/data/catme.1' ) };
 
     my @output = tied($$capture)->dump;
+    my $status = pop @output;
+    like $status, qr{^Result: PASS$},
+      '... and the status line should be correct';
     pop @output;    # get rid of summary line
     my $answer = pop @output;
     is( $answer, "All tests successful.\n", 'cat meows' );
@@ -371,6 +453,9 @@ SKIP: {
     );
 
     my @output = tied($$capture)->dump;
+    my $status = pop @output;
+    like $status, qr{^Result: PASS$},
+      '... and the status line should be correct';
     pop @output;                              # get rid of summary line
     is( $output[-1], "All tests successful.\n", 'No exec accumulation' );
 }
@@ -478,4 +563,107 @@ sub _runtests {
     local $ENV{PERL_TEST_HARNESS_DUMP_TAP} = 0;
     my $aggregate = $harness->runtests(@tests);
     return $aggregate;
+}
+
+{
+
+    # coverage tests for ctor
+
+    my $harness = TAP::Harness->new(
+        {   timer     => 0,
+            errors    => 1,
+            merge     => 2,
+            formatter => 3,
+        }
+    );
+
+    is $harness->timer(), 0, 'timer getter';
+    is $harness->timer(10), 10, 'timer setter';
+    is $harness->errors(), 1, 'errors getter';
+    is $harness->errors(10), 10, 'errors setter';
+    is $harness->merge(), 2, 'merge getter';
+    is $harness->merge(10), 10, 'merge setter';
+    is $harness->formatter(), 3, 'formatter getter';
+    is $harness->formatter(10), 10, 'formatter setter';
+}
+
+{
+
+# coverage tests for the stdout key of VALIDATON_FOR, used by _initialize() in the ctor
+
+    # the coverage tests are
+    # 1. ref $ref => false
+    # 2. ref => ! GLOB and ref->can(print)
+    # 3. ref $ref => GLOB
+
+    # case 1
+
+    my @die;
+
+    eval {
+        local $SIG{__DIE__} = sub { push @die, @_ };
+
+        my $harness = TAP::Harness->new(
+            {   stdout => bless {}, '0',    # how evil is THAT !!!
+            }
+        );
+    };
+
+    is @die, 1, 'bad filehandle to stdout';
+    like pop @die, qr/option 'stdout' needs a filehandle/,
+      '... and we died as expected';
+
+    # case 2
+
+    @die = ();
+
+    package Printable;
+
+    sub new { return bless {}, shift }
+
+    sub print {return}
+
+    package main;
+
+    my $harness = TAP::Harness->new(
+        {   stdout => Printable->new(),
+        }
+    );
+
+    isa_ok $harness, 'TAP::Harness';
+
+    # case 3
+
+    @die = ();
+
+    $harness = TAP::Harness->new(
+        {   stdout => bless {}, 'GLOB',    # again with the evil
+        }
+    );
+
+    isa_ok $harness, 'TAP::Harness';
+}
+
+{
+
+    # coverage testing of lib/switches accessor
+    my $harness = TAP::Harness->new;
+
+    my @die;
+
+    eval {
+        local $SIG{__DIE__} = sub { push @die, @_ };
+
+        $harness->switches(qw( too many arguments));
+    };
+
+    is @die, 1, 'too many arguments to accessor';
+
+    like pop @die, qr/Too many arguments to &\$method/,
+      '...and we died as expected';
+
+    $harness->switches('simple scalar');
+
+    my $arrref = $harness->switches;
+    is_deeply $arrref, ['simple scalar'], 'scalar wrapped in arr ref';
 }

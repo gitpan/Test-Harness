@@ -19,11 +19,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 2.99_01
+Version 2.99_02
 
 =cut
 
-$VERSION = '2.99_01';
+$VERSION = '2.99_02';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -36,7 +36,7 @@ END {
     delete $ENV{TAP_VERSION};
 }
 
-BEGIN { # making accessors
+BEGIN {    # making accessors
     foreach my $method (
         qw(
         _stream
@@ -75,7 +75,7 @@ BEGIN { # making accessors
             };
         }
     }
-} # done making accessors
+}    # done making accessors
 
 =head1 SYNOPSIS
 
@@ -1150,7 +1150,7 @@ sub _iter {
                 $next_state->($result);
 
                 if ( my $code = $self->_callback_for( $result->type ) ) {
-                    $code->($result);
+                    $_->($result) for @$code;
                 }
                 else {
                     $self->_make_callback( 'ELSE', $result );
@@ -1167,7 +1167,7 @@ sub _iter {
                 $self->_finish;
 
                 if ( my $code = $self->_callback_for('EOF') ) {
-                    $code->($self);
+                    $_->($self) for @$code;
                 }
             }
 

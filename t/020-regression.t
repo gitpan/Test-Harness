@@ -6,6 +6,7 @@ use lib 't/lib';
 use Test::More 'no_plan';
 
 use File::Spec;
+use Config;
 
 use constant TRUE  => "__TRUE__";
 use constant FALSE => "__FALSE__";
@@ -14,6 +15,9 @@ use constant FALSE => "__FALSE__";
 use constant NOT_ZERO => "__NOT_ZERO__";
 
 use TAP::Parser;
+
+my $IsVMS   = $^O eq 'VMS';
+my $IsWin32 = $^O eq 'MSWin32';
 
 my $SAMPLE_TESTS
   = File::Spec->catdir( File::Spec->curdir, 't', 'sample-tests' );
@@ -1058,6 +1062,7 @@ my %samples = (
         parse_errors  => ['Bad plan.  You planned 3 tests but ran 7.'],
         'exit'        => 4,
         wait          => NOT_ZERO,
+        skip_if       => sub {$IsVMS},
     },
     taint => {
         results => [
@@ -2155,7 +2160,7 @@ my %samples = (
                 explanation   => '',
             },
         ],
-        __ARGS__      => { switches => '-Mstrict', },
+        __ARGS__      => { switches => ['-Mstrict'] },
         plan          => '1..1',
         passed        => [1],
         actual_passed => [1],
@@ -2193,7 +2198,7 @@ my %samples = (
                 explanation   => '',
             },
         ],
-        __ARGS__      => { switches => '-Iexamples', },
+        __ARGS__      => { switches => ['-Iexamples'] },
         plan          => '1..1',
         passed        => [1],
         actual_passed => [1],
@@ -2383,6 +2388,7 @@ my %samples = (
         'exit'        => 0,
         wait          => 0,
         version       => 12,
+        need_open3    => 1,
     },
 
     junk_before_plan => {
@@ -2782,57 +2788,93 @@ my %HANDLER_FOR = (
     FALSE,    sub { local $^W; !shift },
 );
 
-foreach my $test ( sort keys %samples ) {
+my $can_open3 = ( $Config{d_fork} || $IsWin32 ) ? 1 : 0;
 
-    #next unless 'duplicates' eq $test;
-    my $details = $samples{$test};
-    my $results = delete $details->{results};
-    my $args    = delete $details->{__ARGS__} || { switches => '' };
+for my $hide_fork ( 0 .. $can_open3 ) {
+    if ($hide_fork) {
+        no strict 'refs';
+        local $^W = 0;
+        *{'TAP::Parser::Iterator::Process::_use_open3'} = sub {return};
+    }
 
-    # the following acrobatics are necessary to make it easy for the
-    # Test::Builder::failure_output() method to be overridden when
-    # TAP::Parser is not installed.  Otherwise, these tests will fail.
-    my @switches
-      = 'ARRAY' eq ref $args->{switches}
-      ? @{ $args->{switches} }
-      : $args->{switches};
-    $args->{switches} = [ '-Ilib', @switches ];
+    TEST:
+    for my $test ( sort keys %samples ) {
 
-    $args->{source} = File::Spec->catfile( $SAMPLE_TESTS, $test );
-    $args->{merge} = 1;
+        #next unless 'duplicates' eq $test;
+        my %details = %{ $samples{$test} };
 
-    my $parser = eval { analyze_test( $test, $results, $args ) };
-    my $error = $@;
-    ok !$error, "'$test' should parse successfully" or diag $error;
-
-    if ($error) {
-        my $tests = 0;
-        while ( my ( $method, $answer ) = each %$details ) {
-            $tests += ref $answer ? 2 : 1;
+        if ( my $skip_if = delete $details{skip_if} ) {
+            next TEST if $skip_if->();
         }
-        SKIP: {
-            skip "$test did not parse successfully", $tests;
+
+        my $results    = delete $details{results};
+        my $args       = delete $details{__ARGS__};
+        my $need_open3 = delete $details{need_open3};
+
+        next TEST if $need_open3 && ( $hide_fork || !$can_open3 );
+
+        # the following acrobatics are necessary to make it easy for the
+        # Test::Builder::failure_output() method to be overridden when
+        # TAP::Parser is not installed.  Otherwise, these tests will fail.
+        unshift @{ $args->{switches} }, '-Ilib';
+
+        $args->{source} = File::Spec->catfile( $SAMPLE_TESTS, $test );
+        $args->{merge} = !$hide_fork;
+
+        my $parser = eval { analyze_test( $test, [@$results], $args ) };
+        my $error = $@;
+        ok !$error, "'$test' should parse successfully" or diag $error;
+
+        if ($error) {
+            my $tests = 0;
+            while ( my ( $method, $answer ) = each %details ) {
+                $tests += ref $answer ? 2 : 1;
+            }
+            SKIP: {
+                skip "$test did not parse successfully", $tests;
+            }
+        }
+        else {
+            while ( my ( $method, $answer ) = each %details ) {
+                if ( my $handler = $HANDLER_FOR{ $answer || '' } ) {    # yuck
+                    ok $handler->( $parser->$method() ),
+                      "... and $method should return a reasonable value ($test)";
+                }
+                elsif ( !ref $answer ) {
+                    local $^W;    # uninit warnings
+
+                    $answer = _vmsify_answer( $method, $answer );
+
+                    is $parser->$method(), $answer,
+                      "... and $method should equal $answer ($test)";
+                }
+                else {
+                    is scalar $parser->$method(), scalar @$answer,
+                      "... and $method should be the correct amount ($test)";
+                    is_deeply [ $parser->$method() ], $answer,
+                      "...... and the correct values ($test)";
+                }
+            }
         }
     }
-    else {
-        while ( my ( $method, $answer ) = each %$details ) {
-            if ( my $handler = $HANDLER_FOR{ $answer || '' } ) {    # yuck
-                ok $handler->( $parser->$method() ),
-                  "... and $method should return a reasonable value ($test)";
-            }
-            elsif ( !ref $answer ) {
-                local $^W;    # uninit warnings
-                is $parser->$method(), $answer,
-                  "... and $method should equal $answer ($test)";
-            }
-            else {
-                is scalar $parser->$method(), scalar @$answer,
-                  "... and $method should be the correct amount ($test)";
-                is_deeply [ $parser->$method() ], $answer,
-                  "...... and the correct values ($test)";
-            }
-        }
+}
+
+my %Unix2VMS_Exit_Codes = (
+    1 => 4,
+);
+
+sub _vmsify_answer {
+    my ( $method, $answer ) = @_;
+
+    return $answer unless $IsVMS;
+
+    if ( $method eq 'exit'
+        and exists $Unix2VMS_Exit_Codes{$answer} )
+    {
+        $answer = $Unix2VMS_Exit_Codes{$answer};
     }
+
+    return $answer;
 }
 
 sub analyze_test {
@@ -2869,7 +2911,7 @@ sub analyze_test {
             }
         }
     }
-    ok !@$results,
+    is @$results, 0,
       "... and we should have the correct number of results ($test)";
     return $parser;
 }

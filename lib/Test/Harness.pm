@@ -36,11 +36,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.99_01
+Version 2.99_02
 
 =cut
 
-$VERSION = '2.99_01';
+$VERSION = '2.99_02';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -104,6 +104,9 @@ one of the messages in the DIAGNOSTICS section.
 
 sub runtests {
     my @tests = @_;
+
+    # shield against -l
+    local ($\, $,);
 
     my $harness   = _new_harness();
     my $aggregate = TAP::Parser::Aggregator->new();
@@ -394,7 +397,15 @@ or you can use the C<-v> switch in the F<prove> utility.
 
 =head1 SEE ALSO
 
-L<TAP::Harness>, L<Test::Harness>
+L<TAP::Harness>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-test-harness at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Harness>.  I will be 
+notified, and then you'll automatically be notified of progress on your bug 
+as I make changes.
 
 =head1 AUTHORS
 

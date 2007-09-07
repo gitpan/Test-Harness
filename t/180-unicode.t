@@ -68,12 +68,14 @@ BEGIN {
         {   name   => 'Unicode smiley',
             source => [
                 '1..1',
-                "ok 1 Everything is fine \x{263a}",
+
+                # Funky quoting / eval to avoid errors on older Perls
+                eval qq{"ok 1 Everything is fine \\x{263a}"},
             ],
             expect => [
                 { isa => 'TAP::Parser::Result::Plan', },
                 {   isa         => 'TAP::Parser::Result::Test',
-                    description => "Everything is fine \x{263a}"
+                    description => eval qq{"Everything is fine \\x{263a}"}
                 },
             ],
         }
@@ -95,7 +97,7 @@ for my $test (@schedule) {
             for my $item ( sort keys %$exp ) {
                 my $val = $exp->{$item};
                 if ( 'isa' eq $item ) {
-                    ok $tok->isa($val), "$name: token isa $val";
+                    isa_ok $tok, $val;
                 }
                 elsif ( 'CODE' eq ref $val ) {
                     ok $val->($tok), "$name: assertion for $item";

@@ -3,12 +3,12 @@
 use strict;
 use lib 't/lib';
 
-use Test::More tests => 62;
+use Test::More tests => 75;
 
 use File::Spec;
-
 use TAP::Parser;
 use TAP::Parser::Iterator;
+use Config;
 
 sub array_ref_from {
     my $string = shift;
@@ -27,8 +27,17 @@ my $did_teardown = 0;
 my $setup    = sub { $did_setup++ };
 my $teardown = sub { $did_teardown++ };
 
+package NoForkProcess;
+use vars qw( @ISA );
+@ISA = qw( TAP::Parser::Iterator::Process );
+
+sub _use_open3 {return}
+
+package main;
+
 my @schedule = (
-    {   subclass => 'TAP::Parser::Iterator::Process',
+    {   name     => 'Process',
+        subclass => 'TAP::Parser::Iterator::Process',
         source   => {
             command => [
                 $^X, File::Spec->catfile( 't', 'sample-tests', 'out_err_mix' )
@@ -40,49 +49,74 @@ my @schedule = (
         after => sub {
             is $did_setup,    1, "setup called";
             is $did_teardown, 1, "teardown called";
-          }
+        },
+        need_open3 => 15,
     },
-    {   subclass => 'TAP::Parser::Iterator::Array',
+    {   name     => 'Array',
+        subclass => 'TAP::Parser::Iterator::Array',
         source   => array_ref_from($tap),
     },
-    {   subclass => 'TAP::Parser::Iterator::Stream',
+    {   name     => 'Stream',
+        subclass => 'TAP::Parser::Iterator::Stream',
         source   => \*DATA,
     },
-    {   subclass => 'TAP::Parser::Iterator::Process',
+    {   name     => 'Process (Perl -e)',
+        subclass => 'TAP::Parser::Iterator::Process',
+        source =>
+          { command => [ $^X, '-e', 'print qq/one\ntwo\n\nthree\n/' ] },
+    },
+    {   name     => 'Process (NoFork)',
+        subclass => 'TAP::Parser::Iterator::Process',
+        class    => 'NoForkProcess',
         source =>
           { command => [ $^X, '-e', 'print qq/one\ntwo\n\nthree\n/' ] },
     },
 );
 
+sub _can_open3 {
+    return $^O eq 'MSWin32' || $Config{d_fork};
+}
+
 for my $test (@schedule) {
-    my $subclass = $test->{subclass};
-    my $source   = $test->{source};
-    ok my $iter = TAP::Parser::Iterator->new($source),
-      'We should be able to create a new iterator';
-    isa_ok $iter, 'TAP::Parser::Iterator', '... and the object it returns';
-    isa_ok $iter, $subclass, '... and the object it returns';
+    SKIP: {
+        my $name       = $test->{name};
+        my $need_open3 = $test->{need_open3};
+        skip "No open3", $need_open3 if $need_open3 && !_can_open3();
+        my $subclass = $test->{subclass};
+        my $source   = $test->{source};
+        my $class    = $test->{class} || 'TAP::Parser::Iterator';
+        ok my $iter = $class->new($source),
+          "$name: We should be able to create a new iterator";
+        isa_ok $iter, 'TAP::Parser::Iterator',
+          '... and the object it returns';
+        isa_ok $iter, $subclass, '... and the object it returns';
 
-    can_ok $iter, 'exit';
-    ok !defined $iter->exit,
-      "... and it should be undef before we are done ($subclass)";
+        can_ok $iter, 'exit';
+        ok !defined $iter->exit,
+          "$name: ... and it should be undef before we are done ($subclass)";
 
-    can_ok $iter, 'next';
-    is $iter->next, 'one', 'next() should return the first result';
+        can_ok $iter, 'next';
+        is $iter->next, 'one', "$name: next() should return the first result";
 
-    is $iter->next, 'two', 'next() should return the second result';
+        is $iter->next, 'two',
+          "$name: next() should return the second result";
 
-    is $iter->next, '', 'next() should return the third result';
+        is $iter->next, '', "$name: next() should return the third result";
 
-    is $iter->next, 'three', 'next() should return the fourth result';
+        is $iter->next, 'three',
+          "$name: next() should return the fourth result";
 
-    ok !defined $iter->next, 'next() should return undef after it is empty';
+        ok !defined $iter->next,
+          "$name: next() should return undef after it is empty";
 
-    is $iter->exit, 0, "... and exit should now return 0 ($subclass)";
+        is $iter->exit, 0,
+          "$name: ... and exit should now return 0 ($subclass)";
 
-    is $iter->wait, 0, "wait should also now return 0 ($subclass)";
+        is $iter->wait, 0, "$name: wait should also now return 0 ($subclass)";
 
-    if ( my $after = $test->{after} ) {
-        $after->();
+        if ( my $after = $test->{after} ) {
+            $after->();
+        }
     }
 }
 
@@ -99,7 +133,7 @@ for my $test (@schedule) {
     eval {
         local $SIG{__DIE__} = sub { push @die, @_ };
 
-        TAP::Parser::Iterator->new( \1 ); # a ref to a scalar
+        TAP::Parser::Iterator->new( \1 );    # a ref to a scalar
     };
 
     is @die, 1, 'coverage of error case';
@@ -122,7 +156,8 @@ for my $test (@schedule) {
       'coverage of VMS line-splitting case';
 }
 
-{
+SKIP: {
+    skip "No open3", 4 unless _can_open3();
 
     # coverage testing for TAP::Parser::Iterator::Process ctor
 

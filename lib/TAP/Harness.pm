@@ -19,11 +19,11 @@ TAP::Harness - Run Perl test scripts with statistics
 
 =head1 VERSION
 
-Version 2.99_01
+Version 2.99_02
 
 =cut
 
-$VERSION = '2.99_01';
+$VERSION = '2.99_02';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -262,6 +262,8 @@ A filehandle for catching standard output.
 
 =back
 
+Any keys for which the value is C<undef> will be ignored.
+
 =cut
 
 # new supplied by TAP::Base
@@ -269,6 +271,8 @@ A filehandle for catching standard output.
 {
     my @legal_callback = qw(
       made_parser
+      before_runtests
+      after_runtests
     );
 
     sub _initialize {
@@ -329,9 +333,13 @@ sub runtests {
 
     my $aggregate = TAP::Parser::Aggregator->new;
 
+    $self->_make_callback( 'before_runtests', $aggregate );
+
     my $results = $self->aggregate_tests( $aggregate, @tests );
 
     $self->summary($results);
+
+    $self->_make_callback( 'after_runtests', $aggregate, $results );
 
     # XXX where to put the exit status?
     # die "something failed" if($aggregate->has_problems);
@@ -435,7 +443,7 @@ This is a bit clunky and will be cleaned up in a later release.
 sub summary {
     my ( $self, $arg_for ) = @_;
     my ( $start_time, $aggregate, $tests )
-      = @$arg_for{qw< start aggregate tests >};
+      = @$arg_for{qw( start aggregate tests )};
 
     my $end_time = $arg_for->{end} || Benchmark->new;
 
@@ -498,6 +506,8 @@ sub summary {
     }
     my $files = @$tests;
     $self->output("Files=$files, Tests=$total, $runtime\n");
+    my $status = $aggregate->get_status;
+    $self->output("Result: $status\n");
 }
 
 sub _output_summary_failure {
@@ -546,7 +556,7 @@ like to redirect output somewhere else, just override this method.
 sub output {
     my $self = shift;
 
-    print {$self->stdout} @_;
+    print { $self->stdout } @_;
 }
 
 ##############################################################################
@@ -682,7 +692,8 @@ sub output_test_failure {
     }
 
     if ( $failed == 0 ) {
-        $self->failure_output(" All $total subtests passed ");
+        $self->failure_output(
+            $total ? " All $total subtests passed " : " No subtests run " );
     }
     else {
         $self->failure_output(" Failed $failed/$total subtests ");
