@@ -31,13 +31,15 @@ This is alpha code.  You've been warned.
 
 =cut
 
-
 my @tests;
 if (@ARGV) {
     @tests = @ARGV;
 }
 else {
-    find( sub { -f && /\.t$/ && push @tests => $File::Find::name }, "t" );
+    find(
+        sub { -f && /\.t$/ && push @tests => $File::Find::name },
+        "t"
+    );
 }
 
 pipe( my $reader, my $writer );
@@ -136,7 +138,7 @@ sub create_window {
     my ($self) = @_;
 
     my $window = Gtk2::Window->new();
-    my $vbox   = Gtk2::VBox->new( FALSE, 5 );
+    my $vbox = Gtk2::VBox->new( FALSE, 5 );
 
     $window->add($vbox);
     $window->set_title("Test Runner");
@@ -315,8 +317,8 @@ sub _callback_reader {
             return TRUE;
         }
 
-        my ( $filename, $total, $run, $pass, $fail, $skip, $todo ) =
-          split /\t/, $data;
+        my ( $filename, $total, $run, $pass, $fail, $skip, $todo )
+          = split /\t/, $data;
 
         my $view       = $self->{_view};
         my $model      = $self->{_model};

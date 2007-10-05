@@ -2,7 +2,7 @@ package TAP::Parser::Iterator::Process;
 
 use strict;
 
-use TAP::Parser::Iterator;
+use TAP::Parser::Iterator ();
 
 use vars qw($VERSION @ISA);
 
@@ -12,8 +12,6 @@ use Config;
 use IO::Handle;
 
 my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
-my $IS_MACOS = ( $^O eq 'MacOS' );
-my $IS_VMS   = ( $^O eq 'VMS' );
 
 =head1 NAME
 
@@ -21,11 +19,11 @@ TAP::Parser::Iterator::Process - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 SYNOPSIS
 
@@ -90,8 +88,6 @@ sub new {
     my $class = shift;
     my $args  = shift;
 
-    local *DUMMY;
-
     my @command = @{ delete $args->{command} || [] }
       or die "Must supply a command to execute";
 
@@ -105,21 +101,37 @@ sub new {
     my $out = IO::Handle->new;
 
     if ( $class->_use_open3 ) {
+
+        # HOTPATCH {{{
+        my $xclose = \&IPC::Open3::xclose;
+        local $^W;    # no warnings
+        local *IPC::Open3::xclose = sub {
+            my $fh = shift;
+            no strict 'refs';
+            return if ( fileno($fh) == fileno(STDIN) );
+            $xclose->($fh);
+        };
+
+        # }}}
+
         if ($IS_WIN32) {
             $err = $merge ? '' : '>&STDERR';
             eval {
-                $pid = open3( \*DUMMY, $out, $merge ? '' : $err, @command );
+                $pid = open3(
+                    '<&STDIN', $out, $merge ? '' : $err,
+                    @command
+                );
             };
             die "Could not execute (@command): $@" if $@;
             if ( $] >= 5.006 ) {
 
-                # Kludge to avoid warning under 5.0.5
+                # Kludge to avoid warning under 5.5
                 eval 'binmode($out, ":crlf")';
             }
         }
         else {
             $err = $merge ? '' : IO::Handle->new;
-            eval { $pid = open3( \*DUMMY, $out, $err, @command ); };
+            eval { $pid = open3( '<&STDIN', $out, $err, @command ); };
             die "Could not execute (@command): $@" if $@;
             $sel = $merge ? undef : IO::Select->new( $out, $err );
         }
@@ -130,11 +142,6 @@ sub new {
           = join( ' ', map { $_ =~ /\s/ ? qq{"$_"} : $_ } @command );
         open( $out, "$command|" )
           or die "Could not execute ($command): $!";
-    }
-
-    if ( $] >= 5.008 ) {
-        eval 'binmode($out, ":utf8")';
-        eval 'binmode($err, ":utf8")' if ref $err;
     }
 
     my $self = bless {
@@ -152,6 +159,21 @@ sub new {
     }
 
     return $self;
+}
+
+=head3 C<handle_unicode>
+
+Upgrade the input stream to handle UTF8.
+
+=cut
+
+sub handle_unicode {
+    my $self = shift;
+    if ( $] >= 5.008 ) {
+        my ( $out, $err ) = ( $self->{out}, $self->{err} );
+        eval 'binmode($out, ":utf8")';
+        eval 'binmode($err, ":utf8")' if ref $err;
+    }
 }
 
 ##############################################################################
@@ -239,6 +261,19 @@ sub _finish {
     }
 
     return $self;
+}
+
+=head3 C<get_select_handles>
+
+Return a list of filehandles that may be used upstream in a select()
+call to signal that this Iterator is ready. Iterators that are not
+handle based should return an empty list.
+
+=cut
+
+sub get_select_handles {
+    my $self = shift;
+    return grep $_, ( $self->{out}, $self->{err} );
 }
 
 1;

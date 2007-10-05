@@ -4,7 +4,7 @@ use strict;
 
 use vars qw{$VERSION};
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 my $ESCAPE_CHAR = qr{ [ \x00-\x1f \" ] }x;
 
@@ -116,7 +116,10 @@ sub _write_obj {
             if (@$obj) {
                 $self->_put($prefix);
                 for my $value (@$obj) {
-                    $self->_write_obj( $pad . '-', $value, $indent + 1 );
+                    $self->_write_obj(
+                        $pad . '-', $value,
+                        $indent + 1
+                    );
                 }
             }
             else {
@@ -144,7 +147,7 @@ TAP::Parser::YAMLish::Writer - Write YAMLish data
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =head1 SYNOPSIS
 

@@ -9,11 +9,18 @@ TAP::Base - Base class that provides common functionality to L<TAP::Parser> and 
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
+
+my $GOT_TIME_HIRES;
+
+BEGIN {
+    eval 'use Time::HiRes qw(time);';
+    $GOT_TIME_HIRES = $@ ? 0 : 1;
+}
 
 =head1 SYNOPSIS
 
@@ -85,7 +92,9 @@ sub callback {
           . join( ', ', sort keys %ok_map ) )
       unless exists $ok_map{$event};
 
-    push @{$self->{code_for}{$event}}, $callback;
+    push @{ $self->{code_for}{$event} }, $callback;
+
+    return;
 }
 
 sub _has_callbacks {
@@ -111,6 +120,24 @@ sub _croak {
     my ( $self, $message ) = @_;
     require Carp;
     Carp::croak($message);
+
+    return;
 }
+
+=head3 C<get_time>
+
+Return the current time using Time::HiRes if available.
+
+=cut
+
+sub get_time { return time() }
+
+=head3 C<time_is_hires>
+
+Return true if the time returned by get_time is high resolution (i.e. if Time::HiRes is available).
+
+=cut
+
+sub time_is_hires { return $GOT_TIME_HIRES }
 
 1;

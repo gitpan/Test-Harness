@@ -3,9 +3,9 @@ package TAP::Parser::Iterator;
 use strict;
 use vars qw($VERSION);
 
-use TAP::Parser::Iterator::Array;
-use TAP::Parser::Iterator::Stream;
-use TAP::Parser::Iterator::Process;
+use TAP::Parser::Iterator::Array   ();
+use TAP::Parser::Iterator::Stream  ();
+use TAP::Parser::Iterator::Process ();
 
 =head1 NAME
 
@@ -13,11 +13,11 @@ TAP::Parser::Iterator - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 SYNOPSIS
 
@@ -86,10 +86,30 @@ sub next {
     # by itself:
     #   not
     #   ok 1 - 'I hate VMS'
-    if ( defined $line && $line =~ /^\s*not\s*$/ ) {
+    if ( defined($line) and $line =~ /^\s*not\s*$/ ) {
         $line .= ( $self->next_raw || '' );
     }
+
     return $line;
 }
+
+=head3 C<handle_unicode>
+
+If necessary switch the input stream to handle unicode. This only has
+any effect for I/O handle based streams.
+
+=cut
+
+sub handle_unicode { }
+
+=head3 C<get_select_handles>
+
+Return a list of filehandles that may be used upstream in a select()
+call to signal that this Iterator is ready. Iterators that are not
+handle based should return an empty list.
+
+=cut
+
+sub get_select_handles {return}
 
 1;

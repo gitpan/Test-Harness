@@ -12,11 +12,11 @@ TAP::Parser::Result::YAML - YAML result token.
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 DESCRIPTION
 
@@ -57,6 +57,6 @@ Return the parsed YAML data for this result
 
 =cut
 
-sub data {shift->{data} }
+sub data { shift->{data} }
 
 1;

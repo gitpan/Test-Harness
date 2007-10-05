@@ -19,15 +19,16 @@ prove - Run tests through a TAP harness.
 
 =head1 OPTIONS
 
-Boolean options
+Boolean options:
 
  -v,  --verbose     Print all test lines.
  -l,  --lib         Add 'lib' to the path for your tests (-Ilib).
  -b,  --blib        Add 'blib/lib' to the path for your tests (-Iblib/lib).
  -s,  --shuffle     Run the tests in random order.
- -c,  --color       Colored test output (default).  See TAP::Harness::Color.
+ -c,  --color       Colored test output (default).
       --nocolor     Do not color test output.
  -f,  --failures    Only show failed tests.
+      --fork        Fork to run harness in multiple processes
  -m,  --merge       Merge test scripts' STDERR with their STDOUT.
  -r,  --recurse     Recursively descend into directories.
       --reverse     Run the tests in reverse order.
@@ -35,6 +36,7 @@ Boolean options
  -Q,  --QUIET       Only print summary results.
  -p,  --parse       Show full list of TAP parse errors, if any.
       --directives  Only show results with TODO or SKIP directives.
+      --timer       Print elapsed time after each test.
  -T                 Enable tainting checks.
  -t                 Enable tainting warnings.
  -W                 Enable fatal warnings.
@@ -43,13 +45,16 @@ Boolean options
  -?,                Display this help
  -H,  --man         Longer manpage for prove
 
-Options which take arguments
+Options that take arguments:
 
  -I                 Library paths to include.
+ -P                 Load plugin (searches App::Prove::Plugin::*.)
+ -M                 Load a module.
  -e,  --exec        Interpreter to run the tests ('' for compiled tests.)
       --harness     Define test harness to use.  See TAP::Harness.
       --formatter   Result formatter to use. See TAP::Harness.
- -a,  --archive     Store the resulting TAP into the specified archive file.
+ -a,  --archive     Store the resulting TAP in an archive file.
+ -j,  --jobs N      Run N test jobs in parallel (try 9.)
 
 =head2 Reading from C<STDIN>
 
@@ -69,12 +74,13 @@ matching the pattern C<t/*.t>.
 
 =head2 Colored Test Output
 
-Specifying the C<--color> or C<-c> switch is the same as:
+Colored test output is the default, but if output is not to a
+terminal, color is disabled. You can override this by adding the 
+C<--color> switch.
 
- prove --harness TAP::Harness::Color
-
-Colored test output is the default, but if output is not to a terminal, color
-is disabled.  You can override this by adding the C<--color> switch.
+Color support requires L<Term::ANSIColor> on Unix-like platforms and
+L<Win32::Console> windows. If the necessary module is not installed
+colored output will not be available.
 
 =head2 C<--exec>
 

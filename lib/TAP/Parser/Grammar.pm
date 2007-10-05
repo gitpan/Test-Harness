@@ -2,10 +2,9 @@ package TAP::Parser::Grammar;
 
 use strict;
 use vars qw($VERSION);
-use Carp;
 
-use TAP::Parser::Result;
-use TAP::Parser::YAMLish::Reader;
+use TAP::Parser::Result          ();
+use TAP::Parser::YAMLish::Reader ();
 
 =head1 NAME
 
@@ -13,11 +12,11 @@ TAP::Parser::Grammar - A grammar for the Test Anything Protocol.
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 DESCRIPTION
 
@@ -51,94 +50,122 @@ sub new {
     return $self;
 }
 
-# XXX the 'not' and 'ok' might be on separate lines in VMS ...
-my $ok  = qr/(?:not )?ok\b/;
-my $num = qr/\d+/;
+my %language_for;
 
-my %v12 = (
-    version => {
-        syntax  => qr/^TAP\s+version\s+(\d+)\s*\z/i,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__version_token_handler';
-            my $version = $1;
-            return $self->_make_version_token( $line, $version, );
-          }
-    },
-    plan => {
-        syntax  => qr/^1\.\.(\d+)(?:\s*#\s*SKIP\b(.*))?\z/i,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__plan_token_handler';
-            my $tests_planned = $1;
-            my $explanation   = $2;
-            my $skip
-              = ( 0 == $tests_planned || defined $explanation )
-              ? 'SKIP'
-              : '';
-            $explanation = '' unless defined $explanation;
-            return $self->_make_plan_token(
-                $line, $tests_planned, $skip,
-                _trim($explanation),
-            );
+{
+
+    # XXX the 'not' and 'ok' might be on separate lines in VMS ...
+    my $ok           = qr/(?:not )?ok\b/;
+    my $num          = qr/\d+/;
+    my $plan_handler = sub {
+        my ( $self, $line ) = @_;
+        my $tests_planned = $1;
+        my $explanation   = $2;
+        my $skip
+          = ( 0 == $tests_planned || defined $explanation )
+          ? 'SKIP'
+          : '';
+        $explanation = '' unless defined $explanation;
+        return $self->_make_plan_token(
+            $line, $tests_planned, $skip, $explanation,
+        );
+    };
+
+    my %v12 = (
+        version => {
+            syntax  => qr/^TAP\s+version\s+(\d+)\s*\z/i,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my $version = $1;
+                return $self->_make_version_token( $line, $version, );
+            },
         },
-    },
-    test => {
-        syntax  => qr/^($ok) \s* ($num)? \s* (.*) \z/x,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__test_token_handler';
-            my ( $ok, $num, $desc ) = ( $1, $2, $3 );
-            my ( $dir, $explanation ) = ( '', '' );
-            if ($desc =~ m/^ ( [^\\\#]* (?: \\. [^\\\#]* )* ) 
+        plan => {
+            syntax  => qr/^1\.\.(\d+)(?:\s*#\s*SKIP\S*\s*(.*))?\z/i,
+            handler => $plan_handler,
+        },
+
+        # An optimization to handle the most common test lines without
+        # directives.
+        simple_test => {
+            syntax  => qr/^($ok) \ ($num) (?:\ ([^#]+))? \z/x,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my ( $ok, $num, $desc ) = ( $1, $2, $3 );
+
+                return $self->_make_test_token(
+                    $line, $ok, $num,
+                    $desc
+                );
+              }
+        },
+        test => {
+            syntax  => qr/^($ok) \s* ($num)? \s* (.*) \z/x,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my ( $ok, $num, $desc ) = ( $1, $2, $3 );
+                my ( $dir, $explanation ) = ( '', '' );
+                if ($desc =~ m/^ ( [^\\\#]* (?: \\. [^\\\#]* )* )
                        \# \s* (SKIP|TODO) \b \s* (.*) $/ix
-              )
-            {
-                ( $desc, $dir, $explanation ) = ( $1, $2, $3 );
-            }
-            return $self->_make_test_token(
-                $line,   $ok, $num, _trim($desc),
-                uc $dir, $explanation
-            );
+                  )
+                {
+                    ( $desc, $dir, $explanation ) = ( $1, $2, $3 );
+                }
+                return $self->_make_test_token(
+                    $line,   $ok, $num, $desc,
+                    uc $dir, $explanation
+                );
+            },
         },
-    },
-    comment => {
-        syntax  => qr/^#(.*)/,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__comment_token_handler';
-            my $comment = $1;
-            return $self->_make_comment_token( $line, $comment );
+        comment => {
+            syntax  => qr/^#(.*)/,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my $comment = $1;
+                return $self->_make_comment_token( $line, $comment );
+            },
         },
-    },
-    bailout => {
-        syntax  => qr/^Bail out!\s*(.*)/,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__bailout_token_handler';
-            my $explanation = $1;
-            return $self->_make_bailout_token( $line, _trim($explanation) );
+        bailout => {
+            syntax  => qr/^Bail out!\s*(.*)/,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my $explanation = $1;
+                return $self->_make_bailout_token(
+                    $line,
+                    $explanation
+                );
+            },
         },
-    },
-);
+    );
 
-my %v13 = (
-    %v12,
-    yaml => {
-        syntax  => qr/^ (\s+) (---.*) $/x,
-        handler => sub {
-            my ( $self, $line ) = @_;
-            local *__ANON__ = '__ANON__yaml_token_handler';
-            my ( $pad, $marker ) = ( $1, $2 );
-            return $self->_make_yaml_token( $pad, $marker );
+    my %v13 = (
+        %v12,
+        plan => {
+            syntax  => qr/^1\.\.(\d+)(?:\s*#\s*SKIP\b(.*))?\z/i,
+            handler => $plan_handler,
         },
-    },
-);
+        yaml => {
+            syntax  => qr/^ (\s+) (---.*) $/x,
+            handler => sub {
+                my ( $self, $line ) = @_;
+                my ( $pad, $marker ) = ( $1, $2 );
+                return $self->_make_yaml_token( $pad, $marker );
+            },
+        },
+    );
 
-my %token_for = (
-    '12' => \%v12,
-    '13' => \%v13,
-);
+    %language_for = (
+        '12' => {
+            tokens => \%v12,
+        },
+        '13' => {
+            tokens => \%v13,
+            setup  => sub {
+                shift->{stream}->handle_unicode;
+            },
+        },
+    );
+}
 
 ##############################################################################
 
@@ -147,7 +174,7 @@ my %token_for = (
 =head3 C<set_version>
 
   $grammar->set_version(13);
-  
+
 Tell the grammar which TAP syntax version to support. The lowest
 supported version is 12. Although 'TAP version' isn't valid version 12
 syntax it is accepted so that higher version numbers may be parsed.
@@ -158,12 +185,31 @@ sub set_version {
     my $self    = shift;
     my $version = shift;
 
-    if ( my $tokens = $token_for{$version} ) {
-        $self->{tokens} = $tokens;
+    if ( my $language = $language_for{$version} ) {
+        $self->{tokens} = $language->{tokens};
+
+        if ( my $setup = $language->{setup} ) {
+            $self->$setup();
+        }
+
+        $self->_order_tokens;
     }
     else {
-        croak "Unsupported syntax version: $version";
+        require Carp;
+        Carp::croak("Unsupported syntax version: $version");
     }
+}
+
+# Optimization to put the most frequent tokens first.
+sub _order_tokens {
+    my $self = shift;
+
+    my %copy = %{ $self->{tokens} };
+    my @ordered_tokens = grep {defined}
+      map { delete $copy{$_} } qw( simple_test test comment plan );
+    push @ordered_tokens, values %copy;
+
+    $self->{ordered_tokens} = \@ordered_tokens;
 }
 
 ##############################################################################
@@ -186,7 +232,7 @@ sub tokenize {
 
     my $token;
 
-    foreach my $token_data ( values %{ $self->{tokens} } ) {
+    foreach my $token_data ( @{ $self->{ordered_tokens} } ) {
         if ( $line =~ $token_data->{syntax} ) {
             my $handler = $token_data->{handler};
             $token = $self->$handler($line);
@@ -284,7 +330,7 @@ sub _make_plan_token {
         raw           => $line,
         tests_planned => $tests_planned,
         directive     => $skip,
-        explanation   => $explanation,
+        explanation   => _trim($explanation),
     };
 }
 
@@ -324,7 +370,7 @@ sub _make_bailout_token {
     return {
         type    => 'bailout',
         raw     => $line,
-        bailout => _trim($1)
+        bailout => _trim($explanation)
     };
 }
 
@@ -384,22 +430,22 @@ L<TAP::Parser::Result::Unknown>.  It is I<not> a parse error.
 
 A formal grammar would look similar to the following:
 
- (* 
-     For the time being, I'm cheating on the EBNF by allowing 
+ (*
+     For the time being, I'm cheating on the EBNF by allowing
      certain terms to be defined by POSIX character classes by
      using the following syntax:
- 
+
        digit ::= [:digit:]
- 
+
      As far as I am aware, that's not valid EBNF.  Sue me.  I
-     didn't know how to write "char" otherwise (Unicode issues).  
+     didn't know how to write "char" otherwise (Unicode issues).
      Suggestions welcome.
  *)
- 
- tap            ::= version? { comment | unknown } leading_plan lines 
-                    | 
+
+ tap            ::= version? { comment | unknown } leading_plan lines
+                    |
                     lines trailing_plan {comment}
- 
+
  version        ::= 'TAP version ' positiveInteger {positiveInteger} "\n"
 
  leading_plan   ::= plan skip_directive? "\n"
@@ -407,17 +453,17 @@ A formal grammar would look similar to the following:
  trailing_plan  ::= plan "\n"
 
  plan           ::= '1..' nonNegativeInteger
- 
+
  lines          ::= line {line}
 
  line           ::= (comment | test | unknown | bailout ) "\n"
- 
+
  test           ::= status positiveInteger? description? directive?
- 
+
  status         ::= 'not '? 'ok '
- 
+
  description    ::= (character - (digit | '#')) {character - '#'}
- 
+
  directive      ::= todo_directive | skip_directive
 
  todo_directive ::= hash_mark 'TODO' ' ' {character}
@@ -433,12 +479,12 @@ A formal grammar would look similar to the following:
  unknown        ::= { (character - "\n") }
 
  (* POSIX character classes and other terminals *)
- 
+
  digit              ::= [:digit:]
  character          ::= ([:print:] - "\n")
  positiveInteger    ::= ( digit - '0' ) {digit}
  nonNegativeInteger ::= digit {digit}
- 
+
 
 =cut
 

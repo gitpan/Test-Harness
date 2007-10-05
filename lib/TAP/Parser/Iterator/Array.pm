@@ -1,9 +1,9 @@
 package TAP::Parser::Iterator::Array;
 
 use strict;
-use TAP::Parser::Iterator;
+use TAP::Parser::Iterator ();
 use vars qw($VERSION @ISA);
-@ISA     = 'TAP::Parser::Iterator';
+@ISA = 'TAP::Parser::Iterator';
 
 =head1 NAME
 
@@ -11,11 +11,11 @@ TAP::Parser::Iterator::Array - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 SYNOPSIS
 

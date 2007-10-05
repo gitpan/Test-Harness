@@ -11,15 +11,39 @@ use vars qw($VERSION);
 
 =head1 NAME
 
-App::Prove - the guts of the C<prove> command.
+App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
+
+my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
+my $NEED_GLOB = $IS_WIN32;
+
+use constant PLUGINS => 'App::Prove::Plugin';
+
+my @ATTR;
+
+BEGIN {
+    @ATTR = qw(
+      archive argv blib color directives exec failures fork formatter
+      harness includes modules plugins jobs lib merge parse quiet really_quiet recurse
+      backwards shuffle taint_fail taint_warn timer verbose
+      warnings_fail warnings_warn show_help show_man show_version
+    );
+    for my $attr (@ATTR) {
+        no strict 'refs';
+        *$attr = sub {
+            my $self = shift;
+            croak "$attr is read-only" if @_;
+            $self->{$attr};
+        };
+    }
+}
 
 =head1 METHODS
 
@@ -29,46 +53,35 @@ $VERSION = '2.99_02';
 
 =cut
 
-BEGIN {
-    my @ATTR = qw(
-      archive argv blib color directives exec failures
-      formatter harness includes lib merge parse quiet really_quiet
-      recurse backwards shuffle taint_fail taint_warn verbose
-      warnings_fail warnings_warn
-    );
+sub new {
+    my $class = shift;
+    my $args = shift || {};
+
+    my $self = bless {
+        argv     => [],
+        includes => [],
+        modules  => [],
+        plugins  => [],
+    }, $class;
 
     for my $attr (@ATTR) {
-        no strict 'refs';
-        *{ __PACKAGE__ . '::' . $attr } = sub {
-            my $self = shift;
-            croak "$attr is read-only" if @_;
-            $self->{$attr};
-        };
-    }
+        if ( exists $args->{$attr} ) {
 
-    sub new {
-        my $class = shift;
-        my $args = shift || {};
-
-        my $self = bless {
-            argv              => [],
-            includes          => [],
-            default_formatter => 'TAP::Harness::Formatter::Basic',
-        }, $class;
-
-        for my $attr (@ATTR) {
-            if ( exists $args->{$attr} ) {
-
-                # TODO: Some validation here
-                $self->{$attr} = $args->{$attr};
-            }
+            # TODO: Some validation here
+            $self->{$attr} = $args->{$attr};
         }
-
-        return $self;
     }
+    return $self;
 }
 
 =head3 C<process_args>
+
+  $prove->process_args(@args);
+
+Processes the command-line arguments and stashes the remainders in the
+C<$self->{args}> array-ref.
+
+Dies on invalid arguments.
 
 =cut
 
@@ -83,11 +96,11 @@ sub process_args {
     # Allow cuddling the paths with the -I
     @args = map { /^(-I)(.+)/ ? ( $1, $2 ) : $_ } @args;
 
-    my $help_sub = sub { $self->_help; $self->_exit };
-
     {
         local @ARGV = @args;
         Getopt::Long::Configure( 'no_ignore_case', 'bundling' );
+
+        # Don't add coderefs to GetOptions
         GetOptions(
             'v|verbose'   => \$self->{verbose},
             'f|failures'  => \$self->{failures},
@@ -100,99 +113,97 @@ sub process_args {
             'formatter=s' => \$self->{formatter},
             'r|recurse'   => \$self->{recurse},
             'reverse'     => \$self->{backwards},
+            'fork'        => \$self->{fork},
             'p|parse'     => \$self->{parse},
             'q|quiet'     => \$self->{quiet},
             'Q|QUIET'     => \$self->{really_quiet},
             'e|exec=s'    => \$self->{exec},
             'm|merge'     => \$self->{merge},
             'I=s@'        => $self->{includes},
+            'M=s@'        => $self->{modules},
+            'P=s@'        => $self->{plugins},
             'directives'  => \$self->{directives},
-            'h|help|?'    => $help_sub,
-            'H|man'       => $help_sub,
-            'V|version'   => sub { $self->print_version; $self->_exit },
+            'h|help|?'    => \$self->{show_help},
+            'H|man'       => \$self->{show_man},
+            'V|version'   => \$self->{show_version},
             'a|archive=s' => \$self->{archive},
-
-            'T' => \$self->{taint_fail},
-            't' => \$self->{taint_warn},
-            'W' => \$self->{warnings_fail},
-            'w' => \$self->{warnings_warn},
-        );
+            'j|jobs=i'    => \$self->{jobs},
+            'timer'       => \$self->{timer},
+            'T'           => \$self->{taint_fail},
+            't'           => \$self->{taint_warn},
+            'W'           => \$self->{warnings_fail},
+            'w'           => \$self->{warnings_warn},
+        ) or croak('Unable to continue');
 
         # Stash the remainder of argv for later
         $self->{argv} = [@ARGV];
     }
+
+    return;
 }
 
 sub _exit { exit( $_[1] || 0 ) }
 
 sub _help {
-    my $self = shift;
+    my ( $self, $verbosity ) = @_;
 
     eval('use Pod::Usage 1.12 ()');
-    my $err = $@;
-
-    # XXX Getopt::Long is being helpy
-    local $SIG{__DIE__} = sub { warn @_; $self->_exit; };
-    if ($err) {
+    if ( my $err = $@ ) {
         die 'Please install Pod::Usage for the --help option '
           . '(or try `perldoc prove`.)'
           . "\n ($@)";
     }
 
-    Pod::Usage::pod2usage( { -verbose => 1 } );
+    Pod::Usage::pod2usage( { -verbose => $verbosity } );
+
+    return;
 }
 
 sub _color_default {
     my $self = shift;
 
-    return -t STDOUT
-      && !( $^O =~ /MSWin32/ );
+    return -t STDOUT && !$IS_WIN32;
 }
 
 sub _get_args {
-    my $self          = shift;
-    my $harness_class = 'TAP::Harness';
+    my $self = shift;
+
+    $self->{harness_class} = 'TAP::Harness';
+
     my %args;
 
     if ( defined $self->color ? $self->color : $self->_color_default ) {
-        require TAP::Harness::Color;
-        $harness_class = 'TAP::Harness::Color';
+        $args{color} = 1;
     }
 
     if ( $self->archive ) {
-        eval { require TAP::Harness::Archive };
-        die
-          "TAP::Harness::Archive is required to use the --archive feature: $@"
-          if $@;
-        $harness_class = 'TAP::Harness::Archive';
+        eval('sub TAP::Harness::Archive::auto_inherit {1}');    # wink,wink
+        $self->require_harness( archive => 'TAP::Harness::Archive' );
         $args{archive} = $self->archive;
     }
 
-    if ( $self->harness ) {
-        $harness_class = $self->harness;
-        eval "use $harness_class";
-        die "Cannot use harness ($harness_class): $@" if $@;
+    if ( my $jobs = $self->jobs ) {
+        $args{jobs} = $jobs;
     }
 
-    my $formatter_class;
-    if ( $self->formatter ) {
-        $formatter_class = $self->formatter;
-        eval "use $formatter_class";
-        die "Cannot use formatter ($formatter_class): $@" if $@;
+    if ( my $fork = $self->fork ) {
+        $args{fork} = $fork;
     }
 
-    unless ($formatter_class) {
-        my $class = $self->{default_formatter};
-        eval "use $class";
-        $formatter_class = $class unless $@;
+    if ( my $harness_opt = $self->harness ) {
+        $self->require_harness( harness => $harness_opt );
+    }
+
+    if ( my $formatter = $self->formatter ) {
+        $args{formatter_class} = $formatter;
     }
 
     if ( $self->taint_fail && $self->taint_warn ) {
-        die "-t and -T are mutually exclusive";
+        die '-t and -T are mutually exclusive';
     }
 
     if ( $self->warnings_fail && $self->warnings_warn ) {
-        die "-w and -W are mutually exclusive";
+        die '-w and -W are mutually exclusive';
     }
 
     for my $a (qw( lib switches )) {
@@ -201,24 +212,61 @@ sub _get_args {
         $args{$a} = $val if defined $val;
     }
 
-    $args{merge}    = $self->merge    if $self->merge;
-    $args{verbose}  = $self->verbose  if $self->verbose;
-    $args{failures} = $self->failures if $self->failures;
-
-    $args{quiet}        = 1 if $self->quiet;
-    $args{really_quiet} = 1 if $self->really_quiet;
-    $args{errors}       = 1 if $self->parse;
-
-    $args{exec} = length( $self->exec ) ? [ split( / /, $self->exec ) ] : []
-      if ( defined( $self->exec ) );
-
-    $args{directives} = 1 if $self->directives;
-
-    if ($formatter_class) {
-        $args{formatter} = $formatter_class->new;
+    for my $a (qw( merge verbose failures timer )) {
+        $args{$a} = $self->$a() if $self->$a();
     }
 
-    return ( \%args, $harness_class );
+    for my $a (qw( quiet really_quiet directives )) {
+        $args{$a} = 1 if $self->$a();
+    }
+
+    $args{errors} = 1 if $self->parse;
+
+    # defined but zero-length exec runs test files as binaries
+    $args{exec} = [ split( /\s+/, $self->exec ) ]
+      if ( defined( $self->exec ) );
+
+    return ( \%args, $self->{harness_class} );
+}
+
+sub _find_module {
+    my ( $self, $class, @search ) = @_;
+
+    croak "Bad module name $class"
+      unless $class =~ /^ \w+ (?: :: \w+ ) *$/x;
+
+    for my $pfx (@search) {
+        my $name = join( '::', $pfx, $class );
+        print "$name\n";
+        eval "require $name";
+        return $name unless $@;
+    }
+
+    eval "require $class";
+    return $class unless $@;
+    return;
+}
+
+sub _load_extension {
+    my ( $self, $class, @search ) = @_;
+
+    my @args = ();
+    if ( $class =~ /^(.*?)=(.*)/ ) {
+        $class = $1;
+        @args = split( /,/, $2 );
+    }
+
+    if ( my $name = $self->_find_module( $class, @search ) ) {
+        $name->import(@args);
+    }
+    else {
+        croak "Can't load module $class";
+    }
+}
+
+sub _load_extensions {
+    my ( $self, $ext, @search ) = @_;
+    $self->_load_extension( $_, @search ) for @$ext;
 }
 
 =head3 C<run>
@@ -228,12 +276,29 @@ sub _get_args {
 sub run {
     my $self = shift;
 
-    my @tests = $self->_get_tests( @{ $self->argv } );
+    if ( $self->show_help ) {
+        $self->_help(1);
+    }
+    elsif ( $self->show_man ) {
+        $self->_help(2);
+    }
+    elsif ( $self->show_version ) {
+        $self->print_version;
+    }
+    else {
 
-    $self->_shuffle(@tests) if $self->shuffle;
-    @tests = reverse @tests if $self->backwards;
+        $self->_load_extensions( $self->modules );
+        $self->_load_extensions( $self->plugins, PLUGINS );
 
-    $self->_runtests( $self->_get_args, @tests );
+        my @tests = $self->_get_tests( @{ $self->argv } );
+
+        $self->_shuffle(@tests) if $self->shuffle;
+        @tests = reverse @tests if $self->backwards;
+
+        $self->_runtests( $self->_get_args, @tests );
+    }
+
+    return;
 }
 
 sub _runtests {
@@ -242,6 +307,8 @@ sub _runtests {
     my $aggregator = $harness->runtests(@tests);
 
     $self->_exit( $aggregator->has_problems ? 1 : 0 );
+
+    return;
 }
 
 sub _get_switches {
@@ -287,6 +354,12 @@ sub _get_tests {
     my @argv = @_;
     my ( @tests, %tests );
     @argv = 't' unless @argv;
+
+    # Do globbing on Win32.
+    if ($NEED_GLOB) {
+        @argv = map { glob "$_" } @argv;
+    }
+
     foreach my $arg (@argv) {
         if ( '-' eq $arg ) {
             push @argv => <STDIN>;
@@ -334,6 +407,27 @@ sub _shuffle {
         my $j = rand $i--;
         @_[ $i, $j ] = @_[ $j, $i ];
     }
+    return;
+}
+
+=head3 C<require_harness>
+
+Load a harness class and add it to the inheritance chain.
+
+  $prove->require_harness($for => $class_name);
+
+=cut
+
+sub require_harness {
+    my ( $self, $for, $class ) = @_;
+
+    eval("require $class");
+    die "$class is required to use the --$for feature: $@" if $@;
+    $class->inherit( $self->{harness_class} );
+
+    $self->{harness_class} = $class;
+
+    return;
 }
 
 =head3 C<print_version>
@@ -344,8 +438,10 @@ sub print_version {
     my $self = shift;
     printf(
         "TAP::Harness v%s and Perl v%vd\n",
-        $Tap::Harness::VERSION, $^V
+        $TAP::Harness::VERSION, $^V
     );
+
+    return;
 }
 
 1;
@@ -356,51 +452,67 @@ __END__
 
 =over
 
-=item C< archive >
+=item C<archive>
 
-=item C< argv >
+=item C<argv>
 
-=item C< backwards >
+=item C<backwards>
 
-=item C< blib >
+=item C<blib>
 
-=item C< color >
+=item C<color>
 
-=item C< directives >
+=item C<directives>
 
-=item C< exec >
+=item C<exec>
 
-=item C< failures >
+=item C<failures>
 
-=item C< formatter >
+=item C<fork>
 
-=item C< harness >
+=item C<formatter>
 
-=item C< includes >
+=item C<harness>
 
-=item C< lib >
+=item C<includes>
 
-=item C< merge >
+=item C<jobs>
 
-=item C< parse >
+=item C<lib>
 
-=item C< quiet >
+=item C<merge>
 
-=item C< really_quiet >
+=item C<modules>
 
-=item C< recurse >
+=item C<parse>
 
-=item C< shuffle >
+=item C<plugins>
 
-=item C< taint_fail >
+=item C<quiet>
 
-=item C< taint_warn >
+=item C<really_quiet>
 
-=item C< verbose >
+=item C<recurse>
 
-=item C< warnings_fail >
+=item C<show_help>
 
-=item C< warnings_warn >
+=item C<show_man>
+
+=item C<show_version>
+
+=item C<shuffle>
+
+=item C<taint_fail>
+
+=item C<taint_warn>
+
+=item C<timer>
+
+=item C<verbose>
+
+=item C<warnings_fail>
+
+=item C<warnings_warn>
 
 =back
 

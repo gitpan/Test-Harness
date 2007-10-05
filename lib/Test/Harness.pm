@@ -2,14 +2,15 @@ package Test::Harness;
 
 require 5.00405;
 
-use TAP::Harness;
-use TAP::Parser::Aggregator;
-
-#use Test::Harness::Straps;
-use Exporter;
-use Benchmark;
-use Config;
 use strict;
+
+use constant IS_WIN32 => ( $^O =~ /^(MS)?Win32$/ );
+use constant IS_VMS => ( $^O eq 'VMS' );
+
+use TAP::Harness            ();
+use TAP::Parser::Aggregator ();
+
+use Exporter;
 
 # TODO: Emulate at least some of these
 use vars qw(
@@ -36,11 +37,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -76,9 +77,11 @@ $Timer = $ENV{HARNESS_TIMER} || 0;
 
 =head1 DESCRIPTION
 
-This module exists to provide L<TAP::Harness> with an interface that is
-somewhat backwards compatible with L<Test::Harness> 2.xx. If you're
-writing new code consider using L<TAP::Harness> directly instead.
+Although the L<Test::Harness> distribution takes its name from this
+module for historical reasons it exists only to provide L<TAP::Harness>
+with an interface that is somewhat backwards compatible with
+L<Test::Harness> 2.xx. If you're writing new code consider using
+L<TAP::Harness> directly instead.
 
 Emulation is provided for C<runtests> and C<execute_tests> but the
 pluggable 'Straps' interface that previous versions of L<Test::Harness>
@@ -106,14 +109,14 @@ sub runtests {
     my @tests = @_;
 
     # shield against -l
-    local ($\, $,);
+    local ( $\, $, );
 
     my $harness   = _new_harness();
     my $aggregate = TAP::Parser::Aggregator->new();
 
-    my $results = $harness->aggregate_tests( $aggregate, @tests );
+    $harness->aggregate_tests( $aggregate, @tests );
 
-    $harness->summary($results);
+    $harness->formatter->summary($aggregate);
 
     my $total  = $aggregate->total;
     my $passed = $aggregate->passed;
@@ -171,6 +174,8 @@ sub _new_harness {
         }
     }
 
+    push @lib, _filtered_inc();
+
     my $args = {
         verbose    => $Verbose,
         timer      => $Timer,
@@ -180,6 +185,57 @@ sub _new_harness {
     };
 
     return TAP::Harness->new($args);
+}
+
+# Get the parts of @INC which are changed from the stock list AND
+# preserve reordering of stock directories.
+sub _filtered_inc {
+    my @inc = @INC;
+
+    if (IS_VMS) {
+
+        # VMS has a 255-byte limit on the length of %ENV entries, so
+        # toss the ones that involve perl_root, the install location
+        @inc = grep !/perl_root/i, @inc;
+
+    }
+    elsif (IS_WIN32) {
+
+        # Lose any trailing backslashes in the Win32 paths
+        s/[\\\/+]$// foreach @inc;
+    }
+
+    my @default_inc = _default_inc();
+
+    my @new_inc;
+    my %seen;
+    for my $dir (@inc) {
+        next if $seen{$dir}++;
+
+        if ( $dir eq ( $default_inc[0] || '' ) ) {
+            shift @default_inc;
+        }
+        else {
+            push @new_inc, $dir;
+        }
+
+        shift @default_inc while @default_inc and $seen{ $default_inc[0] };
+    }
+
+    return @new_inc;
+}
+
+{
+
+    # Cache this to avoid repeatedly shelling out to Perl.
+    my @inc;
+
+    sub _default_inc {
+        return @inc if @inc;
+        my $perl = $ENV{HARNESS_PERL} || $^X;
+        chomp( @inc = `$perl -le "print join qq[\\n], \@INC"` );
+        return @inc;
+    }
 }
 
 sub _check_sequence {
@@ -231,18 +287,19 @@ sub execute_tests {
         }
     );
 
-    my $results = $harness->aggregate_tests( $aggregate, @{ $args{tests} } );
+    $harness->aggregate_tests( $aggregate, @{ $args{tests} } );
 
-    $tot{bench} = timediff( $results->{end}, $results->{start} );
+    $tot{bench} = $aggregate->elapsed;
+    my @tests = $aggregate->descriptions;
 
     # TODO: Work out the circumstances under which the files
     # and tests totals can differ.
-    $tot{files} = $tot{tests} = @{ $results->{tests} };
+    $tot{files} = $tot{tests} = scalar @tests;
 
     my %failedtests = ();
     my %todo_passed = ();
 
-    for my $test ( @{ $results->{tests} } ) {
+    for my $test (@tests) {
         my ($parser) = $aggregate->parsers($test);
 
         my @failed = $parser->failed;
@@ -278,7 +335,9 @@ sub execute_tests {
                   || _canon(@failed)
                   || '??',
                 'estat'  => $estat,
-                'failed' => $huh_planned || $huh_errors || scalar @failed,
+                'failed' => $huh_planned
+                  || $huh_errors
+                  || scalar @failed,
                 'max' => $huh_planned || $planned,
                 'name'  => $test,
                 'wstat' => $wstat

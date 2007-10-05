@@ -3,13 +3,13 @@ package TAP::Parser;
 use strict;
 use vars qw($VERSION @ISA);
 
-use TAP::Base;
-use TAP::Parser::Grammar;
-use TAP::Parser::Result;
-use TAP::Parser::Source;
-use TAP::Parser::Source::Perl;
-use TAP::Parser::Iterator;
-use Carp;
+use TAP::Base                 ();
+use TAP::Parser::Grammar      ();
+use TAP::Parser::Result       ();
+use TAP::Parser::Source       ();
+use TAP::Parser::Source::Perl ();
+use TAP::Parser::Iterator     ();
+use Carp                      ();
 
 @ISA = qw(TAP::Base);
 
@@ -19,11 +19,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -51,6 +51,8 @@ BEGIN {    # making accessors
         wait
         version
         in_todo
+        start_time
+        end_time
         )
       )
     {
@@ -82,7 +84,7 @@ BEGIN {    # making accessors
     use TAP::Parser;
 
     my $parser = TAP::Parser->new( { source => $source } );
-    
+
     while ( my $result = $parser->next ) {
         print $result->as_string;
     }
@@ -360,6 +362,8 @@ sub run {
         $grammar->set_version( $self->version );
         $self->_grammar($grammar);
         $self->_spool($spool);
+
+        $self->start_time( $self->get_time );
 
         return $self;
     }
@@ -819,6 +823,14 @@ plan of '1..17' will mean that 17 tests were planned.
 Returns the number of tests which actually were run.  Hopefully this will
 match the number of C<< $parser->tests_planned >>.
 
+=head3 C<start_time>
+
+Returns the time when the Parser was created.
+
+=head3 C<end_time>
+
+Returns the time when the end of TAP input was seen.
+
 =head3 C<has_problems>
 
   if ( $parser->has_problems ) {
@@ -833,7 +845,6 @@ failed, any TODO tests unexpectedly succeeded, or any parse errors occurred.
 sub has_problems {
     my $self = shift;
     return $self->failed
-      || $self->todo_passed
       || $self->parse_errors
       || $self->wait
       || $self->exit;
@@ -941,9 +952,8 @@ sub _make_state_table {
         version => {
             act => sub {
                 my ($version) = @_;
-                local *__ANON__ = '__ANON__bad_version_handler';
                 $self->_add_error(
-                    "If TAP version is present it must be the first line of output"
+                    'If TAP version is present it must be the first line of output'
                 );
             },
         },
@@ -954,7 +964,6 @@ sub _make_state_table {
         plan => {
             act => sub {
                 my ($plan) = @_;
-                local *__ANON__ = '__ANON__plan_handler';
                 $self->tests_planned( $plan->tests_planned );
                 $self->plan( $plan->plan );
             },
@@ -962,48 +971,51 @@ sub _make_state_table {
         test => {
             act => sub {
                 my ($test) = @_;
-                local *__ANON__ = '__ANON__test_handler';
 
-                $self->in_todo( $test->has_todo );
-                $self->{tests_run}++;
+                my ( $has_todo, $number, $tests_run ) = (
+                    $test->has_todo, $test->number,
+                    ++$self->{tests_run}
+                );
+
+                $self->in_todo($has_todo);
                 if ( defined( my $tests_planned = $self->tests_planned ) ) {
-                    if ( $self->tests_run > $tests_planned ) {
+                    if ( $tests_run > $tests_planned ) {
                         $test->is_unplanned(1);
                     }
                 }
 
-                if ( $test->number ) {
-                    if ( $test->number != $self->tests_run ) {
-                        my $number = $test->number;
-                        my $count  = $self->tests_run;
+                if ($number) {
+                    if ( $number != $tests_run ) {
+                        my $count = $tests_run;
                         $self->_add_error(
                             "Tests out of sequence.  Found ($number) but expected ($count)"
                         );
                     }
                 }
                 else {
-                    $test->_number( $self->tests_run );
+                    $test->_number( $number = $tests_run );
                 }
 
-                my $num = $test->number;
+                push @{ $self->{todo} } => $number if $has_todo;
+                push @{ $self->{todo_passed} } => $number
+                  if $test->todo_passed;
+                push @{ $self->{skipped} } => $number
+                  if $test->has_skip;
 
-                push @{ $self->{todo} }        => $num if $test->has_todo;
-                push @{ $self->{todo_passed} } => $num if $test->todo_passed;
-                push @{ $self->{passed} }      => $num if $test->is_ok;
-                push @{ $self->{actual_passed} } => $num
-                  if $test->is_actual_ok;
-                push @{ $self->{skipped} } => $num if $test->has_skip;
+                push @{ $self->{ $test->is_ok ? 'passed' : 'failed' } } =>
+                  $number;
+                push @{
+                    $self->{
+                        $test->is_actual_ok
+                        ? 'actual_passed'
+                        : 'actual_failed'
+                      }
+                  } => $number;
 
-                push @{ $self->{actual_failed} } => $num
-                  if !$test->is_actual_ok;
-                push @{ $self->{failed} } => $num if !$test->is_ok;
             },
         },
         yaml => {
-            act => sub {
-                my ($test) = @_;
-                local *__ANON__ = '__ANON__yaml_handler';
-            },
+            act => sub { },
         },
     );
 
@@ -1017,7 +1029,6 @@ sub _make_state_table {
             version => {
                 act => sub {
                     my ($version) = @_;
-                    local *__ANON__ = '__ANON__version_handler';
                     my $ver_num = $version->version;
                     if ( $ver_num <= $DEFAULT_TAP_VERSION ) {
                         my $ver_min = $DEFAULT_TAP_VERSION + 1;
@@ -1028,7 +1039,7 @@ sub _make_state_table {
                     }
                     if ( $ver_num > $MAX_TAP_VERSION ) {
                         $self->_add_error(
-                                "TAP specified version $ver_num but we don't "
+                            "TAP specified version $ver_num but we don't know "
                               . "about versions later than $MAX_TAP_VERSION"
                         );
                         $ver_num = $MAX_TAP_VERSION;
@@ -1050,7 +1061,6 @@ sub _make_state_table {
             plan => {
                 act => sub {
                     my ($version) = @_;
-                    local *__ANON__ = '__ANON__multiple_plan_handler';
                     $self->_add_error(
                         "More than one plan found in TAP output");
                 },
@@ -1088,15 +1098,15 @@ sub _make_state_table {
     );
 
     # Apply globals and defaults to state table
-    for my $name ( keys %states ) {
+    for my $name ( sort keys %states ) {
 
         # Merge with globals
         my $st = { %state_globals, %{ $states{$name} } };
 
         # Add defaults
-        for my $next ( keys %$st ) {
+        for my $next ( sort keys %{$st} ) {
             if ( my $default = $state_defaults{$next} ) {
-                for my $def ( keys %$default ) {
+                for my $def ( sort keys %{$default} ) {
                     $st->{$next}->{$def} ||= $default->{$def};
                 }
             }
@@ -1108,6 +1118,15 @@ sub _make_state_table {
 
     return \%states;
 }
+
+=head3 C<get_select_handles>
+
+Get an a list of file handles which can be passed to C<select> to
+determine the readiness of this parser.
+
+=cut
+
+sub get_select_handles { shift->_stream->get_select_handles }
 
 sub _iter {
     my $self        = shift;
@@ -1124,7 +1143,7 @@ sub _iter {
         my $count = 1;
         TRANS: {
             my $state_spec = $state_table->{$state}
-              or die "Illegal state: ", $state;
+              or die "Illegal state: $state";
 
             if ( my $next = $state_spec->{$type} ) {
                 if ( my $act = $next->{act} ) {
@@ -1150,7 +1169,7 @@ sub _iter {
                 $next_state->($result);
 
                 if ( my $code = $self->_callback_for( $result->type ) ) {
-                    $_->($result) for @$code;
+                    $_->($result) for @{$code};
                 }
                 else {
                     $self->_make_callback( 'ELSE', $result );
@@ -1159,7 +1178,7 @@ sub _iter {
                 $self->_make_callback( 'ALL', $result );
 
                 # Echo TAP to spool file
-                print $spool $result->raw, "\n" if $spool;
+                print {$spool} $result->raw, "\n" if $spool;
             }
             else {
                 $self->exit( $stream->exit );
@@ -1183,7 +1202,7 @@ sub _iter {
                 $next_state->($result);
 
                 # Echo TAP to spool file
-                print $spool $result->raw, "\n" if $spool;
+                print {$spool} $result->raw, "\n" if $spool;
             }
             else {
                 $self->exit( $stream->exit );
@@ -1199,9 +1218,11 @@ sub _iter {
 sub _finish {
     my $self = shift;
 
+    $self->end_time( $self->get_time );
+
     # sanity checks
     if ( !$self->plan ) {
-        $self->_add_error("No plan found in TAP output");
+        $self->_add_error('No plan found in TAP output');
     }
     else {
         $self->is_good_plan(1) unless defined $self->is_good_plan;
@@ -1227,6 +1248,20 @@ sub _finish {
 
     $self->is_good_plan(0) unless defined $self->is_good_plan;
     return $self;
+}
+
+=head3 C<delete_spool>
+
+Delete and return the spool.
+
+  my $fh = $parser->delete_spool;
+
+=cut
+
+sub delete_spool {
+    my $self = shift;
+
+    return delete $self->{_spool};
 }
 
 ##############################################################################

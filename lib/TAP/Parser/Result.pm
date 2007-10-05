@@ -3,13 +3,13 @@ package TAP::Parser::Result;
 use strict;
 use vars qw($VERSION);
 
-use TAP::Parser::Result::Bailout;
-use TAP::Parser::Result::Comment;
-use TAP::Parser::Result::Plan;
-use TAP::Parser::Result::Test;
-use TAP::Parser::Result::Unknown;
-use TAP::Parser::Result::Version;
-use TAP::Parser::Result::YAML;
+use TAP::Parser::Result::Bailout ();
+use TAP::Parser::Result::Comment ();
+use TAP::Parser::Result::Plan    ();
+use TAP::Parser::Result::Test    ();
+use TAP::Parser::Result::Unknown ();
+use TAP::Parser::Result::Version ();
+use TAP::Parser::Result::YAML    ();
 
 BEGIN {
     no strict 'refs';
@@ -27,11 +27,11 @@ TAP::Parser::Result - TAP::Parser output
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head2 DESCRIPTION
 

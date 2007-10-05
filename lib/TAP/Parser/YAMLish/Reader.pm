@@ -4,7 +4,7 @@ use strict;
 
 use vars qw{$VERSION};
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 # TODO:
 #   Handle blessed object syntax
@@ -49,7 +49,8 @@ sub read {
     # Which might not be a bad idea.
     my $dots = $self->_peek;
     die "Missing '...' at end of YAMLish"
-      unless defined $dots and $dots =~ $IS_END_YAML;
+      unless defined $dots
+          and $dots =~ $IS_END_YAML;
 
     delete $self->{reader};
     delete $self->{next};
@@ -199,7 +200,10 @@ sub _read_array {
 
     while (1) {
         my ( $line, $indent ) = $self->_peek;
-        last if $indent < $limit || !defined $line || $line =~ $IS_END_YAML;
+        last
+          if $indent < $limit
+              || !defined $line
+              || $line =~ $IS_END_YAML;
 
         if ( $indent > $limit ) {
             die "Array line over-indented";
@@ -252,7 +256,10 @@ sub _read_hash {
         }
 
         ( $line, $indent ) = $self->_peek;
-        last if $indent < $limit || !defined $line || $line =~ $IS_END_YAML;
+        last
+          if $indent < $limit
+              || !defined $line
+              || $line =~ $IS_END_YAML;
     }
 
     return $hash;
@@ -270,7 +277,7 @@ TAP::Parser::YAMLish::Reader - Read YAMLish data from iterator
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =head1 SYNOPSIS
 

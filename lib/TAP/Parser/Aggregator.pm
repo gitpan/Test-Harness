@@ -1,6 +1,7 @@
 package TAP::Parser::Aggregator;
 
 use strict;
+use Benchmark;
 use vars qw($VERSION);
 
 =head1 NAME
@@ -9,11 +10,11 @@ TAP::Parser::Aggregator - Aggregate TAP::Parser results
 
 =head1 VERSION
 
-Version 2.99_02
+Version 2.99_03
 
 =cut
 
-$VERSION = '2.99_02';
+$VERSION = '2.99_03';
 
 =head1 SYNOPSIS
 
@@ -22,14 +23,14 @@ $VERSION = '2.99_02';
     my $aggregate = TAP::Parser::Aggregator->new;
     $aggregate->add( 't/00-load.t', $load_parser );
     $aggregate->add( 't/10-lex.t',  $lex_parser  );
-    
+
     my $summary = <<'END_SUMMARY';
     Passed:  %s
     Failed:  %s
     Unexpectedly succeeded: %s
     END_SUMMARY
-    printf $summary, 
-           scalar $aggregate->passed, 
+    printf $summary,
+           scalar $aggregate->passed,
            scalar $aggregate->failed,
            scalar $aggregate->todo_passed;
 
@@ -172,6 +173,84 @@ sub _get_parsers {
         push @parsers => $self->{parser_for}{$description};
     }
     return wantarray ? @parsers : \@parsers;
+}
+
+=head3 C<descriptions>
+
+Get an array of descriptions in the order in which they were added to the aggregator.
+
+=cut
+
+sub descriptions { @{ shift->{parse_order} || [] } }
+
+=head3 C<start>
+
+Call C<start> immediately before adding any results to the aggregator.
+Among other times it records the start time for the test run.
+
+=cut
+
+sub start {
+    my $self = shift;
+    $self->{start_time} = Benchmark->new;
+}
+
+=head3 C<stop>
+
+Call C<stop> immediately after adding all test results to the aggregator.
+
+=cut
+
+sub stop {
+    my $self = shift;
+    $self->{end_time} = Benchmark->new;
+}
+
+=head3 C<elapsed>
+
+Elapsed returns a L<Benchmark> object that represents the running time
+of the aggregated tests. In order for C<elapsed> to be valid you must
+call C<start> before running the tests and C<stop> immediately
+afterwards.
+
+=cut
+
+sub elapsed {
+    my $self = shift;
+
+    require Carp;
+    Carp::croak
+      q{Can't call elapsed without first calling start and then stop}
+      unless defined $self->{start_time} && defined $self->{end_time};
+    return timediff( $self->{end_time}, $self->{start_time} );
+}
+
+=head3 C<elapsed_timestr>
+
+Returns a formatted string representing the runtime returned by
+C<elapsed()>.  This lets the caller not worry about Benchmark.
+
+=cut
+
+sub elapsed_timestr {
+    my $self = shift;
+
+    my $elapsed = $self->elapsed;
+
+    return timestr($elapsed);
+}
+
+=head3 C<all_passed>
+
+Return true if all the tests passed and no parse errors were detected.
+
+=cut
+
+sub all_passed {
+    my $self = shift;
+    return $self->total
+      && $self->total == $self->passed
+      && !$self->has_problems;
 }
 
 =head3 C<get_status>
