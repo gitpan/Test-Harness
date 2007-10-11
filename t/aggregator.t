@@ -1,9 +1,10 @@
 #!/usr/bin/perl -wT
 
+
 use strict;
 use lib 't/lib';
 
-use Test::More tests => 70;
+use Test::More tests => 79;
 
 use TAP::Parser;
 use TAP::Parser::Iterator;
@@ -107,6 +108,15 @@ is $agg->total, $agg->passed + $agg->failed,
 can_ok $agg, 'has_problems';
 ok $agg->has_problems, '... and it should report true if there are problems';
 
+can_ok $agg, 'has_errors';
+ok $agg->has_errors, '... and it should report true if there are errors';
+
+can_ok $agg, 'get_status';
+is $agg->get_status, 'FAIL', '... and it should tell us the tests failed';
+
+can_ok $agg, 'all_passed';
+ok !$agg->all_passed, '... and it should tell us not all tests passed';
+
 # coverage testing
 
 # _get_parsers
@@ -197,6 +207,12 @@ is $agg->todo_passed, 1,
   '... and the correct number of unexpectedly succeeded tests';
 ok $agg->has_problems,
   '... and it should report true that there are problems';
+is $agg->get_status, 'PASS',
+  '... and the status should be passing';
+ok !$agg->has_errors,
+  '.... but it should not report any errors';
+ok $agg->all_passed,
+  '... bonus tests should be passing tests, too';
 
 # 2. !failed && !todo_passed && parse_errors
 

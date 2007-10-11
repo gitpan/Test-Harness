@@ -10,11 +10,11 @@ TAP::Parser::Aggregator - Aggregate TAP::Parser results
 
 =head1 VERSION
 
-Version 2.99_03
+Version 2.99_04
 
 =cut
 
-$VERSION = '2.99_03';
+$VERSION = '2.99_04';
 
 =head1 SYNOPSIS
 
@@ -250,7 +250,7 @@ sub all_passed {
     my $self = shift;
     return $self->total
       && $self->total == $self->passed
-      && !$self->has_problems;
+      && !$self->has_errors;
 }
 
 =head3 C<get_status>
@@ -266,7 +266,7 @@ sub get_status {
 
     if ( my $total = $self->total ) {
         return $total == $self->passed
-          && !$self->has_problems ? 'PASS' : 'FAIL';
+          && !$self->has_errors ? 'PASS' : 'FAIL';
     }
     else {
         return 'NOTESTS';
@@ -334,16 +334,42 @@ sub total { shift->{total} }
       ...
   }
 
-Returns true if I<any> of the parsers has a result other than "all
-passed".  This includes failed tests, TODO tests unexpectedly succeeded,
-parse errors, bad exit/wait status, etc.
+Identical to C<has_errors>, but also returns true if any TODO tests
+unexpectedly succeeded.  This is more akin to "warnings".
 
 =cut
 
 sub has_problems {
     my $self = shift;
+    return $self->todo_passed
+      || $self->has_errors;
+}
+
+##############################################################################
+
+=head3 C<has_errors>
+
+  if ( $parser->has_errors ) {
+      ...
+  }
+
+Returns true if I<any> of the parsers failed.  This includes:
+
+=over 4
+
+=item * Failed tests
+
+=item * Parse erros
+
+=item * Bad exit or wait status
+
+=back
+
+=cut
+
+sub has_errors {
+    my $self = shift;
     return $self->failed
-      || $self->todo_passed
       || $self->parse_errors
       || $self->exit
       || $self->wait;
