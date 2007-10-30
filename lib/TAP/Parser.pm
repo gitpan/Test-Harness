@@ -19,11 +19,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 2.99_05
+Version 2.99_06
 
 =cut
 
-$VERSION = '2.99_05';
+$VERSION = '2.99_06';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -53,6 +53,7 @@ BEGIN {    # making accessors
         in_todo
         start_time
         end_time
+        skip_all
         )
       )
     {
@@ -823,6 +824,11 @@ plan of '1..17' will mean that 17 tests were planned.
 Returns the number of tests which actually were run.  Hopefully this will
 match the number of C<< $parser->tests_planned >>.
 
+=head3 C<skip_all>
+
+Returns a true value (actually the reason for skipping) if all tests
+were skipped.
+
 =head3 C<start_time>
 
 Returns the time when the Parser was created.
@@ -966,6 +972,10 @@ sub _make_state_table {
                 my ($plan) = @_;
                 $self->tests_planned( $plan->tests_planned );
                 $self->plan( $plan->plan );
+                if ( $plan->has_skip ) {
+                    $self->skip_all( $plan->explanation
+                          || '(no reason given)' );
+                }
             },
         },
         test => {

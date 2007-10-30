@@ -2047,6 +2047,7 @@ my %samples = (
         'exit'        => 0,
         wait          => 0,
         version       => 12,
+        skip_all      => 'rope',
     },
     skipall_v13 => {
         results => [
@@ -2101,6 +2102,7 @@ my %samples = (
         'exit'        => 0,
         wait          => 0,
         version       => 12,
+        skip_all      => '(no reason given)',
     },
     todo_misparse => {
         results => [
@@ -2711,7 +2713,7 @@ my %samples = (
         tests_planned => 5,
         tests_run     => 5,
         parse_errors =>
-          [ 'If TAP version is present it must be the first line of output' ],
+          ['If TAP version is present it must be the first line of output'],
         'exit'  => 0,
         wait    => 0,
         version => 12,
