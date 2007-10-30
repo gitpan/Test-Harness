@@ -15,11 +15,11 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 2.99_04
+Version 2.99_05
 
 =cut
 
-$VERSION = '2.99_04';
+$VERSION = '2.99_05';
 
 my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
 my $NEED_GLOB = $IS_WIN32;
@@ -353,7 +353,12 @@ sub _get_tests {
     my $self = shift;
     my @argv = @_;
     my ( @tests, %tests );
-    @argv = 't' unless @argv;
+
+    unless (@argv) {
+        croak "No tests named and 't' directory not found"
+          unless -d 't';
+        @argv = 't';
+    }
 
     # Do globbing on Win32.
     if ($NEED_GLOB) {

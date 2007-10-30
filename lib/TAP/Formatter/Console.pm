@@ -2,6 +2,7 @@ package TAP::Formatter::Console;
 
 use strict;
 use TAP::Base ();
+use POSIX qw(strftime);
 
 use vars qw($VERSION @ISA);
 
@@ -51,11 +52,11 @@ TAP::Formatter::Console - Harness output delegate for default console output
 
 =head1 VERSION
 
-Version 2.99_04
+Version 2.99_05
 
 =cut
 
-$VERSION = '2.99_04';
+$VERSION = '2.99_05';
 
 =head1 DESCRIPTION
 
@@ -226,7 +227,15 @@ sub _format_name {
         $extra = length $1;
     }
     my $periods = '.' x ( $self->_longest + $extra + 4 - length $test );
-    return "$name$periods";
+
+    if ( $self->timer ) {
+        my $stamp = strftime "[%H:%M:%S]", localtime;
+        return "$stamp $name$periods";
+    }
+    else {
+        return "$name$periods";
+    }
+
 }
 
 =head3 C<open_test>

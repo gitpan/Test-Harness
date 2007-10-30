@@ -16,11 +16,11 @@ TAP::Parser::Source::Perl - Stream Perl output
 
 =head1 VERSION
 
-Version 2.99_04
+Version 2.99_05
 
 =cut
 
-$VERSION = '2.99_04';
+$VERSION = '2.99_05';
 
 =head1 DESCRIPTION
 
@@ -186,7 +186,7 @@ sub _get_command {
 
 sub _libs2switches {
     my $self = shift;
-    return map {"-I$_"} @_;
+    return map {"-I$_"} grep {$_} @_;
 }
 
 sub _switches {

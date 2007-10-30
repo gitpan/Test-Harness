@@ -19,11 +19,11 @@ TAP::Parser::Iterator::Process - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 2.99_04
+Version 2.99_05
 
 =cut
 
-$VERSION = '2.99_04';
+$VERSION = '2.99_05';
 
 =head1 SYNOPSIS
 
@@ -252,6 +252,10 @@ sub _finish {
     else {
         $status = $?;
     }
+
+    # Sometimes we get -1 on Windows. Presumably that means status not
+    # available.
+    $status = 0 if $IS_WIN32 && $status == -1;
 
     $self->{wait} = $status;
     $self->{exit} = $self->_wait2exit($status);
