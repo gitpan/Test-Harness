@@ -15,11 +15,11 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 2.99_06
+Version 2.99_07
 
 =cut
 
-$VERSION = '2.99_06';
+$VERSION = '2.99_07';
 
 my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
 my $NEED_GLOB = $IS_WIN32;
@@ -212,11 +212,18 @@ sub _get_args {
         $args{$a} = $val if defined $val;
     }
 
-    for my $a (qw( merge verbose failures timer )) {
-        $args{$a} = $self->$a() if $self->$a();
-    }
+    # Handle verbose, quiet, really_quiet flags
+    my %verb_map = ( verbose => 1, quiet => -1, really_quiet => -2, );
 
-    for my $a (qw( quiet really_quiet directives )) {
+    my @verb_adj = grep {$_} map { $self->$_() ? $verb_map{$_} : 0 }
+      keys %verb_map;
+
+    die "Only one of verbose, quiet or really_quiet should be specified\n"
+      if @verb_adj > 1;
+
+    $args{verbosity} = shift @verb_adj || 0;
+
+    for my $a (qw( merge failures timer directives )) {
         $args{$a} = 1 if $self->$a();
     }
 
@@ -317,16 +324,16 @@ sub _get_switches {
 
     # notes that -T or -t must be at the front of the switches!
     if ( $self->taint_fail ) {
-        push @switches, 'T';
+        push @switches, '-T';
     }
     elsif ( $self->taint_warn ) {
-        push @switches, 't';
+        push @switches, '-t';
     }
     if ( $self->warnings_fail ) {
-        push @switches, 'W';
+        push @switches, '-W';
     }
     elsif ( $self->warnings_warn ) {
-        push @switches, 'w';
+        push @switches, '-w';
     }
 
     return @switches ? \@switches : ();
@@ -344,6 +351,9 @@ sub _get_lib {
     if ( @{ $self->includes } ) {
         push @libs, @{ $self->includes };
     }
+
+    #24926
+    @libs = map { File::Spec->rel2abs($_) } @libs;
 
     # Huh?
     return @libs ? \@libs : ();
@@ -393,7 +403,10 @@ sub _expand_dir {
     my @tests;
     if ( $self->recurse ) {
         find(
-            sub { -f && /\.t$/ && push @tests => $File::Find::name },
+            {   follow => 1,    #21938
+                wanted =>
+                  sub { -f && /\.t$/ && push @tests => $File::Find::name }
+            },
             $dir
         );
     }

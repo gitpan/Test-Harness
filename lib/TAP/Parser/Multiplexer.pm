@@ -4,7 +4,9 @@ use strict;
 use IO::Select;
 use vars qw($VERSION);
 
-use constant IS_WIN32 => ( $^O =~ /^(MS)?Win32$/ );
+use constant IS_WIN32 => $^O =~ /^(MS)?Win32$/;
+use constant IS_VMS => $^O eq 'VMS';
+use constant SELECT_OK => !( IS_VMS || IS_WIN32 );
 
 =head1 NAME
 
@@ -12,11 +14,11 @@ TAP::Parser::Multiplexer - Multiplex multiple TAP::Parsers
 
 =head1 VERSION
 
-Version 2.99_06
+Version 2.99_07
 
 =cut
 
-$VERSION = '2.99_06';
+$VERSION = '2.99_07';
 
 =head1 SYNOPSIS
 
@@ -75,7 +77,7 @@ the next result.
 sub add {
     my ( $self, $parser, $stash ) = @_;
 
-    if ( !IS_WIN32 && ( my @handles = $parser->get_select_handles ) ) {
+    if ( SELECT_OK && ( my @handles = $parser->get_select_handles ) ) {
         my $sel = $self->{select};
 
         # We have to turn handles into file numbers here because by

@@ -21,10 +21,11 @@ use vars qw(
   $Columns
   $Directives
   $Timer
-  $ML $Last_ML_Print
   $Strap
   $has_time_hires
 );
+
+# $ML $Last_ML_Print
 
 BEGIN {
     eval q{use Time::HiRes 'time'};
@@ -37,11 +38,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 2.99_06
+Version 2.99_07
 
 =cut
 
-$VERSION = '2.99_06';
+$VERSION = '2.99_07';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -177,11 +178,11 @@ sub _new_harness {
     push @lib, _filtered_inc();
 
     my $args = {
-        verbose    => $Verbose,
         timer      => $Timer,
         directives => $Directives,
         lib        => \@lib,
         switches   => \@switches,
+        verbosity  => $Verbose,
     };
 
     return TAP::Harness->new($args);
@@ -190,7 +191,7 @@ sub _new_harness {
 # Get the parts of @INC which are changed from the stock list AND
 # preserve reordering of stock directories.
 sub _filtered_inc {
-    my @inc = @INC;
+    my @inc = grep { !ref } @INC; #28567
 
     if (IS_VMS) {
 
