@@ -12,11 +12,11 @@ TAP::Parser::Grammar - A grammar for the Test Anything Protocol.
 
 =head1 VERSION
 
-Version 2.99_07
+Version 2.99_08
 
 =cut
 
-$VERSION = '2.99_07';
+$VERSION = '2.99_08';
 
 =head1 DESCRIPTION
 
@@ -81,7 +81,7 @@ my %language_for;
             },
         },
         plan => {
-            syntax  => qr/^1\.\.(\d+)(?:\s*#\s*SKIP\S*\s*(.*))?\z/i,
+            syntax  => qr/^1\.\.(\d+)\s*(?:#\s*SKIP\S*\s*(.*))?\z/i,
             handler => $plan_handler,
         },
 

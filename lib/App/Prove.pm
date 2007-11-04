@@ -15,11 +15,27 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 2.99_07
+Version 2.99_08
 
 =cut
 
-$VERSION = '2.99_07';
+$VERSION = '2.99_08';
+
+=head1 DESCRIPTION
+
+L<Test::Harness> provides a command, C<prove>, which runs a TAP based
+test suite and prints a report. The C<prove> command is a minimal
+wrapper around an instance of this module.
+
+=head1 SYNOPSIS
+
+    use App::Prove;
+
+    my $app = App::Prove->new;
+    $app->process_args(@ARGV);
+    $app->run;
+
+=cut
 
 my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
 my $NEED_GLOB = $IS_WIN32;
@@ -51,6 +67,9 @@ BEGIN {
 
 =head3 C<new>
 
+Create a new C<App::Prove>. Optionally a hash ref of attribute
+initializers may be passed.
+
 =cut
 
 sub new {
@@ -78,8 +97,8 @@ sub new {
 
   $prove->process_args(@args);
 
-Processes the command-line arguments and stashes the remainders in the
-C<$self->{args}> array-ref.
+Processes the command-line arguments. Attributes will be set
+appropriately. Any filenames may be found in the C<argv> attribute.
 
 Dies on invalid arguments.
 
@@ -177,7 +196,6 @@ sub _get_args {
     }
 
     if ( $self->archive ) {
-        eval('sub TAP::Harness::Archive::auto_inherit {1}');    # wink,wink
         $self->require_harness( archive => 'TAP::Harness::Archive' );
         $args{archive} = $self->archive;
     }
@@ -277,6 +295,15 @@ sub _load_extensions {
 }
 
 =head3 C<run>
+
+Perform whatever actions the command line args specified. The C<prove>
+command line tool consists of the following code:
+
+    use App::Prove;
+
+    my $app = App::Prove->new;
+    $app->process_args(@ARGV);
+    $app->run;
 
 =cut
 
@@ -430,7 +457,7 @@ sub _shuffle {
 
 =head3 C<require_harness>
 
-Load a harness class and add it to the inheritance chain.
+Load a harness replacement class.
 
   $prove->require_harness($for => $class_name);
 
@@ -441,7 +468,6 @@ sub require_harness {
 
     eval("require $class");
     die "$class is required to use the --$for feature: $@" if $@;
-    $class->inherit( $self->{harness_class} );
 
     $self->{harness_class} = $class;
 
@@ -449,6 +475,9 @@ sub require_harness {
 }
 
 =head3 C<print_version>
+
+Display the version numbers of the loaded L<TAP::Harness> and the
+current Perl.
 
 =cut
 
@@ -464,9 +493,15 @@ sub print_version {
 
 1;
 
+# vim:ts=4:sw=4:et:sta
+
 __END__
 
 =head2 Attributes
+
+After command line parsing the following attributes reflect the values
+of the corresponding command line switches. They may be altered before
+calling C<run>.
 
 =over
 
@@ -533,5 +568,3 @@ __END__
 =item C<warnings_warn>
 
 =back
-
-# vim:ts=4:sw=4:et:sta
