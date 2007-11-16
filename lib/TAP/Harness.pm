@@ -22,11 +22,11 @@ TAP::Harness - Run test scripts with statistics
 
 =head1 VERSION
 
-Version 3.01
+Version 3.02
 
 =cut
 
-$VERSION = '3.01';
+$VERSION = '3.02';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -178,7 +178,7 @@ Typically, Perl tests are run through this.  However, anything which spits out
 TAP is fine.  You can use this argument to specify the name of the program
 (and optional switches) to run your tests with:
 
-  exec => '/usr/bin/ruby -w'
+  exec => ['/usr/bin/ruby', '-w']
   
 =item * C<merge>
 
