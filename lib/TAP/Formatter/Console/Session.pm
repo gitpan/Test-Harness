@@ -36,11 +36,11 @@ TAP::Formatter::Console::Session - Harness output delegate for default console o
 
 =head1 VERSION
 
-Version 3.02
+Version 3.03
 
 =cut
 
-$VERSION = '3.02';
+$VERSION = '3.03';
 
 =head1 DESCRIPTION
 
@@ -186,14 +186,16 @@ sub _closures {
 
             return if $really_quiet;
 
-            my $planned = $parser->tests_planned;
             my $is_test = $result->is_test;
 
             # These are used in close_test - but only if $really_quiet
             # is false - so it's safe to only set them here unless that
             # relationship changes.
 
-            $plan = '/' . ( $planned || 0 ) . ' ' unless $plan;
+            if ( !$plan ) {
+                my $planned = $parser->tests_planned || '0';
+                $plan = "/$planned ";
+            }
             $output = $formatter->_get_output_method($parser);
 
             if ( $show_count and $is_test ) {

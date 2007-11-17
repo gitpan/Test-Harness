@@ -22,11 +22,11 @@ TAP::Harness - Run test scripts with statistics
 
 =head1 VERSION
 
-Version 3.02
+Version 3.03
 
 =cut
 
-$VERSION = '3.02';
+$VERSION = '3.03';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -222,6 +222,7 @@ Any keys for which the value is C<undef> will be ignored.
 
 {
     my @legal_callback = qw(
+      parser_args
       made_parser
       before_runtests
       after_runtests
@@ -535,7 +536,9 @@ overridden in subclasses.
 sub make_parser {
     my ( $self, $test ) = @_;
 
-    my $parser = TAP::Parser->new( $self->_get_parser_args($test) );
+    my $args = $self->_get_parser_args($test);
+    $self->_make_callback( 'parser_args', $test, $args );
+    my $parser = TAP::Parser->new($args);
 
     $self->_make_callback( 'made_parser', $parser );
     my $session = $self->formatter->open_test( $test, $parser );

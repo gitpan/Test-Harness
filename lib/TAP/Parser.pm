@@ -19,11 +19,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 3.02
+Version 3.03
 
 =cut
 
-$VERSION = '3.02';
+$VERSION = '3.03';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -172,7 +172,7 @@ with the result as the argument if the C<run> method is used:
      bailout => \&bailout_callback,
      unknown => \&unknown_callback,
  );
- 
+
  my $aggregator = TAP::Parser::Aggregator->new;
  foreach my $file ( @test_files ) {
      my $parser = TAP::Parser->new(
@@ -351,7 +351,7 @@ sub run {
         }
 
         unless ($stream) {
-            $self->_croak("PANIC:  could not determine stream");
+            $self->_croak( 'PANIC: could not determine stream' );
         }
 
         while ( my ( $k, $v ) = each %initialize ) {
@@ -483,7 +483,7 @@ which allows you to do this:
 If the above evaluates as true, the following methods will be available on the
 C<$result> object.
 
-=head3 C<plan> 
+=head3 C<plan>
 
   if ( $result->is_plan ) {
      print $result->plan;
@@ -500,7 +500,7 @@ cause this method to return '17'.
 
 =head3 C<directive>
 
- my $directive = $result->directive; 
+ my $directive = $result->directive;
 
 If a SKIP directive is included with the plan, this method will return it.
 
@@ -520,7 +520,7 @@ explanation, if any.
 If the above evaluates as true, the following methods will be available on the
 C<$result> object.
 
-=head3 C<comment> 
+=head3 C<comment>
 
   if ( $result->is_comment ) {
       my $comment = $result->comment;
@@ -645,7 +645,7 @@ they really passed, check the C<is_actual_ok> method.
 =head3 C<in_todo>
 
   if ( $parser->in_todo ) { ... }
-  
+
 True while the most recent result was a TODO. Becomes true before the
 TODO result is returned and stays true until just before the next non-
 TODO test is returned.
@@ -736,7 +736,7 @@ sub todo { @{ shift->{todo} } }
  # the test numbers which unexpectedly succeeded
  my @todo_passed = $parser->todo_passed;
 
- # the number of tests which unexpectedly succeeded 
+ # the number of tests which unexpectedly succeeded
  my $todo_passed = $parser->todo_passed;
 
 This method lets you know which (or how many) tests actually passed but were
@@ -859,7 +859,7 @@ sub has_problems {
 =head3 C<version>
 
   $parser->version;
-  
+
 Once the parser is done, this will return the version number for the
 parsed TAP. Version numbers were introduced with TAP version 13 so if no
 version number is found version 12 is assumed.
@@ -922,7 +922,7 @@ That last test line above should have the number '3' instead of '2'.
 Note that it's perfectly acceptable for some lines to have test numbers and
 others to not have them.  However, when a test number is found, it must be in
 sequence.  The following is also an error:
- 
+
  1..3
  ok 1 - input file opened
  not ok - first line of the input valid # todo some data
@@ -1079,7 +1079,7 @@ sub _make_state_table {
                 act => sub {
                     my ($version) = @_;
                     $self->_add_error(
-                        "More than one plan found in TAP output");
+                        'More than one plan found in TAP output');
                 },
             },
         },
@@ -1207,7 +1207,7 @@ sub _iter {
 
             return $result;
         };
-    }
+    }    # _has_callbacks
     else {
         return sub {
             my $result = eval { $grammar->tokenize };
@@ -1227,7 +1227,7 @@ sub _iter {
 
             return $result;
         };
-    }
+    }    # no callbacks
 }
 
 sub _finish {
@@ -1297,7 +1297,7 @@ result as its argument.
      bailout => \&bailout_callback,
      unknown => \&unknown_callback,
  );
- 
+
  my $aggregator = TAP::Parser::Aggregator->new;
  foreach my $file ( @test_files ) {
      my $parser = TAP::Parser->new(
@@ -1372,7 +1372,7 @@ test output:
          }
          elsif ( $test->has_skip ) {
              print color 'white on_blue';
- 
+
          }
          elsif ( $test->has_todo ) {
              print color 'white';
@@ -1462,7 +1462,7 @@ just words of encouragement have all been forthcoming.
 =item * GEOFFR
 
 =item * Shlomi Fish
-         
+
 =item * Torsten Schoenfeld
 
 =item * Jerry Gay
@@ -1516,7 +1516,7 @@ against bleed by via anonymous checkout of the latest version:
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Curtis "Ovid" Poe, all rights reserved.
+Copyright 2006-2007 Curtis "Ovid" Poe, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

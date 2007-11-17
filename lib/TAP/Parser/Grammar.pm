@@ -12,11 +12,11 @@ TAP::Parser::Grammar - A grammar for the Test Anything Protocol.
 
 =head1 VERSION
 
-Version 3.02
+Version 3.03
 
 =cut
 
-$VERSION = '3.02';
+$VERSION = '3.03';
 
 =head1 DESCRIPTION
 
@@ -85,6 +85,7 @@ my %language_for;
                 elsif ( 0 == $tests_planned ) {
                     $skip        = 'SKIP';
                     $explanation = $tail;
+
                     # Trim valid SKIP directive without being strict
                     # about its presence.
                     $explanation =~ s/^#\s*//;
@@ -257,8 +258,7 @@ current line of TAP.
 sub tokenize {
     my $self = shift;
 
-    my $stream = $self->{stream};
-    my $line   = $stream->next;
+    my $line = $self->{stream}->next;
     return unless defined $line;
 
     my $token;
@@ -393,7 +393,7 @@ sub _make_comment_token {
     return {
         type    => 'comment',
         raw     => $line,
-        comment => _trim($1)
+        comment => _trim($comment)
     };
 }
 
@@ -440,7 +440,10 @@ sub _make_yaml_token {
 }
 
 sub _trim {
-    my $data = shift || '';
+    my $data = shift;
+
+    return '' unless defined $data;
+
     $data =~ s/^\s+//;
     $data =~ s/\s+$//;
     return $data;
