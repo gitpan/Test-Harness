@@ -19,11 +19,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 3.03
+Version 3.04
 
 =cut
 
-$VERSION = '3.03';
+$VERSION = '3.04';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -64,9 +64,12 @@ BEGIN {    # making accessors
             *$method = sub {
                 my $self = shift;
                 return $self->{$method} unless @_;
-                unless ( ( ref $self ) =~ /^TAP::Parser/ ) { # trusted methods
+
+                # Trusted methods
+                unless ( ( ref $self ) =~ /^TAP::Parser/ ) {
                     Carp::croak("$method() may not be set externally");
                 }
+
                 $self->{$method} = shift;
             };
         }
@@ -195,6 +198,11 @@ be used when invoking the perl executable.
      switches => '-Ilib',
  } );
 
+=item * C<test_args>
+
+Used in conjunction with the C<source> option to supply a reference to
+an C<@ARGV> style array of arguments to pass to the test program.
+
 =item * C<spool>
 
 If passed a filehandle will write a copy of all parsed TAP to that handle.
@@ -301,32 +309,37 @@ sub run {
 
         # everything here is basically designed to convert any TAP source to a
         # stream.
-        $arg_for ||= {};
 
-        $self->SUPER::_initialize( $arg_for, \@legal_callback );
+        # Shallow copy
+        my %args = %{ $arg_for || {} };
 
-        # XXX why delete() ?
-        my $stream = delete $arg_for->{stream};
-        my $tap    = delete $arg_for->{tap};
-        my $source = delete $arg_for->{source};
-        my $exec   = delete $arg_for->{exec};
-        my $merge  = delete $arg_for->{merge};
-        my $spool  = delete $arg_for->{spool};
+        $self->SUPER::_initialize( \%args, \@legal_callback );
 
-        if ( 1 < grep {defined} $stream, $tap, $source ) {
+        my $stream    = delete $args{stream};
+        my $tap       = delete $args{tap};
+        my $source    = delete $args{source};
+        my $exec      = delete $args{exec};
+        my $merge     = delete $args{merge};
+        my $spool     = delete $args{spool};
+        my $switches  = delete $args{switches};
+        my @test_args = @{ delete $args{test_args} || [] };
+
+        if ( 1 < grep {defined} $stream, $tap, $source, $exec ) {
             $self->_croak(
-                "You may only choose one of 'stream', 'tap', or 'source'");
+                "You may only choose one of 'exec', 'stream', 'tap' or 'source'"
+            );
         }
-        if ( $source && $exec ) {
-            $self->_croak(
-                '"source" and "exec" are mutually exclusive options');
+
+        if ( my @excess = sort keys %args ) {
+            $self->_croak("Unknown options: @excess");
         }
+
         if ($tap) {
             $stream = TAP::Parser::Iterator->new( [ split "\n" => $tap ] );
         }
         elsif ($exec) {
             my $source = TAP::Parser::Source->new;
-            $source->source($exec);
+            $source->source( [ @$exec, @test_args ] );
             $source->merge($merge);    # XXX should just be arguments?
             $stream = $source->get_stream;
         }
@@ -338,12 +351,14 @@ sub run {
 
                 my $perl = TAP::Parser::Source::Perl->new;
 
-                $perl->switches( $arg_for->{switches} )
-                  if $arg_for->{switches};
+                $perl->switches($switches)
+                  if $switches;
 
                 $perl->merge($merge);    # XXX args to new()?
 
-                $stream = $perl->source_file($source)->get_stream;
+                $perl->source( [ $source, @test_args ] );
+
+                $stream = $perl->get_stream;
             }
             else {
                 $self->_croak("Cannot determine source for $source");
@@ -351,7 +366,7 @@ sub run {
         }
 
         unless ($stream) {
-            $self->_croak( 'PANIC: could not determine stream' );
+            $self->_croak('PANIC: could not determine stream');
         }
 
         while ( my ( $k, $v ) = each %initialize ) {
@@ -1005,9 +1020,8 @@ sub _make_state_table {
                 if ($number) {
                     if ( $number != $tests_run ) {
                         my $count = $tests_run;
-                        $self->_add_error(
-                            "Tests out of sequence.  Found ($number) but expected ($count)"
-                        );
+                        $self->_add_error( "Tests out of sequence.  Found "
+                              . "($number) but expected ($count)" );
                     }
                 }
                 else {
@@ -1036,11 +1050,14 @@ sub _make_state_table {
         },
     );
 
-# Each state contains a hash the keys of which match a token type. For each token
-# type there may be:
-#   act      A coderef to run
-#   goto     The new state to move to. Stay in this state if missing
-#   continue Goto the new state and run the new state for the current token
+    # Each state contains a hash the keys of which match a token type. For
+    # each token
+    # type there may be:
+    #   act      A coderef to run
+    #   goto     The new state to move to. Stay in this state if
+    #            missing
+    #   continue Goto the new state and run the new state for the
+    #            current token
     %states = (
         INIT => {
             version => {
@@ -1056,9 +1073,9 @@ sub _make_state_table {
                     }
                     if ( $ver_num > $MAX_TAP_VERSION ) {
                         $self->_add_error(
-                            "TAP specified version $ver_num but we don't know "
-                              . "about versions later than $MAX_TAP_VERSION"
-                        );
+                                "TAP specified version $ver_num but "
+                              . "we don't know about versions later "
+                              . "than $MAX_TAP_VERSION" );
                         $ver_num = $MAX_TAP_VERSION;
                     }
                     $self->version($ver_num);
@@ -1094,8 +1111,8 @@ sub _make_state_table {
                     my ($plan) = @_;
                     my $line = $self->plan;
                     $self->_add_error(
-                        "Plan ($line) must be at the beginning or end of the TAP output"
-                    );
+                            "Plan ($line) must be at the beginning "
+                          . "or end of the TAP output" );
                     $self->is_good_plan(0);
                 },
                 continue => 'PLANNED'
@@ -1177,6 +1194,17 @@ sub _iter {
         return $token;
     };
 
+    # Handle end of stream - which means either pop a block or finish
+    my $end_handler = sub {
+        $self->exit( $stream->exit );
+        $self->wait( $stream->wait );
+        $self->_finish;
+        return;
+    };
+
+    # Finally make the closure that we return. For performance reasons
+    # there are two versions of the returned function: one that handles
+    # callbacks and one that does not.
     if ( $self->_has_callbacks ) {
         return sub {
             my $result = eval { $grammar->tokenize };
@@ -1198,11 +1226,9 @@ sub _iter {
                 print {$spool} $result->raw, "\n" if $spool;
             }
             else {
-                $self->exit( $stream->exit );
-                $self->wait( $stream->wait );
-                $self->_finish;
-
-                $self->_make_callback( 'EOF', $result );
+                $result = $end_handler->();
+                $self->_make_callback( 'EOF', $result )
+                  unless defined $result;
             }
 
             return $result;
@@ -1220,9 +1246,7 @@ sub _iter {
                 print {$spool} $result->raw, "\n" if $spool;
             }
             else {
-                $self->exit( $stream->exit );
-                $self->wait( $stream->wait );
-                $self->_finish;
+                $result = $end_handler->();
             }
 
             return $result;
@@ -1256,9 +1280,8 @@ sub _finish {
         my $actual = $self->tests_run;
         my $passed = $self->passed;
         my $failed = $self->failed;
-        $self->_croak(
-            "Panic: planned test count ($actual) did not equal sum of passed ($passed) and failed ($failed) tests!"
-        );
+        $self->_croak( "Panic: planned test count ($actual) did not equal "
+              . "sum of passed ($passed) and failed ($failed) tests!" );
     }
 
     $self->is_good_plan(0) unless defined $self->is_good_plan;
@@ -1349,9 +1372,9 @@ Invoked if C<< $result->is_unknown >> returns true.
 
 =item * C<ELSE>
 
-If a result does not have a callback defined for it, this callback will be
-invoked.  Thus, if all of the previous result types are specified as callbacks,
-this callback will I<never> be invoked.
+If a result does not have a callback defined for it, this callback will
+be invoked. Thus, if all of the previous result types are specified as
+callbacks, this callback will I<never> be invoked.
 
 =item * C<ALL>
 
@@ -1392,8 +1415,8 @@ test output:
 
 =item * C<EOF>
 
-Invoked when there are no more lines to be parsed.  Since there is
-no accompanying L<TAP::Parser::Result> object the C<TAP::Parser> object is
+Invoked when there are no more lines to be parsed. Since there is no
+accompanying L<TAP::Parser::Result> object the C<TAP::Parser> object is
 passed instead.
 
 =back
@@ -1413,18 +1436,19 @@ L<Test::Harness>.  However, there are some minor differences.
 
 =item * TODO plans
 
-A little-known feature of L<Test::Harness> is that it supported TODO lists in
-the plan:
+A little-known feature of L<Test::Harness> is that it supported TODO
+lists in the plan:
 
  1..2 todo 2
  ok 1 - We have liftoff
  not ok 2 - Anti-gravity device activated
 
-Under L<Test::Harness>, test number 2 would I<pass> because it was listed as a
-TODO test on the plan line.  However, we are not aware of anyone actually
-using this feature and hard-coding test numbers is discouraged because it's
-very easy to add a test and break the test number sequence.  This makes test
-suites very fragile.  Instead, the following should be used:
+Under L<Test::Harness>, test number 2 would I<pass> because it was
+listed as a TODO test on the plan line. However, we are not aware of
+anyone actually using this feature and hard-coding test numbers is
+discouraged because it's very easy to add a test and break the test
+number sequence. This makes test suites very fragile. Instead, the
+following should be used:
 
  1..2
  ok 1 - We have liftoff
@@ -1432,7 +1456,8 @@ suites very fragile.  Instead, the following should be used:
 
 =item * 'Missing' tests
 
-It rarely happens, but sometimes a harness might encounter 'missing tests:
+It rarely happens, but sometimes a harness might encounter
+'missing tests:
 
  ok 1
  ok 2
@@ -1440,16 +1465,16 @@ It rarely happens, but sometimes a harness might encounter 'missing tests:
  ok 16
  ok 17
 
-L<Test::Harness> would report tests 3-14 as having failed.  For the
-C<TAP::Parser>, these tests are not considered failed because they've never
-run.  They're reported as parse failures (tests out of sequence).
+L<Test::Harness> would report tests 3-14 as having failed. For the
+C<TAP::Parser>, these tests are not considered failed because they've
+never run. They're reported as parse failures (tests out of sequence).
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
-All of the following have helped.  Bug reports, patches, (im)moral support, or
-just words of encouragement have all been forthcoming.
+All of the following have helped. Bug reports, patches, (im)moral
+support, or just words of encouragement have all been forthcoming.
 
 =over 4
 
@@ -1506,11 +1531,11 @@ Leif Eriksen <leif dot eriksen at bigpond dot com>
 Please report any bugs or feature requests to
 C<bug-tapx-parser@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=TAP-Parser>.
-We will be notified, and then you'll automatically be notified of progress on
-your bug as we make changes.
+We will be notified, and then you'll automatically be notified of
+progress on your bug as we make changes.
 
-Obviously, bugs which include patches are best.  If you prefer, you can patch
-against bleed by via anonymous checkout of the latest version:
+Obviously, bugs which include patches are best. If you prefer, you can
+patch against bleed by via anonymous checkout of the latest version:
 
  svn checkout http://svn.hexten.net/tapx
 

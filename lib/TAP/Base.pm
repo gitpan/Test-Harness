@@ -9,11 +9,11 @@ TAP::Base - Base class that provides common functionality to L<TAP::Parser> and 
 
 =head1 VERSION
 
-Version 3.03
+Version 3.04
 
 =cut
 
-$VERSION = '3.03';
+$VERSION = '3.04';
 
 my $GOT_TIME_HIRES;
 
@@ -65,8 +65,8 @@ sub _initialize {
 
     $self->{ok_callbacks} = \%ok_map;
 
-    if ( exists $arg_for->{callbacks} ) {
-        while ( my ( $event, $callback ) = each %{ $arg_for->{callbacks} } ) {
+    if ( my $cb = delete $arg_for->{callbacks} ) {
+        while ( my ( $event, $callback ) = each %$cb ) {
             $self->callback( $event, $callback );
         }
     }

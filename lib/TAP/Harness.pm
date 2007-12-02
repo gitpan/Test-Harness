@@ -22,11 +22,11 @@ TAP::Harness - Run test scripts with statistics
 
 =head1 VERSION
 
-Version 3.03
+Version 3.04
 
 =cut
 
-$VERSION = '3.03';
+$VERSION = '3.04';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -80,6 +80,7 @@ BEGIN {
         formatter       => sub { shift; shift },
         jobs            => sub { shift; shift },
         fork            => sub { shift; shift },
+        test_args       => sub { shift; shift },
     );
 
     for my $method ( sort keys %VALIDATION_FOR ) {
@@ -128,7 +129,7 @@ BEGIN {
 =head3 C<new>
 
  my %args = (
-    verbose => 1,
+    verbosity => 1,
     lib     => [ 'lib', 'blib/lib' ],
  )
  my $harness = TAP::Harness->new( \%args );
@@ -167,6 +168,11 @@ this only makes sense in the context of tests written in Perl.
 Accepts a scalar value or array ref of scalar values indicating which switches
 should be included if Perl tests are executed.  Naturally, this only makes
 sense in the context of tests written in Perl.
+
+=item * C<test_args>
+
+A reference to an C<@INC> style array of arguments to be passed to each
+test program.
 
 =item * C<color>
 
@@ -226,6 +232,7 @@ Any keys for which the value is C<undef> will be ignored.
       made_parser
       before_runtests
       after_runtests
+      after_test
     );
 
     sub _initialize {
@@ -288,12 +295,23 @@ Any keys for which the value is C<undef> will be ignored.
 
 =head3 C<runtests>
 
-  $harness->runtests(@tests);
+    $harness->runtests(@tests);
 
 Accepts and array of C<@tests> to be run.  This should generally be the names
 of test files, but this is not required.  Each element in C<@tests> will be
 passed to C<TAP::Parser::new()> as a C<source>.  See L<TAP::Parser> for more
 information.
+
+It is possible to provide aliases that will be displayed in place of the
+test name by supplying the test as a reference to an array containing
+C<< [ $test, $alias ] >>:
+
+    $harness->runtests( [ 't/foo.t', 'Foo Once' ],
+                        [ 't/foo.t', 'Foo Twice' ] );
+
+Normally it is an error to attempt to run the same test twice. Aliases
+allow you to overcome this limitation by giving each run of the test a
+unique name.
 
 Tests will be run in the order found.
 
@@ -327,6 +345,13 @@ Tests will be run in the order found.
 
 =cut
 
+sub _after_test {
+    my ( $self, $aggregate, $test, $parser ) = @_;
+
+    $self->_make_callback( 'after_test', $test, $parser );
+    $aggregate->add( $test->[1], $parser );
+}
+
 sub _aggregate_forked {
     my ( $self, $aggregate, @tests ) = @_;
 
@@ -358,7 +383,7 @@ sub _aggregate_forked {
     );
 
     while ( my ( $id, $parser ) = $iter->() ) {
-        $aggregate->add( $tests[$id], $parser );
+        $self->_after_test( $aggregate, $tests[$id], $parser );
     }
 
     return;
@@ -389,7 +414,7 @@ sub _aggregate_parallel {
 
                 # End of parser. Automatically removed from the mux.
                 $self->finish_parser( $parser, $session );
-                $aggregate->add( $test, $parser );
+                $self->_after_test( $aggregate, $test, $parser );
             }
             redo RESULT;
         }
@@ -410,7 +435,7 @@ sub _aggregate_single {
         }
 
         $self->finish_parser( $parser, $session );
-        $aggregate->add( $test, $parser );
+        $self->_after_test( $aggregate, $test, $parser );
     }
 
     return;
@@ -421,19 +446,22 @@ sub aggregate_tests {
 
     my $jobs = $self->jobs;
 
-    $self->formatter->prepare(@tests);
+    my @expanded = map { 'ARRAY' eq ref $_ ? $_ : [ $_, $_ ] } @tests;
+
+    # Formatter gets only names
+    $self->formatter->prepare( map { $_->[1] } @expanded );
     $aggregate->start;
 
     if ( $self->jobs > 1 ) {
         if ( $self->fork ) {
-            $self->_aggregate_forked( $aggregate, @tests );
+            $self->_aggregate_forked( $aggregate, @expanded );
         }
         else {
-            $self->_aggregate_parallel( $aggregate, @tests );
+            $self->_aggregate_parallel( $aggregate, @expanded );
         }
     }
     else {
-        $self->_aggregate_single( $aggregate, @tests );
+        $self->_aggregate_single( $aggregate, @expanded );
     }
 
     $aggregate->stop;
@@ -506,20 +534,27 @@ This is a bit clunky and will be cleaned up in a later release.
 
 sub _get_parser_args {
     my ( $self, $test ) = @_;
-    my %args = ();
+    my $test_prog = $test->[0];
+    my %args      = ();
     my @switches;
     @switches = $self->lib if $self->lib;
     push @switches => $self->switches if $self->switches;
     $args{switches} = \@switches;
-    $args{spool}    = $self->_open_spool($test);
+    $args{spool}    = $self->_open_spool($test_prog);
     $args{merge}    = $self->merge;
     $args{exec}     = $self->exec;
+
     if ( my $exec = $self->exec ) {
-        $args{exec} = [ @$exec, $test ];
+        $args{exec} = [ @$exec, $test_prog ];
     }
     else {
-        $args{source} = $test;
+        $args{source} = $test_prog;
     }
+
+    if ( defined( my $test_args = $self->test_args ) ) {
+        $args{test_args} = $test_args;
+    }
+
     return \%args;
 }
 
@@ -537,11 +572,11 @@ sub make_parser {
     my ( $self, $test ) = @_;
 
     my $args = $self->_get_parser_args($test);
-    $self->_make_callback( 'parser_args', $test, $args );
+    $self->_make_callback( 'parser_args', $args, $test );
     my $parser = TAP::Parser->new($args);
 
-    $self->_make_callback( 'made_parser', $parser );
-    my $session = $self->formatter->open_test( $test, $parser );
+    $self->_make_callback( 'made_parser', $parser, $test );
+    my $session = $self->formatter->open_test( $test->[1], $parser );
 
     return ( $parser, $session );
 }

@@ -40,11 +40,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 3.03
+Version 3.04
 
 =cut
 
-$VERSION = '3.03';
+$VERSION = '3.04';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -135,8 +135,8 @@ sub _aggregate {
         # Supply -I switches in taint mode
         $harness->callback(
             parser_args => sub {
-                my ( $test, $args ) = @_;
-                if ( _has_taint($test) ) {
+                my ( $args, $test ) = @_;
+                if ( _has_taint( $test->[0] ) ) {
                     push @{ $args->{switches} }, map {"-I$_"} _filtered_inc();
                 }
             }

@@ -36,11 +36,11 @@ TAP::Formatter::Console::Session - Harness output delegate for default console o
 
 =head1 VERSION
 
-Version 3.03
+Version 3.04
 
 =cut
 
-$VERSION = '3.03';
+$VERSION = '3.04';
 
 =head1 DESCRIPTION
 
@@ -59,9 +59,9 @@ This provides console orientated output formatting for TAP::Harness.
  my %args = (
     formatter => $self,
  )
- my $harness = TAP::Formatter::Console->new( \%args );
+ my $harness = TAP::Formatter::Console::Session->new( \%args );
 
-The constructor returns a new C<TAP::Formatter::Console> object. The following options are allowed:
+The constructor returns a new C<TAP::Formatter::Console::Session> object.
 
 =over 4
 
@@ -193,7 +193,7 @@ sub _closures {
             # relationship changes.
 
             if ( !$plan ) {
-                my $planned = $parser->tests_planned || '0';
+                my $planned = $parser->tests_planned || '?';
                 $plan = "/$planned ";
             }
             $output = $formatter->_get_output_method($parser);
@@ -227,7 +227,9 @@ sub _closures {
         },
 
         close_test => sub {
-            if ( $show_count && !$really_quiet ) {
+            return if $really_quiet;
+
+            if ($show_count) {
                 my $spaces = ' ' x
                   length( '.' . $pretty . $plan . $parser->tests_run );
                 $formatter->$output("\r$spaces\r$pretty");
@@ -240,22 +242,20 @@ sub _closures {
                 $self->_output_test_failure($parser);
             }
             else {
-                unless ($really_quiet) {
-                    my $time_report = '';
-                    if ( $formatter->timer ) {
-                        my $start_time = $parser->start_time;
-                        my $end_time   = $parser->end_time;
-                        if ( defined $start_time and defined $end_time ) {
-                            my $elapsed = $end_time - $start_time;
-                            $time_report
-                              = $self->time_is_hires
-                              ? sprintf( ' %8d ms', $elapsed * 1000 )
-                              : sprintf( ' %8s s', $elapsed || '<1' );
-                        }
+                my $time_report = '';
+                if ( $formatter->timer ) {
+                    my $start_time = $parser->start_time;
+                    my $end_time   = $parser->end_time;
+                    if ( defined $start_time and defined $end_time ) {
+                        my $elapsed = $end_time - $start_time;
+                        $time_report
+                          = $self->time_is_hires
+                          ? sprintf( ' %8d ms', $elapsed * 1000 )
+                          : sprintf( ' %8s s', $elapsed || '<1' );
                     }
-
-                    $formatter->_output("ok$time_report\n");
                 }
+
+                $formatter->_output("ok$time_report\n");
             }
         },
     };
