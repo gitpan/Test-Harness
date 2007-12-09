@@ -10,10 +10,14 @@ my %make_test;
 
 BEGIN {
     plan skip_all => "unicode on Perl < 5.8.0"
-      unless $] >= 5.008;
+      unless $] > 5.008;
 
     eval "use File::Temp";
     plan skip_all => "File::Temp unavailable"
+      if $@;
+
+    eval "use Encode";
+    plan skip_all => "Encode unavailable"
       if $@;
 
     # Subs that take the supplied TAP and turn it into a set of args to

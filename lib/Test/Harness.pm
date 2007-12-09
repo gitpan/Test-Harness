@@ -40,11 +40,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 3.04
+Version 3.05
 
 =cut
 
-$VERSION = '3.04';
+$VERSION = '3.05';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -510,10 +510,6 @@ milliseconds each test took.  You can also use F<prove>'s C<--timer>
 switch.
 
 =item C<HARNESS_VERBOSE>
-
-If true, C<Test::Harness> will output the verbose results of running
-its tests.  Setting C<$Test::Harness::verbose> will override this,
-or you can use the C<-v> switch in the F<prove> utility.
 
 If true, C<Test::Harness> will output the verbose results of running
 its tests.  Setting C<$Test::Harness::verbose> will override this,
