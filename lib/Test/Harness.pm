@@ -21,6 +21,7 @@ use vars qw(
   $Verbose $Switches $Debug
   $verbose $switches $debug
   $Columns
+  $Color
   $Directives
   $Timer
   $Strap
@@ -40,11 +41,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 3.06
+Version 3.07
 
 =cut
 
-$VERSION = '3.06';
+$VERSION = '3.07';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -71,6 +72,7 @@ $Switches = '-w';
 $Columns = $ENV{HARNESS_COLUMNS} || $ENV{COLUMNS} || 80;
 $Columns--;    # Some shells have trouble with a full line of text.
 $Timer = $ENV{HARNESS_TIMER} || 0;
+$Color = $ENV{HARNESS_COLOR} || 0;
 
 =head1 SYNOPSIS
 
@@ -237,12 +239,16 @@ sub _new_harness {
     # Do things the old way on VMS...
     push @lib, _filtered_inc() if IS_VMS;
 
+    # If $Verbose isn't numeric default to 1. This helps core.
+    my $verbosity = ( $Verbose ? ( $Verbose !~ /\d/ ) ? 1 : $Verbose : 0 );
+
     my $args = {
         timer      => $Timer,
         directives => $Directives,
         lib        => \@lib,
         switches   => \@switches,
-        verbosity  => $Verbose,
+        color      => $Color,
+        verbosity  => $verbosity,
     };
 
     if ( defined( my $env_opt = $ENV{HARNESS_OPTIONS} ) ) {
@@ -252,6 +258,9 @@ sub _new_harness {
             }
             elsif ( $opt eq 'f' ) {
                 $args->{fork} = 1;
+            }
+            elsif ( $opt eq 'c' ) {
+                $args->{color} = 1;
             }
             else {
                 die "Unknown HARNESS_OPTIONS item: $opt\n";
