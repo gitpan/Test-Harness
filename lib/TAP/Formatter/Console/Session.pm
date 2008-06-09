@@ -36,11 +36,11 @@ TAP::Formatter::Console::Session - Harness output delegate for default console o
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =cut
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 =head1 DESCRIPTION
 
@@ -287,9 +287,6 @@ sub _output_test_failure {
     # didn't run
     my $failed = $parser->failed + $total - $tests_run;
     my $exit   = $parser->exit;
-
-    # TODO: $flist isn't used anywhere
-    # my $flist  = join ", " => $formatter->range( $parser->failed );
 
     if ( my $exit = $parser->exit ) {
         my $wstat = $parser->wait;

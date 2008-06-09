@@ -14,11 +14,11 @@ TAP::Parser::Multiplexer - Multiplex multiple TAP::Parsers
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =cut
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 =head1 SYNOPSIS
 
@@ -128,8 +128,6 @@ sub _iter {
 
         unless (@ready) {
             return unless $sel->count;
-
-            # TODO: Win32 doesn't do select properly on handles...
             @ready = $sel->can_read;
         }
 

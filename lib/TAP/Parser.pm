@@ -20,11 +20,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =cut
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -42,7 +42,6 @@ BEGIN {    # making accessors
         qw(
         _stream
         _spool
-        _grammar
         exec
         exit
         is_good_plan
@@ -59,28 +58,11 @@ BEGIN {    # making accessors
       )
     {
         no strict 'refs';
-
-        # another tiny performance hack
-        if ( $method =~ /^_/ ) {
-            *$method = sub {
-                my $self = shift;
-                return $self->{$method} unless @_;
-
-                # Trusted methods
-                unless ( ( ref $self ) =~ /^TAP::Parser/ ) {
-                    Carp::croak("$method() may not be set externally");
-                }
-
-                $self->{$method} = shift;
-            };
-        }
-        else {
-            *$method = sub {
-                my $self = shift;
-                return $self->{$method} unless @_;
-                $self->{$method} = shift;
-            };
-        }
+        *$method = sub {
+            my $self = shift;
+            return $self->{$method} unless @_;
+            $self->{$method} = shift;
+        };
     }
 }    # done making accessors
 
@@ -316,14 +298,15 @@ sub run {
 
         $self->SUPER::_initialize( \%args, \@legal_callback );
 
-        my $stream    = delete $args{stream};
-        my $tap       = delete $args{tap};
-        my $source    = delete $args{source};
-        my $exec      = delete $args{exec};
-        my $merge     = delete $args{merge};
-        my $spool     = delete $args{spool};
-        my $switches  = delete $args{switches};
-        my @test_args = @{ delete $args{test_args} || [] };
+        my $stream      = delete $args{stream};
+        my $tap         = delete $args{tap};
+        my $source      = delete $args{source};
+        my $exec        = delete $args{exec};
+        my $merge       = delete $args{merge};
+        my $spool       = delete $args{spool};
+        my $switches    = delete $args{switches};
+        my $ignore_exit = delete $args{ignore_exit};
+        my @test_args   = @{ delete $args{test_args} || [] };
 
         if ( 1 < grep {defined} $stream, $tap, $source, $exec ) {
             $self->_croak(
@@ -375,12 +358,8 @@ sub run {
         }
 
         $self->_stream($stream);
-        my $grammar = TAP::Parser::Grammar->new($stream);
-        $grammar->set_version( $self->version );
-        $self->_grammar($grammar);
         $self->_spool($spool);
-
-        $self->start_time( $self->get_time );
+        $self->ignore_exit($ignore_exit);
 
         return $self;
     }
@@ -919,8 +898,7 @@ sub has_problems {
     return
          $self->failed
       || $self->parse_errors
-      || $self->wait
-      || $self->exit;
+      || ( !$self->ignore_exit && ( $self->wait || $self->exit ) );
 }
 
 =head3 C<version>
@@ -945,6 +923,20 @@ an executable, it returns the exit status of the executable.
 Once the parser is done, this will return the wait status.  If the parser ran
 an executable, it returns the wait status of the executable.  Otherwise, this
 mererely returns the C<exit> status.
+
+=head2 C<ignore_exit>
+
+  $parser->ignore_exit(1);
+
+Tell the parser to ignore the exit status from the test when determining
+whether the test passed. Normally tests with non-zero exit status are
+considered to have failed even if all individual tests passed. In cases
+where it is not possible to control the exit value of the test script
+use this option to ignore it.
+
+=cut
+
+sub ignore_exit { shift->pragma( 'ignore_exit', @_ ) }
 
 =head3 C<parse_errors>
 
@@ -1230,13 +1222,32 @@ determine the readiness of this parser.
 
 sub get_select_handles { shift->_stream->get_select_handles }
 
+sub _make_grammar_with_stream {
+    my ( $self, $stream ) = @_;
+    my $grammar = TAP::Parser::Grammar->new($stream);
+    $grammar->set_version( $self->version );
+    return $grammar;
+}
+
+sub _grammar {
+    my $self = shift;
+    if (@_) {
+        return $self->{_grammar} = shift;
+    }
+
+    return $self->{_grammar}
+      ||= $self->_make_grammar_with_stream( $self->_stream );
+}
+    
 sub _iter {
     my $self        = shift;
     my $stream      = $self->_stream;
-    my $spool       = $self->_spool;
     my $grammar     = $self->_grammar;
+    my $spool       = $self->_spool;
     my $state       = 'INIT';
     my $state_table = $self->_make_state_table;
+
+    $self->start_time( $self->get_time );
 
     # Make next_state closure
     my $next_state = sub {

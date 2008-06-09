@@ -12,7 +12,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 268;
+use Test::More tests => 282;
 use IO::c55Capture;
 
 use File::Spec;
@@ -220,7 +220,7 @@ ok $test->is_actual_ok,
   '... and the correct boolean version of is_actual_ok()';
 is $test->number, 5, '... and have the correct test number';
 ok !$test->description, '... and skipped tests have no description';
-is $test->directive, 'SKIP', '... and teh correct directive';
+is $test->directive, 'SKIP', '... and the correct directive';
 is $test->explanation, 'we have no description',
   '... but we should have an explanation';
 ok $test->has_skip, '... and it is a SKIPped test';
@@ -435,29 +435,6 @@ is $test->raw, 'ok 2 - read the rest of the file',
 
 is scalar $parser->passed, 2,
   'Empty junk lines should not affect the correct number of tests passed';
-
-# coverage tests
-{
-
-    # calling a TAP::Parser internal method with a 'foreign' class
-
-    my $foreigner = bless {}, 'Foreigner';
-
-    my @die;
-
-    eval {
-        local $SIG{__DIE__} = sub { push @die, @_ };
-
-        TAP::Parser::_stream $foreigner, qw(a b c);
-    };
-
-    unless ( is @die, 1, 'coverage testing for TAP::Parser accessors' ) {
-        diag " >>> $_ <<<\n" for @die;
-    }
-
-    like pop @die, qr/_stream[(][)] may not be set externally/,
-      '... and we died with expected message';
-}
 
 {
 
@@ -1017,4 +994,41 @@ END_TAP
     }
 
     is_deeply [ sort keys %reachable ], [@states], "all states reachable";
+}
+
+{
+
+    # exit, wait, ignore_exit interactions
+
+    my @truth = (
+        [ 0, 0, 0, 0 ],
+        [ 0, 0, 1, 0 ],
+        [ 1, 0, 0, 1 ],
+        [ 1, 0, 1, 0 ],
+        [ 1, 1, 0, 1 ],
+        [ 1, 1, 1, 0 ],
+        [ 0, 1, 0, 1 ],
+        [ 0, 1, 1, 0 ],
+    );
+
+    for my $t (@truth) {
+        my ( $wait, $exit, $ignore_exit, $has_problems ) = @$t;
+        my $test_parser = sub {
+            my $parser = shift;
+            $parser->wait($wait);
+            $parser->exit($exit);
+            ok $has_problems ? $parser->has_problems : !$parser->has_problems,
+              "exit=$exit, wait=$wait, ignore=$ignore_exit";
+        };
+
+        my $parser = TAP::Parser->new( { tap => "1..1\nok 1\n" } );
+        $parser->ignore_exit($ignore_exit);
+        $test_parser->($parser);
+
+        $test_parser->(
+            TAP::Parser->new(
+                { tap => "1..1\nok 1\n", ignore_exit => $ignore_exit }
+            )
+        );
+    }
 }

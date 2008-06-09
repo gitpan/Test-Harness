@@ -16,11 +16,11 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =cut
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 =head1 DESCRIPTION
 
@@ -55,7 +55,7 @@ BEGIN {
       harness includes modules plugins jobs lib merge parse quiet
       really_quiet recurse backwards shuffle taint_fail taint_warn timer
       verbose warnings_fail warnings_warn show_help show_man
-      show_version test_args state dry
+      show_version test_args state dry extension ignore_exit
     );
     for my $attr (@ATTR) {
         no strict 'refs';
@@ -194,7 +194,9 @@ sub process_args {
             'colour!'     => \$self->{color},
             'c'           => \$self->{color},
             'D|dry'       => \$self->{dry},
+            'ext=s'       => \$self->{extension},
             'harness=s'   => \$self->{harness},
+            'ignore-exit' => \$self->{ignore_exit},
             'formatter=s' => \$self->{formatter},
             'r|recurse'   => \$self->{recurse},
             'reverse'     => \$self->{backwards},
@@ -235,8 +237,6 @@ sub _first_pos {
     }
     return;
 }
-
-sub _exit { exit( $_[1] || 0 ) }
 
 sub _help {
     my ( $self, $verbosity ) = @_;
@@ -287,6 +287,10 @@ sub _get_args {
 
     if ( my $formatter = $self->formatter ) {
         $args{formatter_class} = $formatter;
+    }
+
+    if ( $self->ignore_exit ) {
+        $args{ignore_exit} = 1;
     }
 
     if ( $self->taint_fail && $self->taint_warn ) {
@@ -406,16 +410,18 @@ sub run {
 
         local $ENV{TEST_VERBOSE} = 1 if $self->verbose;
 
-        $self->_runtests( $self->_get_args, $self->_get_tests );
+        return $self->_runtests( $self->_get_args, $self->_get_tests );
     }
 
-    return;
+    return 1;
 }
 
 sub _get_tests {
     my $self = shift;
 
     my $state = $self->{_state};
+    my $ext   = $self->extension;
+    $state->extension($ext) if defined $ext;
     if ( defined( my $state_switch = $self->state ) ) {
         $state->apply_switch(@$state_switch);
     }
@@ -440,9 +446,7 @@ sub _runtests {
 
     my $aggregator = $harness->runtests(@tests);
 
-    $self->_exit( $aggregator->has_problems ? 1 : 0 );
-
-    return;
+    return $aggregator->has_problems ? 0 : 1;
 }
 
 sub _get_switches {
@@ -511,10 +515,15 @@ Load a harness replacement class.
 sub require_harness {
     my ( $self, $for, $class ) = @_;
 
-    eval("require $class");
-    die "$class is required to use the --$for feature: $@" if $@;
+    my ($class_name) = $class =~ /^(\w+(?:::\w+)*)/;
 
-    $self->{harness_class} = $class;
+    # Emulate Perl's -MModule=arg1,arg2 behaviour
+    $class =~ s!^(\w+(?:::\w+)*)=(.*)$!$1 split(/,/,q{$2})!;
+
+    eval("use $class;");
+    die "$class_name is required to use the --$for feature: $@" if $@;
+
+    $self->{harness_class} = $class_name;
 
     return;
 }
@@ -566,6 +575,8 @@ calling C<run>.
 
 =item C<exec>
 
+=item C<extension>
+
 =item C<failures>
 
 =item C<fork>
@@ -573,6 +584,8 @@ calling C<run>.
 =item C<formatter>
 
 =item C<harness>
+
+=item C<ignore_exit>
 
 =item C<includes>
 

@@ -12,11 +12,11 @@ TAP::Parser::Grammar - A grammar for the Test Anything Protocol.
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =cut
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 =head1 DESCRIPTION
 
@@ -83,13 +83,10 @@ my %language_for;
                     );
                 }
                 elsif ( 0 == $tests_planned ) {
-                    $skip        = 'SKIP';
-                    $explanation = $tail;
+                    $skip = 'SKIP';
 
-                    # Trim valid SKIP directive without being strict
-                    # about its presence.
-                    $explanation =~ s/^#\s*//;
-                    $explanation =~ s/^skip\S*\s+//i;
+                    # If we can't match # SKIP the directive should be undef.
+                    ($explanation) = $tail =~ /^#\s*SKIP\s+(.*)/i;
                 }
                 elsif ( $tail !~ /^\s*$/ ) {
                     return $self->_make_unknown_token($line);
@@ -227,7 +224,8 @@ sub set_version {
     my $version = shift;
 
     if ( my $language = $language_for{$version} ) {
-        $self->{tokens} = $language->{tokens};
+        $self->{version} = $version;
+        $self->{tokens}  = $language->{tokens};
 
         if ( my $setup = $language->{setup} ) {
             $self->$setup();
@@ -361,10 +359,14 @@ sub _make_version_token {
 sub _make_plan_token {
     my ( $self, $line, $tests_planned, $directive, $explanation, $todo ) = @_;
 
-    if ( $directive eq 'SKIP' && 0 != $tests_planned ) {
+    if (   $directive eq 'SKIP'
+        && 0 != $tests_planned
+        && $self->{version} < 13 )
+    {
         warn
           "Specified SKIP directive in plan but more than 0 tests ($line)\n";
     }
+    
     return {
         type          => 'plan',
         raw           => $line,

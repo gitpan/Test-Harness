@@ -4,7 +4,7 @@ use strict;
 
 use vars qw{$VERSION};
 
-$VERSION = '3.10';
+$VERSION = '3.11';
 
 # TODO:
 #   Handle blessed object syntax
@@ -17,7 +17,7 @@ my %UNESCAPES = (
 );
 
 my $QQ_STRING    = qr{ " (?:\\. | [^"])* " }x;
-my $HASH_LINE    = qr{ ^ ($QQ_STRING|\S+) \s* : (?: \s+ (.+?) \s* )? $ }x;
+my $HASH_LINE    = qr{ ^ ($QQ_STRING|\S+) \s* : \s* (?: (.+?) \s* )? $ }x;
 my $IS_HASH_KEY  = qr{ ^ [\w\'\"] }x;
 my $IS_END_YAML  = qr{ ^ \.\.\. \s* $ }x;
 my $IS_QQ_STRING = qr{ ^ $QQ_STRING $ }x;
@@ -40,6 +40,7 @@ sub read {
 
     # Prime the reader
     $self->_next;
+    return unless $self->{next};
 
     my $doc = $self->_read;
 
@@ -58,15 +59,7 @@ sub read {
     return $doc;
 }
 
-sub get_raw {
-    my $self = shift;
-
-    if ( defined( my $capture = $self->{capture} ) ) {
-        return join( "\n", @$capture ) . "\n";
-    }
-
-    return '';
-}
+sub get_raw { join( "\n", grep defined, @{ shift->{capture} || [] } ) . "\n" }
 
 sub _peek {
     my $self = shift;
@@ -151,7 +144,9 @@ sub _read_scalar {
             $self->_next;
             my ( $next, $ind ) = $self->_peek;
             last if $ind < $indent;
-            push @multiline, $next;
+
+            my $pad = $string eq '|' ? ( ' ' x ( $ind - $indent ) ) : '';
+            push @multiline, $pad . $next;
         }
 
         return join( ( $string eq '>' ? ' ' : "\n" ), @multiline ) . "\n";
@@ -277,7 +272,7 @@ TAP::Parser::YAMLish::Reader - Read YAMLish data from iterator
 
 =head1 VERSION
 
-Version 3.10
+Version 3.11
 
 =head1 SYNOPSIS
 

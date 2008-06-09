@@ -1,10 +1,10 @@
 --- #YAML:1.0
 name:                Test-Harness
-version:             3.10
+version:             3.11
 abstract:            ~
 license:             perl
 author:              ~
-generated_by:        ExtUtils::MakeMaker version 6.42
+generated_by:        ExtUtils::MakeMaker version 6.44
 distribution_type:   module
 requires:     
     File::Spec:                    0.8

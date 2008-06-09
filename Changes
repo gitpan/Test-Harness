@@ -1,5 +1,30 @@
 Revision history for Test-Harness
 
+3.11    2008-02-27
+        - applied Jim Keenan's patch that makes App::Prove::run return a
+          rather than exit (#33609)
+        - prove -r now recurses cwd rather than 't' by default (#33007)
+        - restored --ext switch to prove (#33848)
+        - added ignore_exit option to TAP::Parser and corresponding
+          interfaces to TAP::Harness and Test::Harness. Requested for
+          Parrot.
+        - Implemented rule based parallel scheduler.
+        - Moved filename -> display name mapping out of formatter. This
+          prevents the formatter's strip-extensions logic from stripping
+          extensions from supplied descriptions.
+        - Only strip extensions from test names if all tests have the
+          same extension. Previously we stripped extensions if all names
+          had /any/ extension making it impossible to distinguish tests
+          whose name differed only in the extension.
+        - Removed privacy test that made it impossible to subclass
+          TAP::Parser.
+        - Delayed initialisation of grammar making it easier to replace
+          the TAP::Parser stream after instantiation.
+        - Make it possible to supply import parameters to a replacement
+          harness with prove.
+        - Make it possible to replace either _grammar /or/ _stream
+          before reading from a TAP::Parser.
+
 3.10    2008-02-26
         - fix undefined value warnings with bleadperl.
         - added pragma support.
