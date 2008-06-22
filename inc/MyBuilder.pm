@@ -50,7 +50,7 @@ sub ACTION_testreference {
 
 sub ACTION_testauthor {
     my $self = shift;
-    $self->test_files( 'xt/author' );
+    $self->test_files('xt/author');
     $self->ACTION_test;
 }
 
@@ -76,8 +76,23 @@ sub ACTION_tags {
 sub ACTION_tidy {
     my $self = shift;
 
-    my $pms = $self->find_pm_files;
-    for my $file ( keys %$pms ) {
+    my @extra = qw(
+      Build.PL
+      Makefile.PL
+      bin/prove
+    );
+
+    my %found_files = map {%$_} $self->find_pm_files,
+      $self->_find_file_by_type( 'pm', 't' ),
+      $self->_find_file_by_type( 'pm', 'inc' ),
+      $self->_find_file_by_type( 't',  't' );
+
+    my @files = (
+        keys %found_files,
+        map { $self->localize_file_path($_) } @extra
+    );
+
+    for my $file (@files) {
         system( 'perltidy', '-b', $file );
         unlink("$file.bak") if $? == 0;
     }
@@ -87,17 +102,18 @@ my @profiling_target = qw( -Mblib bin/prove --timer t/regression.t );
 
 sub ACTION_dprof {
     system( $^X, '-d:DProf', @profiling_target );
-    exec( qw( dprofpp -R ) );
+    exec(qw( dprofpp -R ));
 }
 
 sub ACTION_smallprof {
     system( $^X, '-d:SmallProf', @profiling_target );
     open( FH, 'smallprof.out' ) or die "Can't open smallprof.out: $!";
-    @rows = grep { /\d+:/ } <FH>;
+    @rows = grep {/\d+:/} <FH>;
     close FH;
 
-    @rows = reverse sort { (split(/\s+/,$a))[2] <=> (split(/\s+/,$b))[2] } @rows;
-    @rows = @rows[0..30];
+    @rows = reverse
+      sort { ( split( /\s+/, $a ) )[2] <=> ( split( /\s+/, $b ) )[2] } @rows;
+    @rows = @rows[ 0 .. 30 ];
     print join( '', @rows );
 }
 

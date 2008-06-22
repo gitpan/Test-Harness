@@ -1,6 +1,8 @@
 package App::Prove::State;
 
 use strict;
+use vars qw($VERSION @ISA);
+
 use File::Find;
 use File::Spec;
 use Carp;
@@ -8,7 +10,6 @@ use TAP::Parser::YAMLish::Reader ();
 use TAP::Parser::YAMLish::Writer ();
 use TAP::Base;
 
-use vars qw($VERSION @ISA);
 @ISA = qw( TAP::Base );
 
 use constant IS_WIN32 => ( $^O =~ /^(MS)?Win32$/ );
@@ -20,11 +21,11 @@ App::Prove::State - State storage for the C<prove> command.
 
 =head1 VERSION
 
-Version 3.11
+Version 3.12
 
 =cut
 
-$VERSION = '3.11';
+$VERSION = '3.12';
 
 =head1 DESCRIPTION
 
@@ -47,6 +48,7 @@ and the operations that may be performed on it.
 
 =cut
 
+# override TAP::Base::new:
 sub new {
     my $class = shift;
     my %args = %{ shift || {} };

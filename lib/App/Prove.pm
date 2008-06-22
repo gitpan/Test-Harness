@@ -1,6 +1,9 @@
 package App::Prove;
 
 use strict;
+use vars qw($VERSION @ISA);
+
+use TAP::Object ();
 use TAP::Harness;
 use TAP::Parser::Utils qw( split_shell );
 use File::Spec;
@@ -8,7 +11,7 @@ use Getopt::Long;
 use App::Prove::State;
 use Carp;
 
-use vars qw($VERSION);
+@ISA = qw(TAP::Object);
 
 =head1 NAME
 
@@ -16,11 +19,11 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 3.11
+Version 3.12
 
 =cut
 
-$VERSION = '3.11';
+$VERSION = '3.12';
 
 =head1 DESCRIPTION
 
@@ -78,20 +81,18 @@ initializers may be passed.
 
 =cut
 
-sub new {
-    my $class = shift;
+# new() implementation supplied by TAP::Object
+
+sub _initialize {
+    my $self = shift;
     my $args = shift || {};
 
-    my $self = bless {
-        argv          => [],
-        rc_opts       => [],
-        includes      => [],
-        modules       => [],
-        state         => [],
-        plugins       => [],
-        harness_class => 'TAP::Harness',
-        _state        => App::Prove::State->new( { store => STATE_FILE } ),
-    }, $class;
+    # setup defaults:
+    for my $key (qw( argv rc_opts includes modules state plugins )) {
+        $self->{$key} = [];
+    }
+    $self->{harness_class} = 'TAP::Harness';
+    $self->{_state} = App::Prove::State->new( { store => STATE_FILE } );
 
     for my $attr (@ATTR) {
         if ( exists $args->{$attr} ) {
@@ -100,6 +101,7 @@ sub new {
             $self->{$attr} = $args->{$attr};
         }
     }
+
     return $self;
 }
 

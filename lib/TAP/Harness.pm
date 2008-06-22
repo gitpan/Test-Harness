@@ -23,11 +23,11 @@ TAP::Harness - Run test scripts with statistics
 
 =head1 VERSION
 
-Version 3.11
+Version 3.12
 
 =cut
 
-$VERSION = '3.11';
+$VERSION = '3.12';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -188,7 +188,22 @@ TAP is fine.  You can use this argument to specify the name of the program
 (and optional switches) to run your tests with:
 
   exec => ['/usr/bin/ruby', '-w']
-  
+
+You can also pass a subroutine reference in order to determine and return the
+proper program to run based on a given test script. The subroutine reference
+should expect the TAP::Harness object itself as the first argument, and the
+file name as the second argument. It should return an array reference
+containing the command to be run and including the test file name. It can also
+simply return C<undef>, in which case TAP::Harness will fall back on executing
+the test script in Perl:
+
+  exec => sub {
+      my ( $harness, $test_file ) = @_;
+      # Let Perl tests run.
+      return undef if $test_file =~ /[.]t$/;
+      return [ qw( /usr/bin/ruby -w ), $test_file ] if $test_file =~ /[.]rb$/;
+  }
+
 =item * C<merge>
 
 If C<merge> is true the harness will create parsers that merge STDOUT
@@ -571,22 +586,22 @@ sub _add_descriptions {
     my $self = shift;
 
     # First transformation: turn scalars into single element arrays
-    my @t = map { 'ARRAY' eq ref $_ ? $_ : [$_] } @_;
+    my @tests = map { 'ARRAY' eq ref $_ ? $_ : [$_] } @_;
 
     # Work out how many different extensions we have
     my %ext;
-    for (@t) {
-        $ext{$1}++ if $_->[0] =~ /\.(\w+)$/;
+    for my $test (@tests) {
+        $ext{$1}++ if $test->[0] =~ /\.(\w+)$/;
     }
 
-    for (@t) {
-        if ( @$_ == 1 ) {
-            $_->[1] = $_->[0];
-            $_->[1] =~ s/\.\w+$//
-              if keys %ext > 1;
+    for my $test (@tests) {
+        if ( @$test == 1 ) {
+            $test->[1] = $test->[0];
+            $test->[1] =~ s/\.\w+$//
+              if keys %ext <= 1;
         }
     }
-    return @t;
+    return @tests;
 }
 
 =head3 C<make_scheduler>
@@ -679,11 +694,14 @@ sub _get_parser_args {
     $args{switches}    = \@switches;
     $args{spool}       = $self->_open_spool($test_prog);
     $args{merge}       = $self->merge;
-    $args{exec}        = $self->exec;
     $args{ignore_exit} = $self->ignore_exit;
 
     if ( my $exec = $self->exec ) {
-        $args{exec} = [ @$exec, $test_prog ];
+        $args{exec}
+          = ref $exec eq 'CODE'
+          ? $exec->( $self, $test_prog )
+          : [ @$exec, $test_prog ];
+        $args{source} = $test_prog unless $args{exec};
     }
     else {
         $args{source} = $test_prog;

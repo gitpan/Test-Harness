@@ -51,11 +51,11 @@ TAP::Formatter::Console - Harness output delegate for default console output
 
 =head1 VERSION
 
-Version 3.11
+Version 3.12
 
 =cut
 
-$VERSION = '3.11';
+$VERSION = '3.12';
 
 =head1 DESCRIPTION
 
@@ -212,7 +212,7 @@ sub _format_now { strftime "[%H:%M:%S]", localtime }
 
 sub _format_name {
     my ( $self, $test ) = @_;
-    my $name  = $test;
+    my $name = $test;
     my $periods = '.' x ( $self->_longest + 4 - length $test );
 
     if ( $self->timer ) {
