@@ -17,11 +17,11 @@ TAP::Parser::Iterator::Process - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -310,6 +310,10 @@ sub _finish {
     my $self = shift;
 
     my $status = $?;
+
+    # Avoid circular refs
+    $self->{_next} = sub {return}
+      if $] >= 5.006;
 
     # If we have a subprocess we need to wait for it to terminate
     if ( defined $self->{pid} ) {

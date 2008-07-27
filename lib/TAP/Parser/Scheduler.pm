@@ -12,11 +12,11 @@ TAP::Parser::Scheduler - Schedule tests during parallel testing
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -43,7 +43,7 @@ sub new {
 
     my %args  = @_;
     my $tests = delete $args{tests} || croak "Need a 'tests' argument";
-    my $rules = delete $args{rules} || { par => '*' };
+    my $rules = delete $args{rules} || { par => '**' };
 
     croak "Unknown arg(s): ", join ', ', sort keys %args
       if keys %args;
@@ -113,9 +113,10 @@ sub _rule_clause {
 sub _expand {
     my ( $self, $name, $tests ) = @_;
 
-    $name =~ s{(.)}{
-        $1 eq '?' ? '[^/]'
-      : $1 eq '*' ? '[^/]*'
+    $name =~ s{(\?|\*\*?|.)}{
+        $1 eq '?'  ? '[^/]'
+      : $1 eq '*'  ? '[^/]*'
+      : $1 eq '**' ? '.*?'
       :             quotemeta($1);
     }gex;
 
@@ -227,6 +228,7 @@ sub _as_string {
         return "$indent(undef)\n";
     }
     elsif ( 'ARRAY' eq ref $rule ) {
+        return unless @$rule;
         my $type = ( 'par', 'seq' )[ $depth % 2 ];
         return join(
             '', "$indent$type:\n",

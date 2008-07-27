@@ -13,11 +13,11 @@ TAP::Parser::Iterator - Internal base class for TAP::Parser Iterators
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -84,7 +84,6 @@ sub next_raw {
     $_[0]->_croak($msg);
 }
 
-
 =head3 C<handle_unicode>
 
 If necessary switch the input stream to handle unicode. This only has
@@ -95,7 +94,6 @@ The default implementation does nothing.
 =cut
 
 sub handle_unicode { }
-
 
 =head3 C<get_select_handles>
 
@@ -110,7 +108,6 @@ The default implementation does nothing.
 sub get_select_handles {
     return;
 }
-
 
 =head3 C<wait>
 
@@ -141,7 +138,6 @@ sub exit {
     my $msg = Carp::longmess('abstract method called directly!');
     $_[0]->_croak($msg);
 }
-
 
 1;
 

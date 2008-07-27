@@ -1,6 +1,16 @@
 Revision history for Test-Harness
 
-3.12    ****-**-**
+3.13    2008-07-27
+        - fixed various closure related leaks
+        - made prove honour HARNESS_TIMER
+        - Applied patches supplied by Alex Vandiver
+          - add 'rules' switch to prove: allows parallel execution rules
+            to be specified on the command line.
+          - allow '**' (any path) wildcard in parallel rules
+          - fix bug report address
+          - make tprove_gtk example work again.
+
+3.12    2008-06-22
         - applied Steve Purkis' huge refactoring patch which adds
           configurable factories for most of the major internal classes.
         - applied David Wheeler's patch to allow exec to be a code
@@ -43,13 +53,13 @@ Revision history for Test-Harness
         - set HARNESS_IS_VERBOSE during verbose testing.
         - documentation fixes.
 
-3.08	2008-02-08
+3.08    2008-02-08
         - added support for 'out' option to
           Test::Harness::execute_tests. See #32476. Thanks RENEEB.
         - Fixed YAMLish handling of non-alphanumeric hash keys.
         - Added --dry option to prove for 2.64 compatibility.
 
-3.07	2008-01-13
+3.07    2008-01-13
         - prove now supports HARNESS_PERL_SWITCHES.
         - restored TEST_VERBOSE to prove.
 

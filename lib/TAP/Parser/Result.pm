@@ -8,6 +8,7 @@ use TAP::Object ();
 @ISA = 'TAP::Object';
 
 BEGIN {
+
     # make is_* methods
     my @attrs = qw( plan pragma test comment bailout version unknown yaml );
     no strict 'refs';
@@ -25,11 +26,11 @@ TAP::Parser::Result - Base class for TAP::Parser output objects
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -64,10 +65,11 @@ Returns an instance the appropriate class for the test token passed in.
 # new() implementation provided by TAP::Object
 
 sub _initialize {
-    my ($self, $token) = @_;
+    my ( $self, $token ) = @_;
     if ($token) {
-	# make a shallow copy of the token:
-	$self->{$_} = $token->{$_} for (keys %$token);
+
+        # make a shallow copy of the token:
+        $self->{$_} = $token->{$_} for ( keys %$token );
     }
     return $self;
 }
@@ -254,7 +256,6 @@ sub set_directive {
 }
 
 1;
-
 
 =head1 SUBCLASSING
 

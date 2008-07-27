@@ -16,11 +16,11 @@ TAP::Parser::IteratorFactory - Internal TAP::Parser Iterator
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -84,7 +84,6 @@ sub make_iterator {
     }
 }
 
-
 =head3 C<make_stream_iterator>
 
 Make a new stream iterator and return it.  Passes through any arguments given.
@@ -118,7 +117,6 @@ sub make_process_iterator {
 }
 
 1;
-
 
 =head1 SUBCLASSING
 

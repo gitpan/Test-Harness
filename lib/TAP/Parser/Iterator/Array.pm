@@ -13,11 +13,11 @@ TAP::Parser::Iterator::Array - Internal TAP::Parser array Iterator
 
 =head1 VERSION
 
-Version 3.12
+Version 3.13
 
 =cut
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 =head1 SYNOPSIS
 
@@ -90,7 +90,6 @@ sub next_raw {
 }
 
 1;
-
 
 =head1 ATTRIBUTION
 
