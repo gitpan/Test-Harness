@@ -5,6 +5,7 @@
 
 use strict;
 use lib 't/lib';
+use Config;
 
 sub has_crazy_patch {
     my $sentinel = 'blirpzoffle';
@@ -32,9 +33,8 @@ my $test_template = <<'END';
 
 use Test::More tests => 2;
 
-# Make sure we did something sensible with PERL5LIB
+is $INC[0], "wibble", 'basic order of @INC preserved' or diag "\@INC: @INC";
 like $ENV{PERL5LIB}, qr{wibble};
-ok grep { $_ eq 'wibble' } @INC;
 
 END
 
