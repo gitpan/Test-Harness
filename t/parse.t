@@ -5,14 +5,14 @@ use strict;
 BEGIN {
     if ( $ENV{PERL_CORE} ) {
         chdir 't';
-        @INC = ( '../lib', '../ext/Test/Harness/t/lib' );
+        @INC = ( '../lib', '../ext/Test-Harness/t/lib' );
     }
     else {
         use lib 't/lib';
     }
 }
 
-use Test::More tests => 282;
+use Test::More tests => 294;
 use IO::c55Capture;
 
 use File::Spec;
@@ -438,6 +438,30 @@ is $test->raw, 'ok 2 - read the rest of the file',
 is scalar $parser->passed, 2,
   'Empty junk lines should not affect the correct number of tests passed';
 
+# Check source => "tap content"
+can_ok $PARSER, 'new';
+$parser = $PARSER->new( { source => "1..1\nok 1\n" } );
+isa_ok $parser, $PARSER, '... and calling it should succeed';
+ok @results = _get_results($parser), 'The parser should return results';
+is( scalar @results, 2, "Got two lines of TAP" );
+
+# Check source => [array]
+can_ok $PARSER, 'new';
+$parser = $PARSER->new( { source => [ "1..1", "ok 1" ] } );
+isa_ok $parser, $PARSER, '... and calling it should succeed';
+ok @results = _get_results($parser), 'The parser should return results';
+is( scalar @results, 2, "Got two lines of TAP" );
+
+# Check source => $filehandle
+can_ok $PARSER, 'new';
+open my $fh, $ENV{PERL_CORE}
+  ? '../ext/Test-Harness/t/data/catme.1'
+  : 't/data/catme.1';
+$parser = $PARSER->new( { source => $fh } );
+isa_ok $parser, $PARSER, '... and calling it should succeed';
+ok @results = _get_results($parser), 'The parser should return results';
+is( scalar @results, 2, "Got two lines of TAP" );
+
 {
 
     # set a spool to write to
@@ -606,7 +630,7 @@ END_TAP
     my $parser = TAP::Parser->new(
         {   source => File::Spec->catfile(
                 (   $ENV{PERL_CORE}
-                    ? ( File::Spec->updir(), 'ext', 'Test', 'Harness' )
+                    ? ( File::Spec->updir(), 'ext', 'Test-Harness' )
                     : ()
                 ),
                 't',

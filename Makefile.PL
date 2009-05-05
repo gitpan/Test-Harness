@@ -1,4 +1,6 @@
-#!/usr/bin/perl -w
+#!perl
+
+require 5.006;
 
 # This Makefile.PL is provided for installation compatibility.
 # Extra developer actions are in the Build.PL.
@@ -6,8 +8,6 @@
 use ExtUtils::MakeMaker qw/WriteMakefile prompt/;
 
 use strict;
-
-my $core = grep { $_ eq 'PERL_CORE=1' } @ARGV;
 
 my %mm_args = (
     'NAME'         => 'Test::Harness',
@@ -19,12 +19,8 @@ my %mm_args = (
     'PL_FILES'    => {},
     'test'        => { 'TESTS' => 't/*.t t/compat/*.t' },
 
-    # In the core pods will be built by installman, and prove found by
-    # utils/prove.PL
-    $core
-    ? ( 'MAN3PODS' => {} )
-    : ( 'EXE_FILES' => ['bin/prove'],
-    ),
+   # The core autogenerates a Makefile.PL, and finds prove with utils/prove.PL
+    'EXE_FILES' => ['bin/prove'],
 );
 
 {
