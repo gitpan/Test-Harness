@@ -13,21 +13,18 @@ my $IS_WIN32 = ( $^O =~ /^(MS)?Win32$/ );
 
 =head1 NAME
 
-TAP::Parser::Iterator::Process - Internal TAP::Parser Iterator
+TAP::Parser::Iterator::Process - Iterator for proccess-based TAP sources
 
 =head1 VERSION
 
-Version 3.17
+Version 3.17_01
 
 =cut
 
-$VERSION = '3.17';
+$VERSION = '3.17_01';
 
 =head1 SYNOPSIS
 
-  # see TAP::Parser::IteratorFactory for preferred usage
-
-  # to use directly:
   use TAP::Parser::Iterator::Process;
   my %args = (
    command  => ['python', 'setup.py', 'test'],
@@ -41,8 +38,8 @@ $VERSION = '3.17';
 =head1 DESCRIPTION
 
 This is a simple iterator wrapper for executing external processes, used by
-L<TAP::Parser>.  Unless you're subclassing, you probably won't need to use
-this module directly.
+L<TAP::Parser>.  Unless you're writing a plugin or subclassing, you probably
+won't need to use this module directly.
 
 =head1 METHODS
 
@@ -116,6 +113,8 @@ sub _initialize {
 
     my @command = @{ delete $args->{command} || [] }
       or die "Must supply a command to execute";
+
+    $self->{command} = [@command];
 
     # Private. Used to frig with chunk size during testing.
     my $chunk_size = delete $args->{_chunk_size} || 65536;
@@ -371,7 +370,6 @@ Originally ripped off from L<Test::Harness>.
 L<TAP::Object>,
 L<TAP::Parser>,
 L<TAP::Parser::Iterator>,
-L<TAP::Parser::IteratorFactory>,
 
 =cut
 

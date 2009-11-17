@@ -24,7 +24,7 @@ my $source_tests
 my $sample_tests
   = $ENV{PERL_CORE} ? '../ext/Test-Harness/t/sample-tests' : 't/sample-tests';
 
-plan tests => 119;
+plan tests => 128;
 
 # note that this test will always pass when run through 'prove'
 ok $ENV{HARNESS_ACTIVE},  'HARNESS_ACTIVE env variable should be set';
@@ -528,6 +528,8 @@ foreach my $test_args ( get_arg_sets() ) {
 SKIP: {
 
     my $cat = '/bin/cat';
+
+    # TODO: use TYPE on win32?
     unless ( -e $cat ) {
         skip "no '$cat'", 2;
     }
@@ -687,6 +689,66 @@ SKIP: {
     is( $output[-1], "All tests successful.\n",
         'No exec accumulation'
     );
+}
+
+# customize default File source
+{
+    my $capture = IO::c55Capture->new_handle;
+    my $harness = TAP::Harness->new(
+        {   verbosity => -2,
+            stdout    => $capture,
+            sources   => {
+                File => { extensions => ['.1'] },
+            },
+        }
+    );
+
+    _runtests( $harness, "$source_tests/source.1" );
+
+    my @output = tied($$capture)->dump;
+    my $status = pop @output;
+    like $status, qr{^Result: PASS$},
+      'customized File source has correct status line';
+    pop @output;    # get rid of summary line
+    my $answer = pop @output;
+    is( $answer, "All tests successful.\n", '... all tests passed' );
+}
+
+# load a custom source
+{
+    my $capture = IO::c55Capture->new_handle;
+    my $harness = TAP::Harness->new(
+        {   verbosity => -2,
+            stdout    => $capture,
+            sources   => {
+                MyFileSourceHandler => { extensions => ['.1'] },
+            },
+        }
+    );
+
+    my $source_test = "$source_tests/source.1";
+    eval { _runtests( $harness, "$source_tests/source.1" ); };
+    my $e = $@;
+    ok( !$e, 'no error on load custom source' ) || diag($e);
+
+    no warnings 'once';
+    can_ok( 'MyFileSourceHandler', 'make_iterator' );
+    ok( $MyFileSourceHandler::CAN_HANDLE,
+        '... MyFileSourceHandler->can_handle was called'
+    );
+    ok( $MyFileSourceHandler::MAKE_ITER,
+        '... MyFileSourceHandler->make_iterator was called'
+    );
+
+    my $raw_source = eval { ${ $MyFileSourceHandler::LAST_SOURCE->raw } };
+    is( $raw_source, $source_test, '... used the right source' );
+
+    my @output = tied($$capture)->dump;
+    my $status = pop(@output) || '';
+    like $status, qr{^Result: PASS$}, '... and test has correct status line';
+    pop @output;    # get rid of summary line
+    my $answer = pop @output;
+    is( $answer, "All tests successful.\n", '... all tests passed' );
 }
 
 sub trim {

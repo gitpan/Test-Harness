@@ -43,15 +43,15 @@ BEGIN {
 
 =head1 NAME
 
-TAP::Formatter::Console - Harness output delegate for default console output
+TAP::Formatter::Base - Base class for harness output delegates
 
 =head1 VERSION
 
-Version 3.17
+Version 3.17_01
 
 =cut
 
-$VERSION = '3.17';
+$VERSION = '3.17_01';
 
 =head1 DESCRIPTION
 
