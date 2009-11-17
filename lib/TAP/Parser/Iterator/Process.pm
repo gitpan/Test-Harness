@@ -17,11 +17,11 @@ TAP::Parser::Iterator::Process - Iterator for proccess-based TAP sources
 
 =head1 VERSION
 
-Version 3.17_01
+Version 3.17_02
 
 =cut
 
-$VERSION = '3.17_01';
+$VERSION = '3.17_02';
 
 =head1 SYNOPSIS
 
@@ -77,12 +77,16 @@ Get the exit status for this iterator's process.
 
 =cut
 
-eval { require POSIX; &POSIX::WEXITSTATUS(0) };
-if ($@) {
-    *_wait2exit = sub { $_[1] >> 8 };
-}
-else {
-    *_wait2exit = sub { POSIX::WEXITSTATUS( $_[1] ) }
+{
+    # get around a catch22 in the test suite that causes failures on Win32:
+    local $SIG{__DIE__} = undef;
+    eval { require POSIX; &POSIX::WEXITSTATUS(0) };
+    if ($@) {
+        *_wait2exit = sub { $_[1] >> 8 };
+    }
+    else {
+        *_wait2exit = sub { POSIX::WEXITSTATUS( $_[1] ) }
+    }
 }
 
 sub _use_open3 {
