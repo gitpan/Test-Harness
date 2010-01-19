@@ -24,11 +24,11 @@ TAP::Parser - Parse L<TAP|Test::Harness::TAP> output
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 my $DEFAULT_TAP_VERSION = 12;
 my $MAX_TAP_VERSION     = 13;
@@ -210,7 +210,7 @@ with the result as the argument if the C<run> method is used:
  );
 
  my $aggregator = TAP::Parser::Aggregator->new;
- foreach my $file ( @test_files ) {
+ for my $file ( @test_files ) {
      my $parser = TAP::Parser->new(
          {
              source    => $file,
@@ -1533,7 +1533,7 @@ result as its argument.
  );
 
  my $aggregator = TAP::Parser::Aggregator->new;
- foreach my $file ( @test_files ) {
+ for my $file ( @test_files ) {
      my $parser = TAP::Parser->new(
          {
              source    => $file,

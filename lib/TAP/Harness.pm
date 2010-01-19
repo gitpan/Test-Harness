@@ -19,11 +19,11 @@ TAP::Harness - Run test scripts with statistics
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 $ENV{HARNESS_ACTIVE}  = 1;
 $ENV{HARNESS_VERSION} = $VERSION;
@@ -427,7 +427,7 @@ Any keys for which the value is C<undef> will be ignored.
 
     $harness->runtests(@tests);
 
-Accepts and array of C<@tests> to be run. This should generally be the
+Accepts an array of C<@tests> to be run. This should generally be the
 names of test files, but this is not required. Each element in C<@tests>
 will be passed to C<TAP::Parser::new()> as a C<source>. See
 L<TAP::Parser> for more information.

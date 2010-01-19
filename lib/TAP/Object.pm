@@ -9,11 +9,11 @@ TAP::Object - Base class that provides common functionality to all C<TAP::*> mod
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 =head1 SYNOPSIS
 
@@ -143,7 +143,7 @@ Create simple getter/setters.
 
 sub mk_methods {
     my ( $class, @methods ) = @_;
-    foreach my $method_name (@methods) {
+    for my $method_name (@methods) {
         my $method = "${class}::$method_name";
         no strict 'refs';
         *$method = sub {

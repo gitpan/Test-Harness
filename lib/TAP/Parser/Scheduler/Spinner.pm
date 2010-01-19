@@ -10,11 +10,11 @@ TAP::Parser::Scheduler::Spinner - A no-op job.
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 =head1 SYNOPSIS
 

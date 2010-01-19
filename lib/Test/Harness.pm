@@ -45,11 +45,11 @@ Test::Harness - Run Perl standard test scripts with statistics
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 # Backwards compatibility for exportable variable names.
 *verbose  = *Verbose;
@@ -270,7 +270,7 @@ sub _filtered_inc {
     elsif (IS_WIN32) {
 
         # Lose any trailing backslashes in the Win32 paths
-        s/[\\\/]+$// foreach @inc;
+        s/[\\\/]+$// for @inc;
     }
 
     my @default_inc = _default_inc();
@@ -307,7 +307,7 @@ sub _filtered_inc {
         my $perl = $ENV{HARNESS_PERL} || $^X;
 
         # Avoid using -l for the benefit of Perl 6
-        chomp( @inc = `$perl -e "print join qq[\\n], \@INC, q[]"` );
+        chomp( @inc = `"$perl" -e "print join qq[\\n], \@INC, q[]"` );
         return @inc;
     }
 }
@@ -530,15 +530,15 @@ Provide additional options to the harness. Currently supported options are:
 
 Run <n> (default 9) parallel jobs.
 
-=item C<< f >>
+=item C<< c >>
 
-Use forked parallelism.
+Try to color output. See L<TAP::Formatter::Base/"new">.
 
 =back
 
 Multiple options may be separated by colons:
 
-    HARNESS_OPTIONS=j9:f make test
+    HARNESS_OPTIONS=j9:c make test
 
 =item C<HARNESS_SUBCLASS>
 

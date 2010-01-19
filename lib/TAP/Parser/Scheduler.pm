@@ -12,11 +12,11 @@ TAP::Parser::Scheduler - Schedule tests during parallel testing
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 =head1 SYNOPSIS
 
@@ -231,7 +231,7 @@ sub get_job {
 sub _not_empty {
     my $ar = shift;
     return 1 unless 'ARRAY' eq ref $ar;
-    foreach (@$ar) {
+    for (@$ar) {
         return 1 if _not_empty($_);
     }
     return;

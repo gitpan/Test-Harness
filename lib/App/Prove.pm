@@ -17,11 +17,11 @@ App::Prove - Implements the C<prove> command.
 
 =head1 VERSION
 
-Version 3.17_04
+Version 3.18
 
 =cut
 
-$VERSION = '3.17_04';
+$VERSION = '3.18';
 
 =head1 DESCRIPTION
 
@@ -313,7 +313,7 @@ sub _get_args {
         $args{formatter_class} = $formatter;
     }
 
-    foreach my $handler ( @{ $self->sources } ) {
+    for my $handler ( @{ $self->sources } ) {
         my ( $name, $config ) = $self->_parse_source($handler);
         $args{sources}->{$name} = $config;
     }
