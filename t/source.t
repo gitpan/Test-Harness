@@ -1,13 +1,7 @@
 #!/usr/bin/perl -w
 
 BEGIN {
-    if ( $ENV{PERL_CORE} ) {
-        chdir 't';
-        @INC = ( '../lib', '../ext/Test-Harness/t/lib' );
-    }
-    else {
-        unshift @INC, 't/lib';
-    }
+    unshift @INC, 't/lib';
 }
 
 use strict;
@@ -16,15 +10,20 @@ use Test::More tests => 45;
 use File::Spec;
 
 my $dir = File::Spec->catdir(
-    (   $ENV{PERL_CORE}
-        ? ( File::Spec->updir(), 'ext', 'Test-Harness' )
-        : ()
-    ),
     't',
     'source_tests'
 );
 
 use_ok('TAP::Parser::Source');
+
+sub ct($) {
+    my $hash = shift;
+    if ( $ENV{PERL_CORE} ) {
+        delete $hash->{is_symlink};
+        delete $hash->{lstat};
+    }
+    return $hash;
+}
 
 # Basic tests
 {
@@ -141,8 +140,8 @@ use_ok('TAP::Parser::Source');
     # separate meta->file to break up the test
     my $file = delete $meta->{file};
     is_deeply(
-        $meta,
-        {   is_scalar    => 1,
+        ct $meta,
+        ct {is_scalar    => 1,
             has_newlines => 0,
             length       => length($test),
             is_object    => 0,
@@ -162,8 +161,8 @@ use_ok('TAP::Parser::Source');
     isnt( delete $file->{write},   undef, '... file->write set' );
     isnt( delete $file->{execute}, undef, '... file->execute set' );
     is_deeply(
-        $file,
-        {   basename   => 'source.t',
+        ct $file,
+        ct {basename   => 'source.t',
             ext        => '.t',
             lc_ext     => '.t',
             shebang    => '#!/usr/bin/perl',
@@ -174,9 +173,10 @@ use_ok('TAP::Parser::Source');
             is_dir     => 0,
             is_file    => 1,
             is_symlink => 0,
-            sticky     => 0,
-            setgid     => 0,
-            setuid     => 0,
+            # Fix for bizarre -k bug in Strawberry Perl
+            sticky     => ( -k $test )[-1] ? 1 : 0,
+            setgid     => -g $test ? 1 : 0,
+            setuid     => -u $test ? 1 : 0,
         },
         '... file->* set'
     );
@@ -184,7 +184,7 @@ use_ok('TAP::Parser::Source');
 
 # dir test
 {
-    my $test   = File::Spec->catfile($dir);
+    my $test   = $dir;
     my $source = TAP::Parser::Source->new;
 
     $source->raw( \$test );
@@ -193,8 +193,8 @@ use_ok('TAP::Parser::Source');
     # separate meta->file to break up the test
     my $file = delete $meta->{file};
     is_deeply(
-        $meta,
-        {   is_scalar    => 1,
+        ct $meta,
+        ct {is_scalar    => 1,
             has_newlines => 0,
             length       => length($test),
             is_object    => 0,
@@ -216,8 +216,8 @@ use_ok('TAP::Parser::Source');
     isnt( delete $file->{write},   undef, '... file->write set' );
     isnt( delete $file->{execute}, undef, '... file->execute set' );
     is_deeply(
-        $file,
-        {   basename   => 'source_tests',
+        ct $file,
+        ct {basename   => 'source_tests',
             ext        => '',
             lc_ext     => '',
             text       => 0,
@@ -225,9 +225,9 @@ use_ok('TAP::Parser::Source');
             is_dir     => 1,
             is_file    => 0,
             is_symlink => 0,
-            sticky     => 0,
-            setgid     => 0,
-            setuid     => 0,
+            sticky     => ( -k $test )[-1] ? 1 : 0,
+            setgid     => -g $test ? 1 : 0,
+            setuid     => -u $test ? 1 : 0,
         },
         '... file->* set'
     );
@@ -254,8 +254,8 @@ SKIP: {
     # separate meta->file to break up the test
     my $file = delete $meta->{file};
     is_deeply(
-        $meta,
-        {   is_scalar    => 1,
+        ct $meta,
+        ct {is_scalar    => 1,
             has_newlines => 0,
             length       => length($symlink),
             is_object    => 0,
@@ -277,8 +277,8 @@ SKIP: {
     isnt( delete $file->{write},   undef, '... file->write set' );
     isnt( delete $file->{execute}, undef, '... file->execute set' );
     is_deeply(
-        $file,
-        {   basename   => 'source_link.T',
+        ct $file,
+        ct {basename   => 'source_link.T',
             ext        => '.T',
             lc_ext     => '.t',
             shebang    => '#!/usr/bin/perl',
@@ -289,9 +289,9 @@ SKIP: {
             is_dir     => 0,
             is_file    => 1,
             is_symlink => 1,
-            sticky     => 0,
-            setgid     => 0,
-            setuid     => 0,
+            sticky     => ( -k $symlink )[-1] ? 1 : 0,
+            setgid     => -g $symlink ? 1 : 0,
+            setuid     => -u $symlink ? 1 : 0,
         },
         '... file->* set'
     );
