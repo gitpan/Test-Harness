@@ -1,4 +1,4 @@
-Test-Harness 3.23
+Test-Harness 3.24
 
 INSTALLATION
 
@@ -11,7 +11,7 @@ To install Test::Harness using ExtUtils::MakeMaker do:
 
 To use Module::Build (preferred) do:
 
-    perl Build.PL
+    perl NotBuild.PL
     ./Build
     ./Build test
     ./Build install
