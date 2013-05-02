@@ -22,11 +22,11 @@ TAP::Parser::SourceHandler::Perl - Stream TAP from a Perl executable
 
 =head1 VERSION
 
-Version 3.27
+Version 3.28
 
 =cut
 
-$VERSION = '3.27';
+$VERSION = '3.28';
 
 =head1 SYNOPSIS
 
@@ -167,7 +167,7 @@ sub _mangle_switches {
     # PERL5LIB as -I switches and place PERL5OPT on the command line
     # in order that it be seen.
     if ( $class->_has_taint_switch($switches) ) {
-        my @perl5lib = split /:/, $ENV{PERL5LIB};
+        my @perl5lib = split /$Config{path_sep}/, $ENV{PERL5LIB};
         return (
             $libs,
             [   @{$switches},
