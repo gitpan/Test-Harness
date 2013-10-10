@@ -1,8 +1,9 @@
 package Test::More;
 
-use 5.004;
+use 5.006;
 
 use strict;
+use warnings;
 
 # Can't use Carp because it might cause use_ok() to accidentally succeed
 # even though the module being used forgot to use Carp.  Yes, this
@@ -12,12 +13,11 @@ sub _carp {
     warn @_, " at $file line $line\n";
 }
 
-use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.72';
+our (@EXPORT, %EXPORT_TAGS, $TODO);
+our $VERSION = '0.72';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
-use Test::Builder::Module;
-@ISA    = qw(Test::Builder::Module);
+use parent qw(Test::Builder::Module);
 @EXPORT = qw(ok use_ok require_ok
   is isnt like unlike is_deeply
   cmp_ok
@@ -771,7 +771,7 @@ along these lines.
 
 =cut
 
-use vars qw(@Data_Stack %Refs_Seen);
+our (@Data_Stack, %Refs_Seen);
 my $DNE = bless [], 'Does::Not::Exist';
 
 sub _dne {
@@ -1007,7 +1007,7 @@ sub skip {
         $tb->skip($why);
     }
 
-    local $^W = 0;
+    no warnings 'exiting';
     last SKIP;
 }
 
@@ -1088,7 +1088,7 @@ sub todo_skip {
         $tb->todo_skip($why);
     }
 
-    local $^W = 0;
+    no warnings 'exiting';
     last TODO;
 }
 
@@ -1212,7 +1212,7 @@ sub _deep_check {
     {
 
         # Quiet uninitialized value warnings when comparing undefs.
-        local $^W = 0;
+        no warnings 'uninitialized';
 
         $tb->_unoverload_str( \$e1, \$e2 );
 
@@ -1358,7 +1358,7 @@ sub eq_set {
     return 0 unless @$a1 == @$a2;
 
     # There's faster ways to do this, but this is easiest.
-    local $^W = 0;
+    no warnings 'uninitialized';
 
     # It really doesn't matter how we sort them, as long as both arrays are
     # sorted with the same algorithm.

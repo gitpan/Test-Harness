@@ -1,14 +1,14 @@
 package Test::Builder;
 
-use 5.004;
+use 5.006;
 
 # $^C was only introduced in 5.005-ish.  We do this to prevent
 # use of uninitialized value warnings in older perls.
 $^C ||= 0;
 
 use strict;
-use vars qw($VERSION);
-$VERSION = '0.72';
+use warnings;
+our $VERSION = '0.72';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -75,8 +75,7 @@ Test::Builder - Backend for building test libraries
 
   package My::Test::Module;
   use Test::Builder;
-  require Exporter;
-  @ISA = qw(Exporter);
+  use parent qw(Exporter);
   @EXPORT = qw(ok);
 
   my $Test = Test::Builder->new;
@@ -169,7 +168,7 @@ test might be run multiple times in the same process.
 
 =cut
 
-use vars qw($Level);
+our $Level;
 
 sub reset {
     my ($self) = @_;

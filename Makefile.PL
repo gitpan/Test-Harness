@@ -8,16 +8,20 @@ require 5.006;
 use ExtUtils::MakeMaker qw/WriteMakefile prompt/;
 
 use strict;
+use warnings;
 
 my %mm_args = (
     'NAME'         => 'Test::Harness',
     'VERSION_FROM' => 'lib/Test/Harness.pm',
-    'INSTALLDIRS'  => 'perl',
+    'INSTALLDIRS'  => ($] < 5.011 ? 'perl' : 'site'),
     'PL_FILES'     => {},
     'test'         => { 'TESTS' => 't/*.t t/compat/*.t' },
 
    # The core autogenerates a Makefile.PL, and finds prove with utils/prove.PL
     'EXE_FILES' => ['bin/prove'],
+    'PREREQ_PM'    => {
+        parent => 0,
+    }
 );
 
 {

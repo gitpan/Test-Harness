@@ -2,12 +2,12 @@ package Test::Builder::Module;
 
 use Test::Builder;
 
-require Exporter;
-@ISA = qw(Exporter);
+use parent qw(Exporter);
 
 $VERSION = '0.72';
 
 use strict;
+use warnings;
 
 # 5.004's Exporter doesn't have export_to_level.
 my $_export_to_level = sub {
